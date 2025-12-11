@@ -29,3 +29,15 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #4A4A4C;
 }
+
+/* Add to your globals.css */
+@media (max-width: 768px) {
+  button, [role="button"], .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  input, select, textarea {
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+}
