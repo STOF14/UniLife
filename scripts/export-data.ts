@@ -1,20 +1,4 @@
-import { supabase, USER_ID } from '@/lib/supabase/supabase/client'
-import fs from 'fs'
+// This script is not needed for the main app
+// You can implement data export functionality later
 
-async function exportData() {
-  const { data: modules } = await supabase.from('modules').select('*').eq('user_id', USER_ID)
-  const { data: tasks } = await supabase.from('tasks').select('*').eq('user_id', USER_ID)
-  // ... export all tables
-  
-  const backup = {
-    timestamp: new Date().toISOString(),
-    modules,
-    tasks,
-    // ... other data
-  }
-  
-  fs.writeFileSync('backup.json', JSON.stringify(backup, null, 2))
-  console.log('Backup complete!')
-}
-
-exportData()
+console.log('Export data script - implement Supabase integration later');

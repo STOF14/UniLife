@@ -40,6 +40,8 @@ type InputProps = {
   placeholder?: string;
   required?: boolean;
   step?: string;
+  min?: string;    // ADD THIS
+  max?: string;    // ADD THIS
 };
 
 type SelectProps = {
@@ -70,6 +72,9 @@ type Module = {
   coverImage?: string;
   assessments: Assessment[];
   specialCode?: number;
+  created_at?: string;     // ADD THIS LINE
+  updated_at?: string;     // ADD THIS LINE
+  user_id?: string;        // ADD THIS LINE (optional)
 };
 
 type Task = {
@@ -80,6 +85,9 @@ type Task = {
   priority: 'low' | 'medium' | 'high';
   status: 'todo' | 'inprogress' | 'done';
   completed: boolean;
+  created_at?: string;    // ADD THIS
+  updated_at?: string;    // ADD THIS
+  user_id?: string;       // ADD THIS
 };
 
 type Transaction = {
@@ -88,6 +96,8 @@ type Transaction = {
   description: string;
   amount: number;
   category: string;
+  created_at?: string;    // ADD THIS
+  user_id?: string;       // ADD THIS
 };
 
 const useDatabase = () => {
@@ -223,7 +233,48 @@ const useDatabase = () => {
     { id: '4', date: '2024-12-05', description: 'Part-time Job', amount: 300.00, category: 'Income' }
   ]);
 
-  return { modules, setModules, tasks, setTasks, transactions, setTransactions };
+    // Add these save functions
+  const saveModule = async (module: Module) => {
+    // For now, just update local state
+    if (modules.find(m => m.id === module.id)) {
+      setModules(modules.map(m => m.id === module.id ? module : m));
+    } else {
+      setModules([...modules, module]);
+    }
+    return true; // Simulate success
+  };
+
+  const saveTask = async (task: Task) => {
+    if (tasks.find(t => t.id === task.id)) {
+      setTasks(tasks.map(t => t.id === task.id ? task : t));
+    } else {
+      setTasks([...tasks, task]);
+    }
+    return true;
+  };
+
+  const saveTransaction = async (transaction: Transaction) => {
+    setTransactions([...transactions, transaction]);
+    return true;
+  };
+
+  const deleteModule = async (id: string) => {
+    setModules(modules.filter(m => m.id !== id));
+    return true;
+  };
+
+  const deleteTask = async (id: string) => {
+    setTasks(tasks.filter(t => t.id !== id));
+    return true;
+  };
+
+  return { 
+    modules, setModules, 
+    tasks, setTasks, 
+    transactions, setTransactions,
+    saveModule, saveTask, saveTransaction,
+    deleteModule, deleteTask
+  };
 };
 
 type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'tasks' | 'finances' | 'settings';
