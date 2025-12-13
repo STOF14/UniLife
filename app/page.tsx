@@ -2,106 +2,26 @@
 
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react'
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, BookOpen, CheckSquare, DollarSign, Settings, User, Menu, X, Plus, Edit, Trash2, ArrowLeft, Download, Upload, Upload as UploadIcon, Camera, Target as TargetIcon, TrendingUp, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// Type Definitions
-type ProgressRingProps = {
-  percentage: number;
-  size?: number;
-  strokeWidth?: number;
-};
+// Types
+import type { Module, Task, Transaction, PageType, Assessment, ButtonProps, InputProps, SelectProps, ProgressRingProps, ProgressBarProps, ModalProps } from '@/lib/types';
 
-type ProgressBarProps = {
-  percentage: number;
-  height?: number;
-  color?: string;
-};
+// Hooks
+import { useStore } from '@/hooks/useStore';
 
-type ModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-};
+// UI Components
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { ProgressRing } from '@/components/ui/ProgressRing';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import { Modal } from '@/components/ui/Modal';
 
-type ButtonProps = {
-  children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'danger';
-  onClick?: () => void;
-  className?: string;
-  disabled?: boolean;
-  type?: 'button' | 'submit' | 'reset';
-};
-
-type InputProps = {
-  label: string;
-  type?: string;
-  value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-  required?: boolean;
-  step?: string;
-  min?: string;    // ADD THIS
-  max?: string;    // ADD THIS
-};
-
-type SelectProps = {
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  options: { value: string; label: string }[];
-  required?: boolean;
-};
-
-type Assessment = {
-  id: string;
-  name: string;
-  type: 'assignment' | 'test' | 'exam';
-  dueDate: string;
-  weight?: number;
-};
-
-type Module = {
-  id: string;
-  code: string;
-  name: string;
-  semester: string;
-  credits: number;
-  currentGrade: number;
-  targetGrade: number;
-  progress: number;
-  coverImage?: string;
-  assessments: Assessment[];
-  specialCode?: number;
-  created_at?: string;     // ADD THIS LINE
-  updated_at?: string;     // ADD THIS LINE
-  user_id?: string;        // ADD THIS LINE (optional)
-};
-
-type Task = {
-  id: string;
-  title: string;
-  moduleCode: string;
-  dueDate: string;
-  priority: 'low' | 'medium' | 'high';
-  status: 'todo' | 'inprogress' | 'done';
-  completed: boolean;
-  created_at?: string;    // ADD THIS
-  updated_at?: string;    // ADD THIS
-  user_id?: string;       // ADD THIS
-};
-
-type Transaction = {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  category: string;
-  created_at?: string;    // ADD THIS
-  user_id?: string;       // ADD THIS
-};
+// Utilities
+import { calculateCWA, calculateTermAverage } from '@/lib/utils/calculations';
+import { SettingsPage } from '@/components/pages/SettingsPage';
 
 const useDatabase = () => {
   const [modules, setModules] = useState<Module[]>([
@@ -279,169 +199,6 @@ const useDatabase = () => {
     deleteModule, deleteTask
   };
 };
-
-type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'tasks' | 'finances' | 'settings';
-
-const useStore = () => {
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
-  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
-  const [showModal, setShowModal] = useState<string | null>(null);
-  const [editingModule, setEditingModule] = useState<Module | null>(null);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  
-  return {
-    sidebarExpanded, setSidebarExpanded,
-    currentPage, setCurrentPage,
-    selectedModule, setSelectedModule,
-    showModal, setShowModal,
-    editingModule, setEditingModule,
-    editingTask, setEditingTask,
-    editingTransaction, setEditingTransaction
-  };
-};
-
-const calculateCWA = (modules: Module[]) => {
-  let totalWeightedScore = 0;
-  let totalCredits = 0;
-
-  modules.forEach(module => {
-    totalCredits += module.credits;
-    
-    if (module.specialCode && [988, 997, 998].includes(module.specialCode)) {
-      totalWeightedScore += 0;
-    } else {
-      totalWeightedScore += module.currentGrade * module.credits;
-    }
-  });
-
-  return totalCredits > 0 ? (totalWeightedScore / totalCredits).toFixed(2) : '0.00';
-};
-
-const calculateTermAverage = (modules: Module[], term: string) => {
-  const termModules = modules.filter(m => m.semester === term);
-  return calculateCWA(termModules);
-};
-
-const ProgressRing = ({ percentage, size = 80, strokeWidth = 8 }: ProgressRingProps) => {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (percentage / 100) * circumference;
-
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width={size} height={size} className="transform -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#38383A" strokeWidth={strokeWidth} fill="none" />
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#0A84FF" strokeWidth={strokeWidth} fill="none"
-          strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
-          className="transition-all duration-1000 ease-out" />
-      </svg>
-      <span className="absolute text-lg font-mono font-semibold text-white">{percentage}%</span>
-    </div>
-  );
-};
-
-const ProgressBar = ({ percentage, height = 4, color = '#0A84FF' }: ProgressBarProps) => (
-  <div className="w-full bg-[#38383A] rounded-full overflow-hidden" style={{ height: `${height}px` }}>
-    <div className="h-full rounded-full transition-all duration-800 ease-out" 
-      style={{ width: `${percentage}%`, backgroundColor: color }} />
-  </div>
-);
-
-const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
-  if (!isOpen) return null;
-  
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-[#141414] border border-[#38383A] rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-white">{title}</h2>
-          <button onClick={onClose} className="text-[#EBEBF599] hover:text-white">
-            <X size={20} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-};
-
-const Button = ({ 
-  children, 
-  variant = 'primary', 
-  onClick, 
-  className = '', 
-  disabled = false,
-  type = 'button'
-}: ButtonProps) => {
-  const variants = {
-    primary: 'bg-[#0A84FF] hover:bg-[#409CFF] text-white',
-    secondary: 'bg-[#141414] border border-[#38383A] text-[#EBEBF599] hover:border-[#0A84FF] hover:text-white',
-    danger: 'bg-[#FF453A] hover:bg-[#FF6961] text-white'
-  } as const;
-  
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
-    >
-      {children}
-    </button>
-  );
-};
-
-const Input = ({ 
-  label, 
-  type = 'text', 
-  value, 
-  onChange, 
-  placeholder = '', 
-  required = false,
-  step
-}: InputProps) => (
-  <div>
-    <label className="block text-sm font-medium text-white mb-2">
-      {label} {required && <span className="text-[#FF453A]">*</span>}
-    </label>
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      required={required}
-      step={step}
-      className="w-full bg-[#0A0A0A] border border-[#38383A] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#0A84FF]"
-    />
-  </div>
-);
-
-const Select = ({ 
-  label, 
-  value, 
-  onChange, 
-  options, 
-  required = false 
-}: SelectProps) => (
-  <div>
-    <label className="block text-sm font-medium text-white mb-2">
-      {label} {required && <span className="text-[#FF453A]">*</span>}
-    </label>
-    <select
-      value={value}
-      onChange={onChange}
-      required={required}
-      className="w-full bg-[#0A0A0A] border border-[#38383A] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#0A84FF]"
-    >
-      {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
-  </div>
-);
 
 const UniLife = () => {
   const store = useStore();
@@ -1537,23 +1294,7 @@ const TransactionForm = () => {
     );
   };
 
-  const SettingsPage = () => (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-semibold text-white">Settings</h1>
-      <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
-        <h2 className="text-xl font-semibold text-white mb-6">Data Management</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between py-3 border-b border-[#38383A]">
-            <div>
-              <div className="text-sm font-medium text-white">Export Data</div>
-              <div className="text-xs text-[#EBEBF599]">Download all your data as JSON</div>
-            </div>
-            <Button onClick={exportData}><Download size={16} className="mr-2" />Export</Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+
 
   const renderPage = () => {
     switch (store.currentPage) {
@@ -1562,7 +1303,7 @@ const TransactionForm = () => {
       case 'academic-progress': return <AcademicProgressPage />;
       case 'tasks': return <TasksPage />;
       case 'finances': return <FinancesPage />;
-      case 'settings': return <SettingsPage />;
+      case 'settings': return <SettingsPage exportData={exportData} />;
       default: return <DashboardPage />;
     }
   };
