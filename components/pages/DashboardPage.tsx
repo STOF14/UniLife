@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Module, Task } from '@/types';
+import { Module, Task } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Edit } from 'lucide-react';
-import { Transaction } from '@/types';
+import { Transaction } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 
 type FinancesPageProps = {

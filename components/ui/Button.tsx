@@ -7,7 +7,8 @@ export const Button = ({
   onClick, 
   className = '', 
   disabled = false,
-  type = 'button'
+  type = 'button',
+  'data-testid': testId
 }: ButtonProps) => {
   const variants = {
     primary: 'bg-[#0A84FF] hover:bg-[#409CFF] text-white',
@@ -20,6 +21,7 @@ export const Button = ({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      data-testid={testId}
       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
     >
       {children}

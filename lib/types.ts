@@ -25,6 +25,7 @@ export type ButtonProps = {
   className?: string;
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  'data-testid'?: string;
 };
 
 export type InputProps = {
@@ -37,6 +38,7 @@ export type InputProps = {
   step?: string;
   min?: string;
   max?: string;
+  'data-testid'?: string;
 };
 
 export type SelectProps = {
@@ -45,6 +47,7 @@ export type SelectProps = {
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: { value: string; label: string }[];
   required?: boolean;
+  'data-testid'?: string;
 };
 
 export type Assessment = {

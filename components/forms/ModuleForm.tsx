@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Module } from '@/types';
+import { Module } from '@/lib/types';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';

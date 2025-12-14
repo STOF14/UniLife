@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Edit, Trash2, Camera } from 'lucide-react';
-import { Module, Task } from '@/types';
+import { Module, Task } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { ProgressBar } from '@/components/ui/ProgressBar';

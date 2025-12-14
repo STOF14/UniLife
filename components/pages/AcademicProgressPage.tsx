@@ -1,5 +1,5 @@
 import React from 'react';
-import { Module } from '@/types';
+import { Module } from '@/lib/types';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { calculateTermAverage } from '@/lib/utils/calculations';
