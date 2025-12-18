@@ -1,3 +1,6 @@
+
+
+
 // Type Definitions
 export type ProgressRingProps = {
   percentage: number;
@@ -73,6 +76,7 @@ export type Module = {
   created_at?: string;
   updated_at?: string;
   user_id?: string;
+  targetMark: number; // <--- ADD THIS
 };
 
 export type Task = {
@@ -98,4 +102,4 @@ export type Transaction = {
   user_id?: string;
 };
 
-export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'tasks' | 'finances' | 'settings';
+export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'tasks' | 'finances' | 'analytics' | 'settings';

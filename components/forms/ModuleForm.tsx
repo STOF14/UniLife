@@ -49,6 +49,7 @@ export const ModuleForm = ({ editingModule, onSave, onClose }: ModuleFormProps) 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <Input 
+          data-testid="module-code-input"  // ✅ Added for Playwright
           label="Module Code" 
           value={formState.code || ''} 
           onChange={e => setFormState({...formState, code: e.target.value})} 
@@ -56,6 +57,7 @@ export const ModuleForm = ({ editingModule, onSave, onClose }: ModuleFormProps) 
           required 
         />
         <Input 
+          data-testid="module-name-input"  // ✅ Added for Playwright
           label="Module Name" 
           value={formState.name || ''} 
           onChange={e => setFormState({...formState, name: e.target.value})} 
@@ -65,6 +67,7 @@ export const ModuleForm = ({ editingModule, onSave, onClose }: ModuleFormProps) 
       </div>
       <div className="grid grid-cols-3 gap-4">
         <Input 
+          data-testid="module-credits-input" // ✅ Added for Playwright
           label="Credits" 
           type="number" 
           value={formState.credits || 16} 
@@ -84,6 +87,7 @@ export const ModuleForm = ({ editingModule, onSave, onClose }: ModuleFormProps) 
           max="100"
         />
         <Input 
+          data-testid="module-target-grade-input" // ✅ Added for Playwright
           label="Target Grade" 
           type="number" 
           value={formState.targetGrade || 60} 
@@ -126,6 +130,7 @@ export const ModuleForm = ({ editingModule, onSave, onClose }: ModuleFormProps) 
           Cancel
         </Button>
         <Button 
+          data-testid="module-submit-btn" // ✅ Added for Playwright
           type="submit" 
           disabled={isSubmitting}
           className="min-w-[120px]"

@@ -36,15 +36,24 @@ export const useDatabase = () => {
   const [loading, setLoading] = useState(true);
 
   // Generate a unique user ID (for now - add proper auth later)
+// Generate a unique user ID that looks like a real UUID
   const getUserId = () => {
-    if (typeof window === 'undefined') return 'anonymous';
+    if (typeof window === 'undefined') return '00000000-0000-0000-0000-000000000000';
     
     let userId = localStorage.getItem('unilife_user_id');
-    if (!userId) {
-      userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('unilife_user_id', userId);
+    
+    // Check if we have an ID and if it matches UUID format (8-4-4-4-12)
+    const isValidUUID = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+
+    if (!isValidUUID) {
+      // Generate a compliant UUID v4
+      userId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+      localStorage.setItem('unilife_user_id', userId!);
     }
-    return userId;
+    return userId!;
   };
 
   // Load all data
@@ -95,14 +104,14 @@ export const useDatabase = () => {
   useEffect(() => {
     const userId = getUserId();
     
-    // Subscribe to modules changes
     const modulesSubscription = supabase
       .channel('modules-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'modules', filter: `user_id=eq.${userId}` },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setModules(prev => [toCamelCase(payload.new), ...prev]);
+            // Only add if we don't already have it (prevents double add from optimistic update)
+            setModules(prev => prev.some(m => m.id === payload.new.id) ? prev : [toCamelCase(payload.new), ...prev]);
           } else if (payload.eventType === 'UPDATE') {
             setModules(prev => prev.map(m => m.id === payload.new.id ? toCamelCase(payload.new) : m));
           } else if (payload.eventType === 'DELETE') {
@@ -112,14 +121,13 @@ export const useDatabase = () => {
       )
       .subscribe();
 
-    // Subscribe to tasks changes
     const tasksSubscription = supabase
       .channel('tasks-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${userId}` },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setTasks(prev => [...prev, toCamelCase(payload.new)]);
+             setTasks(prev => prev.some(t => t.id === payload.new.id) ? prev : [...prev, toCamelCase(payload.new)].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()));
           } else if (payload.eventType === 'UPDATE') {
             setTasks(prev => prev.map(t => t.id === payload.new.id ? toCamelCase(payload.new) : t));
           } else if (payload.eventType === 'DELETE') {
@@ -129,74 +137,220 @@ export const useDatabase = () => {
       )
       .subscribe();
 
+    const transactionsSubscription = supabase
+      .channel('transactions-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setTransactions(prev => prev.some(t => t.id === payload.new.id) ? prev : [toCamelCase(payload.new), ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setTransactions(prev => prev.map(t => t.id === payload.new.id ? toCamelCase(payload.new) : t));
+          } else if (payload.eventType === 'DELETE') {
+            setTransactions(prev => prev.filter(t => t.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       modulesSubscription.unsubscribe();
       tasksSubscription.unsubscribe();
+      transactionsSubscription.unsubscribe();
     };
   }, []);
 
-  // Save functions
+  // --- SAVING FUNCTIONS (With ID Fix) ---
+
   const saveModule = async (module: Module) => {
     const userId = getUserId();
-    const dbData = toSnakeCase({ ...module, user_id: userId, updated_at: new Date().toISOString() });
-    const { error } = await supabase
-      .from('modules')
-      .upsert(dbData);
-    
-    if (error) console.error('Error saving module:', error);
-    return !error;
+    // Check if ID is a temp timestamp (no hyphens) or a real UUID
+    const isTempId = !module.id.includes('-');
+    const moduleWithUser = { ...module, userId, updatedAt: new Date().toISOString() };
+
+    if (isTempId) {
+      // 1. INSERT (New Item)
+      // Optimistic Update
+      setModules(prev => [moduleWithUser, ...prev]);
+
+      // Strip the temp ID and any client-only fields so Supabase generates a real UUID
+      const { id, targetMark, ...dataToInsert } = moduleWithUser as any;
+      const dbData = toSnakeCase(dataToInsert);
+
+      const { data, error } = await supabase
+        .from('modules')
+        .insert([dbData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving module:', error);
+        setModules(prev => prev.filter(m => m.id !== module.id)); // Revert
+        return false;
+      }
+
+      // Replace temp ID with real ID in state
+      if (data) {
+        const realModule = toCamelCase(data);
+        setModules(prev => prev.map(m => m.id === module.id ? realModule : m));
+      }
+      return true;
+
+    } else {
+      // 2. UPDATE (Existing Item)
+      setModules(prev => prev.map(m => m.id === module.id ? moduleWithUser : m));
+      
+      const { targetMark, ...dataToUpdate } = moduleWithUser as any;
+      const dbData = toSnakeCase(dataToUpdate);
+      const { error } = await supabase
+        .from('modules')
+        .update(dbData)
+        .eq('id', module.id);
+
+      if (error) {
+        console.error('Error updating module:', error);
+        loadData(); // Revert safely
+        return false;
+      }
+      return true;
+    }
   };
 
   const saveTask = async (task: Task) => {
     const userId = getUserId();
-    const dbData = toSnakeCase({ ...task, user_id: userId });
-    const { error } = await supabase
-      .from('tasks')
-      .upsert(dbData);
-    
-    if (error) console.error('Error saving task:', error);
-    return !error;
+    const isTempId = !task.id.includes('-');
+    const taskWithUser = { ...task, userId };
+
+    if (isTempId) {
+      // INSERT
+      setTasks(prev => [...prev, taskWithUser].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()));
+
+      const { id, ...dataToInsert } = taskWithUser;
+      const dbData = toSnakeCase(dataToInsert);
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([dbData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving task:', error);
+        setTasks(prev => prev.filter(t => t.id !== task.id));
+        return false;
+      }
+
+      if (data) {
+        const realTask = toCamelCase(data);
+        setTasks(prev => prev.map(t => t.id === task.id ? realTask : t));
+      }
+      return true;
+
+    } else {
+      // UPDATE
+      setTasks(prev => prev.map(t => t.id === task.id ? taskWithUser : t));
+      
+      const dbData = toSnakeCase(taskWithUser);
+      const { error } = await supabase
+        .from('tasks')
+        .update(dbData)
+        .eq('id', task.id);
+
+      if (error) {
+        console.error('Error updating task:', error);
+        loadData();
+        return false;
+      }
+      return true;
+    }
   };
 
   const saveTransaction = async (transaction: Transaction) => {
     const userId = getUserId();
-    const dbData = toSnakeCase({ ...transaction, user_id: userId });
-    const { error } = await supabase
-      .from('transactions')
-      .insert(dbData);
-    
-    if (error) console.error('Error saving transaction:', error);
-    return !error;
+    const isTempId = !transaction.id.includes('-');
+    const transactionWithUser = { ...transaction, userId };
+
+    if (isTempId) {
+      // INSERT
+      setTransactions(prev => [transactionWithUser, ...prev]);
+
+      const { id, ...dataToInsert } = transactionWithUser;
+      const dbData = toSnakeCase(dataToInsert);
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert([dbData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving transaction:', error);
+        setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+        return false;
+      }
+
+      if (data) {
+        const realTransaction = toCamelCase(data);
+        setTransactions(prev => prev.map(t => t.id === transaction.id ? realTransaction : t));
+      }
+      return true;
+
+    } else {
+      // UPDATE
+      setTransactions(prev => prev.map(t => t.id === transaction.id ? transactionWithUser : t));
+      
+      const dbData = toSnakeCase(transactionWithUser);
+      const { error } = await supabase
+        .from('transactions')
+        .update(dbData)
+        .eq('id', transaction.id);
+
+      if (error) {
+        console.error('Error updating transaction:', error);
+        loadData();
+        return false;
+      }
+      return true;
+    }
   };
 
   const deleteModule = async (id: string) => {
-    const { error } = await supabase
-      .from('modules')
-      .delete()
-      .eq('id', id);
+    const backup = [...modules];
+    setModules(prev => prev.filter(m => m.id !== id));
     
-    if (error) console.error('Error deleting module:', error);
-    return !error;
+    const { error } = await supabase.from('modules').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting module:', error);
+      setModules(backup);
+      return false;
+    }
+    return true;
   };
 
   const deleteTask = async (id: string) => {
-    const { error } = await supabase
-      .from('tasks')
-      .delete()
-      .eq('id', id);
+    const backup = [...tasks];
+    setTasks(prev => prev.filter(t => t.id !== id));
     
-    if (error) console.error('Error deleting task:', error);
-    return !error;
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting task:', error);
+      setTasks(backup);
+      return false;
+    }
+    return true;
   };
 
   const deleteTransaction = async (id: string) => {
-    const { error } = await supabase
-      .from('transactions')
-      .delete()
-      .eq('id', id);
+    const backup = [...transactions];
+    setTransactions(prev => prev.filter(t => t.id !== id));
     
-    if (error) console.error('Error deleting transaction:', error);
-    return !error;
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting transaction:', error);
+      setTransactions(backup);
+      return false;
+    }
+    return true;
   };
 
   return {

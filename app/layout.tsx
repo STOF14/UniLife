@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { StoreProvider } from '@/hooks/useStore' // <--- 1. Import this
 
 export const metadata: Metadata = {
   title: 'UniLife',
@@ -21,7 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        {/* 2. Wrap the children with the Provider */}
+        <StoreProvider>
+          {children}
+        </StoreProvider>
       </body>
     </html>
   )

@@ -47,6 +47,7 @@ export const TaskForm = ({ editingTask, modules, onSave, onClose }: TaskFormProp
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input 
+        data-testid="task-title-input" // ✅ Added ID
         label="Task Title" 
         value={formState.title || ''} 
         onChange={e => setFormState({...formState, title: e.target.value})} 
@@ -55,6 +56,7 @@ export const TaskForm = ({ editingTask, modules, onSave, onClose }: TaskFormProp
       />
       <div className="grid grid-cols-2 gap-4">
         <Select 
+          data-testid="task-module-select" // ✅ Added ID
           label="Module" 
           value={formState.moduleCode || ''} 
           onChange={e => setFormState({...formState, moduleCode: e.target.value})}
@@ -65,6 +67,7 @@ export const TaskForm = ({ editingTask, modules, onSave, onClose }: TaskFormProp
           required 
         />
         <Input 
+          data-testid="task-due-date-input" // ✅ Added ID
           label="Due Date" 
           type="date" 
           value={formState.dueDate || ''} 
@@ -76,6 +79,7 @@ export const TaskForm = ({ editingTask, modules, onSave, onClose }: TaskFormProp
       </div>
       <div className="grid grid-cols-2 gap-4">
         <Select 
+          data-testid="task-priority-select" // ✅ Added ID
           label="Priority" 
           value={formState.priority || 'medium'} 
           onChange={e => setFormState({...formState, priority: e.target.value as Task['priority']})}
@@ -87,6 +91,7 @@ export const TaskForm = ({ editingTask, modules, onSave, onClose }: TaskFormProp
           required 
         />
         <Select 
+          data-testid="task-status-select" // ✅ Added ID
           label="Status" 
           value={formState.status || 'todo'} 
           onChange={e => setFormState({...formState, status: e.target.value as Task['status']})}
@@ -120,21 +125,12 @@ export const TaskForm = ({ editingTask, modules, onSave, onClose }: TaskFormProp
           Cancel
         </Button>
         <Button 
+          data-testid="task-submit-btn" // ✅ Added ID
           type="submit" 
           disabled={isSubmitting}
           className="min-w-[120px]"
         >
-          {isSubmitting ? (
-            <span className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Saving...
-            </span>
-          ) : (
-            `${editingTask ? 'Update' : 'Add'} Task`
-          )}
+          {isSubmitting ? 'Saving...' : `${editingTask ? 'Update' : 'Add'} Task`}
         </Button>
       </div>
     </form>

@@ -5,6 +5,10 @@ import { Suspense } from 'react'
 import React, { useState, useEffect } from 'react';
 import { Calendar, BookOpen, CheckSquare, DollarSign, Settings, User, Menu, X, Plus, Edit, Trash2, ArrowLeft, Download, Upload, Upload as UploadIcon, Camera, Target as TargetIcon, TrendingUp, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDatabase } from '@/hooks/useDatabase';
+import { SpeedInsights } from "@vercel/speed-insights/next"
+import { AnalyticsPage } from '@/components/pages/AnalyticsPage';
+
+
 
 // Types
 import type { Module, Task, Transaction, PageType, Assessment, ButtonProps, InputProps, SelectProps, ProgressRingProps, ProgressBarProps, ModalProps } from '@/lib/types';
@@ -27,27 +31,75 @@ import { SettingsPage } from '@/components/pages/SettingsPage';
 // Utilities
 import { calculateCWA, calculateTermAverage } from '@/lib/utils/calculations';
 
+import { useRouter } from 'next/navigation'; // <--- Add this
+import { createClient } from '@supabase/supabase-js'; // <--- Add this
+
+// Initialize Supabase (Client Side)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 const UniLife = () => {
+  // ---  AUTH PROTECTION START ---
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const store = useStore();
   const db = useDatabase();
   const [isMobile, setIsMobile] = useState(false);
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
+  const [currentPage, setCurrentPage] = useState<PageType | 'analytics'>('dashboard');
+
 
   useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          // No user found, redirect to login
+          router.push('/login');
+        } else {
+          // User exists, allow access
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        router.push('/login');
+      }
+    };
+    
+    checkUser();
+  }, [router]);
+
+    useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const navigation = [
-    { id: 'dashboard' as PageType, icon: Calendar, label: 'Dashboard' },
-    { id: 'academic' as PageType, icon: BookOpen, label: 'Academic' },
-    { id: 'academic-progress' as PageType, icon: TrendingUp, label: 'Progress' },
-    { id: 'tasks' as PageType, icon: CheckSquare, label: 'Tasks' },
-    { id: 'finances' as PageType, icon: DollarSign, label: 'Finances' },
-    { id: 'settings' as PageType, icon: Settings, label: 'Settings' },
-  ];
+  // Show a loading screen while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0A84FF]"></div>
+          <p className="text-[#EBEBF599] text-sm">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+  // --- 🔒 AUTH PROTECTION END ---  
+
+const navigation = [
+  { id: 'dashboard' as PageType, icon: Calendar, label: 'Dashboard' },
+  { id: 'academic' as PageType, icon: BookOpen, label: 'Academic' },
+  { id: 'academic-progress' as PageType, icon: TrendingUp, label: 'Progress' },
+  { id: 'analytics' as PageType, icon: TargetIcon, label: 'Analytics' },  // ← ADD THIS LINE
+  { id: 'tasks' as PageType, icon: CheckSquare, label: 'Tasks' },
+  { id: 'finances' as PageType, icon: DollarSign, label: 'Finances' },
+  { id: 'settings' as PageType, icon: Settings, label: 'Settings' },
+];
 
   const cwa = calculateCWA(db.modules);
   const term2024 = calculateTermAverage(db.modules, '2024');
@@ -1061,7 +1113,9 @@ const renderPage = () => {
     case 'dashboard': return <DashboardPage />;
     case 'academic': return <AcademicPage />;
     case 'academic-progress': return <AcademicProgressPage />;
+    case 'analytics': return <AnalyticsPage modules={db.modules} />;
     case 'tasks':
+    
       return (
         <TasksPage
           tasks={db.tasks}
@@ -1085,7 +1139,7 @@ const renderPage = () => {
         />
       );
     case 'finances': return <FinancesPage />;
-    case 'settings': return <SettingsPage exportData={exportData} />;
+    case 'settings': return <SettingsPage />;
     default: return <DashboardPage />;
   }
 };

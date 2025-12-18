@@ -1,0 +1,1322 @@
+--- lib/types.ts ---
+// Type Definitions
+export type ProgressRingProps = {
+  percentage: number;
+  size?: number;
+  strokeWidth?: number;
+};
+
+export type ProgressBarProps = {
+  percentage: number;
+  height?: number;
+  color?: string;
+};
+
+export type ModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+};
+
+export type ButtonProps = {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'danger';
+  onClick?: () => void;
+  className?: string;
+  disabled?: boolean;
+  type?: 'button' | 'submit' | 'reset';
+  'data-testid'?: string;
+};
+
+export type InputProps = {
+  label: string;
+  type?: string;
+  value: string | number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  required?: boolean;
+  step?: string;
+  min?: string;
+  max?: string;
+  'data-testid'?: string;
+};
+
+export type SelectProps = {
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: { value: string; label: string }[];
+  required?: boolean;
+  'data-testid'?: string;
+};
+
+export type Assessment = {
+  id: string;
+  name: string;
+  type: 'assignment' | 'test' | 'exam';
+  dueDate: string;
+  weight?: number;
+};
+
+export type Module = {
+  id: string;
+  code: string;
+  name: string;
+  semester: string;
+  credits: number;
+  currentGrade: number;
+  targetGrade: number;
+  progress: number;
+  coverImage?: string;
+  assessments: Assessment[];
+  specialCode?: number;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
+};
+
+export type Task = {
+  id: string;
+  title: string;
+  moduleCode: string;
+  dueDate: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'todo' | 'inprogress' | 'done';
+  completed: boolean;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
+};
+
+export type Transaction = {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  category: string;
+  created_at?: string;
+  user_id?: string;
+};
+
+export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'tasks' | 'finances' | 'settings';
+--- hooks/useDatabase.ts ---
+// hooks/useDatabase.ts
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase/supabase';
+import type { Module, Task, Transaction } from '@/lib/types';
+
+// Convert camelCase to snake_case for database
+const toSnakeCase = (obj: any): any => {
+  if (Array.isArray(obj)) return obj.map(toSnakeCase);
+  if (obj === null || typeof obj !== 'object') return obj;
+  
+  return Object.keys(obj).reduce((acc, key) => {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    acc[snakeKey] = toSnakeCase(obj[key]);
+    return acc;
+  }, {} as any);
+};
+
+// Convert snake_case to camelCase from database
+const toCamelCase = (obj: any): any => {
+  if (Array.isArray(obj)) return obj.map(toCamelCase);
+  if (obj === null || typeof obj !== 'object') return obj;
+  
+  return Object.keys(obj).reduce((acc, key) => {
+    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    acc[camelKey] = toCamelCase(obj[key]);
+    return acc;
+  }, {} as any);
+};
+
+export const useDatabase = () => {
+  const [modules, setModules] = useState<Module[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Generate a unique user ID (for now - add proper auth later)
+  const getUserId = () => {
+    if (typeof window === 'undefined') return 'anonymous';
+    
+    let userId = localStorage.getItem('unilife_user_id');
+    if (!userId) {
+      userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('unilife_user_id', userId);
+    }
+    return userId;
+  };
+
+  // Load all data
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const userId = getUserId();
+    
+    try {
+      // Load modules
+      const { data: modulesData } = await supabase
+        .from('modules')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (modulesData) setModules(modulesData.map(toCamelCase));
+
+      // Load tasks
+      const { data: tasksData } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', userId)
+        .order('due_date', { ascending: true });
+      
+      if (tasksData) setTasks(tasksData.map(toCamelCase));
+
+      // Load transactions
+      const { data: transactionsData } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false });
+      
+      if (transactionsData) setTransactions(transactionsData.map(toCamelCase));
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Real-time subscriptions
+  useEffect(() => {
+    const userId = getUserId();
+    
+    // Subscribe to modules changes
+    const modulesSubscription = supabase
+      .channel('modules-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'modules', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setModules(prev => [toCamelCase(payload.new), ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setModules(prev => prev.map(m => m.id === payload.new.id ? toCamelCase(payload.new) : m));
+          } else if (payload.eventType === 'DELETE') {
+            setModules(prev => prev.filter(m => m.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to tasks changes
+    const tasksSubscription = supabase
+      .channel('tasks-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setTasks(prev => [...prev, toCamelCase(payload.new)].sort((a, b) => 
+              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+            ));
+          } else if (payload.eventType === 'UPDATE') {
+            setTasks(prev => prev.map(t => t.id === payload.new.id ? toCamelCase(payload.new) : t));
+          } else if (payload.eventType === 'DELETE') {
+            setTasks(prev => prev.filter(t => t.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to transactions changes
+    const transactionsSubscription = supabase
+      .channel('transactions-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setTransactions(prev => [toCamelCase(payload.new), ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setTransactions(prev => prev.map(t => t.id === payload.new.id ? toCamelCase(payload.new) : t));
+          } else if (payload.eventType === 'DELETE') {
+            setTransactions(prev => prev.filter(t => t.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      modulesSubscription.unsubscribe();
+      tasksSubscription.unsubscribe();
+      transactionsSubscription.unsubscribe();
+    };
+  }, []);
+
+  // Save functions with optimistic updates
+  const saveModule = async (module: Module) => {
+    const userId = getUserId();
+    const moduleWithUser = { ...module, userId, updatedAt: new Date().toISOString() };
+    
+    // Optimistic update
+    const existingIndex = modules.findIndex(m => m.id === module.id);
+    if (existingIndex >= 0) {
+      // Update existing
+      setModules(prev => prev.map(m => m.id === module.id ? moduleWithUser : m));
+    } else {
+      // Add new
+      setModules(prev => [moduleWithUser, ...prev]);
+    }
+    
+    // Save to database
+    const dbData = toSnakeCase(moduleWithUser);
+    const { error } = await supabase
+      .from('modules')
+      .upsert(dbData);
+    
+    if (error) {
+      console.error('Error saving module:', error);
+      // Revert on error
+      loadData();
+      return false;
+    }
+    return true;
+  };
+
+  const saveTask = async (task: Task) => {
+    const userId = getUserId();
+    const taskWithUser = { ...task, userId };
+    
+    // Optimistic update
+    const existingIndex = tasks.findIndex(t => t.id === task.id);
+    if (existingIndex >= 0) {
+      // Update existing
+      setTasks(prev => prev.map(t => t.id === task.id ? taskWithUser : t));
+    } else {
+      // Add new
+      setTasks(prev => [...prev, taskWithUser].sort((a, b) => 
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      ));
+    }
+    
+    // Save to database
+    const dbData = toSnakeCase(taskWithUser);
+    const { error } = await supabase
+      .from('tasks')
+      .upsert(dbData);
+    
+    if (error) {
+      console.error('Error saving task:', error);
+      // Revert on error
+      loadData();
+      return false;
+    }
+    return true;
+  };
+
+  const saveTransaction = async (transaction: Transaction) => {
+    const userId = getUserId();
+    const transactionWithUser = { ...transaction, userId };
+    
+    // Optimistic update
+    const existingIndex = transactions.findIndex(t => t.id === transaction.id);
+    if (existingIndex >= 0) {
+      // Update existing
+      setTransactions(prev => prev.map(t => t.id === transaction.id ? transactionWithUser : t));
+    } else {
+      // Add new
+      setTransactions(prev => [transactionWithUser, ...prev]);
+    }
+    
+    // Save to database
+    const dbData = toSnakeCase(transactionWithUser);
+    const { error } = await supabase
+      .from('transactions')
+      .upsert(dbData);
+    
+    if (error) {
+      console.error('Error saving transaction:', error);
+      // Revert on error
+      loadData();
+      return false;
+    }
+    return true;
+  };
+
+  const deleteModule = async (id: string) => {
+    // Optimistic delete
+    const backup = [...modules];
+    setModules(prev => prev.filter(m => m.id !== id));
+    
+    const { error } = await supabase
+      .from('modules')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting module:', error);
+      // Revert on error
+      setModules(backup);
+      return false;
+    }
+    return true;
+  };
+
+  const deleteTask = async (id: string) => {
+    // Optimistic delete
+    const backup = [...tasks];
+    setTasks(prev => prev.filter(t => t.id !== id));
+    
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting task:', error);
+      // Revert on error
+      setTasks(backup);
+      return false;
+    }
+    return true;
+  };
+
+  const deleteTransaction = async (id: string) => {
+    // Optimistic delete
+    const backup = [...transactions];
+    setTransactions(prev => prev.filter(t => t.id !== id));
+    
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting transaction:', error);
+      // Revert on error
+      setTransactions(backup);
+      return false;
+    }
+    return true;
+  };
+
+  return {
+    modules,
+    tasks,
+    transactions,
+    loading,
+    saveModule,
+    saveTask,
+    saveTransaction,
+    deleteModule,
+    deleteTask,
+    deleteTransaction,
+    refreshData: loadData
+  };
+};
+--- hooks/useStore.ts ---
+'use client';
+
+import { useState } from 'react';
+import type { PageType, Module, Task, Transaction } from '@/lib/types';
+
+export const useStore = () => {
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  const [showModal, setShowModal] = useState<string | null>(null);
+  const [editingModule, setEditingModule] = useState<Module | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  
+  return {
+    sidebarExpanded, setSidebarExpanded,
+    currentPage, setCurrentPage,
+    selectedModule, setSelectedModule,
+    showModal, setShowModal,
+    editingModule, setEditingModule,
+    editingTask, setEditingTask,
+    editingTransaction, setEditingTransaction
+  };
+};
+--- components/ui/Button.tsx ---
+import React from 'react';
+import { ButtonProps } from '@/lib/types'
+
+export const Button = ({ 
+  children, 
+  variant = 'primary', 
+  onClick, 
+  className = '', 
+  disabled = false,
+  type = 'button',
+  'data-testid': testId
+}: ButtonProps) => {
+  const variants = {
+    primary: 'bg-[#0A84FF] hover:bg-[#409CFF] text-white',
+    secondary: 'bg-[#141414] border border-[#38383A] text-[#EBEBF599] hover:border-[#0A84FF] hover:text-white',
+    danger: 'bg-[#FF453A] hover:bg-[#FF6961] text-white'
+  } as const;
+  
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      data-testid={testId}
+      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+};
+--- components/forms/TaskForm.tsx ---
+import React, { useState } from 'react';
+import { Task, Module } from '@/lib/types';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+
+type TaskFormProps = {
+  editingTask: Task | null;
+  modules: Module[];
+  onSave: (task: Task) => Promise<boolean>;
+  onClose: () => void;
+};
+
+export const TaskForm = ({ editingTask, modules, onSave, onClose }: TaskFormProps) => {
+  const [formState, setFormState] = useState<Partial<Task>>(editingTask || {
+    title: '', moduleCode: '', dueDate: new Date().toISOString().split('T')[0], priority: 'medium', status: 'todo', completed: false
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const taskToSave: Task = {
+        ...formState,
+        id: editingTask?.id || Date.now().toString(),
+        created_at: editingTask?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as Task;
+      
+      const success = await onSave(taskToSave);
+      
+      if (success) {
+        onClose();
+      } else {
+        alert('Failed to save task. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving task:', error);
+      alert('Error saving task. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input 
+        label="Task Title" 
+        value={formState.title || ''} 
+        onChange={e => setFormState({...formState, title: e.target.value})} 
+        placeholder="Complete assignment" 
+        required 
+      />
+      <div className="grid grid-cols-2 gap-4">
+        <Select 
+          label="Module" 
+          value={formState.moduleCode || ''} 
+          onChange={e => setFormState({...formState, moduleCode: e.target.value})}
+          options={[
+            {value: '', label: 'None'}, 
+            ...modules.map(m => ({value: m.code, label: `${m.code} - ${m.name.substring(0, 20)}${m.name.length > 20 ? '...' : ''}`}))
+          ]} 
+          required 
+        />
+        <Input 
+          label="Due Date" 
+          type="date" 
+          value={formState.dueDate || ''} 
+          onChange={e => setFormState({...formState, dueDate: e.target.value})} 
+          placeholder="" 
+          required 
+          min={new Date().toISOString().split('T')[0]}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Select 
+          label="Priority" 
+          value={formState.priority || 'medium'} 
+          onChange={e => setFormState({...formState, priority: e.target.value as Task['priority']})}
+          options={[
+            {value: 'low', label: 'Low'}, 
+            {value: 'medium', label: 'Medium'}, 
+            {value: 'high', label: 'High'}
+          ]} 
+          required 
+        />
+        <Select 
+          label="Status" 
+          value={formState.status || 'todo'} 
+          onChange={e => setFormState({...formState, status: e.target.value as Task['status']})}
+          options={[
+            {value: 'todo', label: 'To Do'}, 
+            {value: 'inprogress', label: 'In Progress'}, 
+            {value: 'done', label: 'Done'}
+          ]} 
+          required 
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="completed"
+          checked={formState.completed || false}
+          onChange={e => setFormState({...formState, completed: e.target.checked})}
+          className="w-4 h-4 rounded border-[#38383A] bg-[#0A0A0A]"
+        />
+        <label htmlFor="completed" className="text-sm text-white cursor-pointer">
+          Mark as completed
+        </label>
+      </div>
+      <div className="flex gap-3 justify-end pt-4">
+        <Button 
+          variant="secondary" 
+          onClick={onClose}
+          type="button"
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="min-w-[120px]"
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Saving...
+            </span>
+          ) : (
+            `${editingTask ? 'Update' : 'Add'} Task`
+          )}
+        </Button>
+      </div>
+    </form>
+  );
+};
+--- components/forms/ModuleForm.tsx ---
+import React, { useState } from 'react';
+import { Module } from '@/lib/types';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+
+type ModuleFormProps = {
+  editingModule: Module | null;
+  onSave: (module: Module) => Promise<boolean>;
+  onClose: () => void;
+};
+
+export const ModuleForm = ({ editingModule, onSave, onClose }: ModuleFormProps) => {
+  const [formState, setFormState] = useState<Partial<Module>>(editingModule || {
+    code: '', name: '', semester: '2025', credits: 16, currentGrade: 0, targetGrade: 60, progress: 0, assessments: []
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const moduleToSave: Module = {
+        ...formState,
+        id: editingModule?.id || Date.now().toString(),
+        assessments: editingModule?.assessments || [],
+        coverImage: editingModule?.coverImage || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        created_at: editingModule?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as Module;
+      
+      const success = await onSave(moduleToSave);
+      
+      if (success) {
+        onClose();
+      } else {
+        alert('Failed to save module. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving module:', error);
+      alert('Error saving module. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <Input 
+          label="Module Code" 
+          value={formState.code || ''} 
+          onChange={e => setFormState({...formState, code: e.target.value})} 
+          placeholder="PHY114" 
+          required 
+        />
+        <Input 
+          label="Module Name" 
+          value={formState.name || ''} 
+          onChange={e => setFormState({...formState, name: e.target.value})} 
+          placeholder="Physics 114" 
+          required 
+        />
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        <Input 
+          label="Credits" 
+          type="number" 
+          value={formState.credits || 16} 
+          onChange={e => setFormState({...formState, credits: parseInt(e.target.value)})} 
+          placeholder="16" 
+          required 
+          min="1"
+          max="32"
+        />
+        <Input 
+          label="Current Grade" 
+          type="number" 
+          value={formState.currentGrade || 0} 
+          onChange={e => setFormState({...formState, currentGrade: parseInt(e.target.value)})} 
+          placeholder="75" 
+          min="0"
+          max="100"
+        />
+        <Input 
+          label="Target Grade" 
+          type="number" 
+          value={formState.targetGrade || 60} 
+          onChange={e => setFormState({...formState, targetGrade: parseInt(e.target.value)})} 
+          placeholder="80" 
+          min="0"
+          max="100"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Select 
+          label="Semester" 
+          value={formState.semester || '2025'} 
+          onChange={e => setFormState({...formState, semester: e.target.value})}
+          options={[
+            {value: '2024', label: '2024'},
+            {value: '2025', label: '2025'},
+            {value: '2026', label: '2026'},
+            {value: '2027', label: '2027'},
+          ]} 
+          required 
+        />
+        <Input 
+          label="Progress (%)" 
+          type="number" 
+          value={formState.progress || 0} 
+          onChange={e => setFormState({...formState, progress: parseInt(e.target.value)})} 
+          placeholder="75" 
+          min="0"
+          max="100"
+        />
+      </div>
+      <div className="flex gap-3 justify-end pt-4">
+        <Button 
+          variant="secondary" 
+          onClick={onClose}
+          type="button"
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="min-w-[120px]"
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Saving...
+            </span>
+          ) : (
+            `${editingModule ? 'Update' : 'Add'} Module`
+          )}
+        </Button>
+      </div>
+    </form>
+  );
+};
+--- components/forms/TransactionForm.tsx ---
+import React, { useState } from 'react';
+import { Transaction } from '@/lib/types';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+
+type TransactionFormProps = {
+  editingTransaction: Transaction | null;
+  onSave: (transaction: Transaction) => Promise<boolean>;
+  onClose: () => void;
+};
+
+export const TransactionForm = ({ editingTransaction, onSave, onClose }: TransactionFormProps) => {
+  const [formState, setFormState] = useState<Partial<Transaction>>(editingTransaction || {
+    date: new Date().toISOString().split('T')[0], 
+    description: '', 
+    amount: 0, 
+    category: 'Food'
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const transactionToSave: Transaction = {
+        ...formState,
+        id: editingTransaction?.id || Date.now().toString(),
+        created_at: editingTransaction?.created_at || new Date().toISOString(),
+      } as Transaction;
+      
+      const success = await onSave(transactionToSave);
+      
+      if (success) {
+        onClose();
+      } else {
+        alert('Failed to save transaction. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving transaction:', error);
+      alert('Error saving transaction. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const formatAmount = (value: string) => {
+    const num = value.replace(/[^0-9.-]/g, '');
+    return num === '' ? '0' : num;
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <Input 
+          label="Date" 
+          type="date" 
+          value={formState.date || ''} 
+          onChange={e => setFormState({...formState, date: e.target.value})} 
+          placeholder="" 
+          required 
+          max={new Date().toISOString().split('T')[0]}
+        />
+        <Select 
+          label="Category" 
+          value={formState.category || 'Food'} 
+          onChange={e => setFormState({...formState, category: e.target.value})}
+          options={[
+            {value: 'Food', label: 'Food'}, 
+            {value: 'Books', label: 'Books'}, 
+            {value: 'Tuition', label: 'Tuition'}, 
+            {value: 'Transport', label: 'Transport'}, 
+            {value: 'Entertainment', label: 'Entertainment'},
+            {value: 'Utilities', label: 'Utilities'},
+            {value: 'Shopping', label: 'Shopping'},
+            {value: 'Income', label: 'Income'},
+            {value: 'Other', label: 'Other'}
+          ]} 
+          required
+        />
+      </div>
+      <Input 
+        label="Description" 
+        value={formState.description || ''} 
+        onChange={e => setFormState({...formState, description: e.target.value})} 
+        placeholder="e.g., Lunch at cafeteria, Textbook purchase" 
+        required 
+      />
+      <div className="relative">
+        <label className="block text-sm font-medium text-white mb-2">
+          Amount <span className="text-[#FF453A]">*</span>
+        </label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#EBEBF599]">R</span>
+          <input
+            type="text"
+            value={formState.amount === 0 ? '' : formState.amount?.toString()}
+            onChange={e => {
+              const formatted = formatAmount(e.target.value);
+              setFormState({...formState, amount: parseFloat(formatted) || 0});
+            }}
+            placeholder="-25.50"
+            required
+            className="w-full bg-[#0A0A0A] border border-[#38383A] rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-[#0A84FF]"
+          />
+        </div>
+        <div className="flex gap-2 mt-2">
+          <span className="text-xs text-[#EBEBF599]">Quick add:</span>
+          {[10, 20, 50, 100, 200].map(amt => (
+            <button
+              key={amt}
+              type="button"
+              onClick={() => setFormState({...formState, amount: -amt})}
+              className="text-xs px-2 py-1 bg-[#38383A] hover:bg-[#444444] rounded transition-colors text-white"
+            >
+              -R{amt}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setFormState({...formState, amount: Math.abs(formState.amount || 0)})}
+            className="text-xs px-2 py-1 bg-[#30D158]/20 hover:bg-[#30D158]/30 rounded transition-colors text-[#30D158]"
+          >
+            Make positive
+          </button>
+        </div>
+      </div>
+      <div className="flex gap-3 justify-end pt-4">
+        <Button 
+          variant="secondary" 
+          onClick={onClose}
+          type="button"
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="min-w-[120px]"
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Saving...
+            </span>
+          ) : (
+            `${editingTransaction ? 'Update' : 'Add'} Transaction`
+          )}
+        </Button>
+      </div>
+    </form>
+  );
+};
+--- components/pages/TasksPage.tsx ---
+import React, { useState, useMemo, useEffect } from 'react';
+import { Task, Module } from '@/lib/types';
+import { Button } from '@/components/ui/Button';
+
+type TasksPageProps = {
+  tasks: Task[];
+  modules: Module[];
+  onAddTask: () => void;
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (id: string) => void;
+  onToggleComplete: (id: string) => void;
+  onSaveTask: (task: Task) => Promise<boolean>;
+};
+
+export const TasksPage = ({ 
+  tasks, 
+  modules,
+  onAddTask, 
+  onEditTask, 
+  onDeleteTask, 
+  onToggleComplete,
+  onSaveTask
+}: TasksPageProps) => {
+  const [activeTab, setActiveTab] = useState<'tasks' | 'modules'>('tasks');
+  const [selectedModuleFilter, setSelectedModuleFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'priority' | 'dueDate' | 'created'>('priority');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  
+  const TASKS_PER_PAGE = 20;
+
+  const colorOptions = [
+    { value: 'blue', class: 'border-blue-500/30 text-blue-400 bg-blue-500/10' },
+    { value: 'green', class: 'border-green-500/30 text-green-400 bg-green-500/10' },
+    { value: 'purple', class: 'border-purple-500/30 text-purple-400 bg-purple-500/10' },
+    { value: 'pink', class: 'border-pink-500/30 text-pink-400 bg-pink-500/10' },
+    { value: 'orange', class: 'border-orange-500/30 text-orange-400 bg-orange-500/10' },
+    { value: 'red', class: 'border-red-500/30 text-red-400 bg-red-500/10' },
+    { value: 'yellow', class: 'border-yellow-500/30 text-yellow-400 bg-yellow-500/10' },
+    { value: 'indigo', class: 'border-indigo-500/30 text-indigo-400 bg-indigo-500/10' },
+    { value: 'teal', class: 'border-teal-500/30 text-teal-400 bg-teal-500/10' },
+    { value: 'gray', class: 'border-gray-500/30 text-gray-400 bg-gray-500/10' }
+  ];
+
+  const priorities = [
+    { value: 'low', label: 'Low', indicator: '○', color: 'text-gray-400 bg-gray-500/10 border-gray-500/30' },
+    { value: 'medium', label: 'Medium', indicator: '◐', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30' },
+    { value: 'high', label: 'High', indicator: '●', color: 'text-red-400 bg-red-500/10 border-red-500/30' }
+  ];
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedModuleFilter, searchQuery, sortBy, activeTab]);
+
+  // Stats calculation
+  const stats = useMemo(() => ({
+    total: tasks.length,
+    completed: tasks.filter(t => t.completed).length,
+    pending: tasks.filter(t => !t.completed).length
+  }), [tasks]);
+
+  // Filtering and sorting
+  const sortTasks = (tasksToSort: Task[]) => {
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    
+    switch(sortBy) {
+      case 'priority':
+        return [...tasksToSort].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+      case 'dueDate':
+        return [...tasksToSort].sort((a, b) => {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        });
+      case 'created':
+        return [...tasksToSort].sort((a, b) => 
+          new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+        );
+      default:
+        return tasksToSort;
+    }
+  };
+
+  const filteredTasks = useMemo(() => {
+    let filtered = selectedModuleFilter === 'all'
+      ? tasks
+      : tasks.filter(task => task.moduleCode === selectedModuleFilter);
+
+    if (searchQuery) {
+      filtered = filtered.filter(task => 
+        task.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return sortTasks(filtered);
+  }, [tasks, selectedModuleFilter, searchQuery, sortBy]);
+
+  // Pagination
+  const indexOfLastTask = currentPage * TASKS_PER_PAGE;
+  const indexOfFirstTask = indexOfLastTask - TASKS_PER_PAGE;
+  const currentTasks = filteredTasks.slice(indexOfFirstTask, indexOfLastTask);
+  const totalPages = Math.ceil(filteredTasks.length / TASKS_PER_PAGE);
+
+  // Module stats
+  const getModuleStats = (moduleCode: string) => {
+    const moduleTasks = tasks.filter(t => t.moduleCode === moduleCode);
+    return {
+      total: moduleTasks.length,
+      completed: moduleTasks.filter(t => t.completed).length
+    };
+  };
+
+  const updateTaskModule = async (taskId: string, newModuleCode: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      await onSaveTask({ ...task, moduleCode: newModuleCode });
+      setEditingTaskId(null);
+    }
+  };
+
+  const updateTaskPriority = async (taskId: string, newPriority: Task['priority']) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      await onSaveTask({ ...task, priority: newPriority });
+    }
+  };
+
+  const getModuleColor = (moduleCode: string) => {
+    const module = modules.find(m => m.code === moduleCode);
+    // Use a simple hash to consistently map module codes to colors
+    const colorIndex = moduleCode.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colorOptions.length;
+    return colorOptions[colorIndex];
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0A0A0A] p-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-4xl font-light text-white mb-1">Study</h1>
+          <p className="text-[#EBEBF599] text-sm">Keep track of your learning</p>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex gap-1 mb-8 border-b border-[#38383A]">
+          <button
+            onClick={() => setActiveTab('tasks')}
+            className={`px-6 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'tasks'
+                ? 'border-b-2 border-[#0A84FF] text-white'
+                : 'text-[#EBEBF599] hover:text-white'
+            }`}
+          >
+            Tasks
+          </button>
+          <button
+            onClick={() => setActiveTab('modules')}
+            className={`px-6 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'modules'
+                ? 'border-b-2 border-[#0A84FF] text-white'
+                : 'text-[#EBEBF599] hover:text-white'
+            }`}
+          >
+            Modules
+          </button>
+        </div>
+
+        {activeTab === 'tasks' ? (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3 mb-8">
+              <div className="bg-[#141414] border border-[#38383A] rounded-lg p-4">
+                <div className="text-2xl font-light text-white">{stats.total}</div>
+                <div className="text-[#EBEBF599] text-xs mt-1">Total</div>
+              </div>
+              <div className="bg-[#141414] border border-[#38383A] rounded-lg p-4">
+                <div className="text-2xl font-light text-white">{stats.completed}</div>
+                <div className="text-[#EBEBF599] text-xs mt-1">Done</div>
+              </div>
+              <div className="bg-[#141414] border border-[#38383A] rounded-lg p-4">
+                <div className="text-2xl font-light text-white">{stats.pending}</div>
+                <div className="text-[#EBEBF599] text-xs mt-1">Pending</div>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-3 mb-6 flex-wrap">
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <button
+                  onClick={() => setSelectedModuleFilter('all')}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap border ${
+                    selectedModuleFilter === 'all'
+                      ? 'bg-[#0A84FF] text-white border-[#0A84FF]'
+                      : 'bg-[#141414] text-[#EBEBF599] border-[#38383A] hover:border-[#0A84FF]'
+                  }`}
+                >
+                  All
+                </button>
+                {modules.map(mod => (
+                  <button
+                    key={mod.id}
+                    onClick={() => setSelectedModuleFilter(mod.code)}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap border ${
+                      selectedModuleFilter === mod.code
+                        ? 'bg-[#0A84FF] text-white border-[#0A84FF]'
+                        : 'bg-[#141414] text-[#EBEBF599] border-[#38383A] hover:border-[#0A84FF]'
+                    }`}
+                  >
+                    {mod.code}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="flex gap-2 ml-auto">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search..."
+                  className="px-3 py-1.5 rounded border border-[#38383A] bg-[#141414] text-white text-sm focus:outline-none focus:border-[#0A84FF] placeholder-[#EBEBF54D]"
+                />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="px-3 py-1.5 rounded border border-[#38383A] bg-[#141414] text-white text-sm focus:outline-none focus:border-[#0A84FF]"
+                >
+                  <option value="priority" className="bg-[#141414]">Sort: Priority</option>
+                  <option value="dueDate" className="bg-[#141414]">Sort: Due Date</option>
+                  <option value="created" className="bg-[#141414]">Sort: Recent</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Add Task Button */}
+            <div className="bg-[#141414] border border-[#38383A] rounded-lg p-5 mb-6">
+              <button
+                onClick={onAddTask}
+                className="w-full px-0 py-2 border-0 border-b border-[#38383A] text-[#EBEBF599] text-left text-sm hover:text-white hover:border-[#0A84FF] transition-colors"
+              >
+                Add a new task...
+              </button>
+            </div>
+
+            {/* Task List */}
+            <div className="space-y-2">
+              {currentTasks.length === 0 ? (
+                <div className="text-center py-16 text-[#EBEBF599]">
+                  <p className="text-sm">No tasks found</p>
+                </div>
+              ) : (
+                currentTasks.map(task => {
+                  const moduleColor = getModuleColor(task.moduleCode);
+                  const priority = priorities.find(p => p.value === task.priority);
+                  
+                  return (
+                    <div
+                      key={task.id}
+                      className={`bg-[#141414] border border-[#38383A] rounded-lg p-4 transition-all hover:border-[#0A84FF] ${
+                        task.completed ? 'opacity-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <button
+                          onClick={() => onToggleComplete(task.id)}
+                          className="mt-0.5 text-[#EBEBF599] hover:text-white transition-colors"
+                        >
+                          {task.completed ? (
+                            <span className="text-lg">✓</span>
+                          ) : (
+                            <span className="text-lg">○</span>
+                          )}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            {editingTaskId === task.id ? (
+                              <select
+                                value={task.moduleCode}
+                                onChange={(e) => updateTaskModule(task.id, e.target.value)}
+                                className="px-2.5 py-0.5 rounded border border-[#38383A] bg-[#0A0A0A] text-white text-xs font-medium focus:outline-none focus:border-[#0A84FF]"
+                              >
+                                {modules.map(mod => (
+                                  <option key={mod.id} value={mod.code} className="bg-[#141414]">{mod.code}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span 
+                                onClick={() => setEditingTaskId(task.id)}
+                                className={`px-2.5 py-0.5 rounded border text-xs font-medium cursor-pointer hover:opacity-80 ${moduleColor?.class}`}
+                              >
+                                {task.moduleCode}
+                              </span>
+                            )}
+                            
+                            <select
+                              value={task.priority}
+                              onChange={(e) => updateTaskPriority(task.id, e.target.value as Task['priority'])}
+                              className={`px-2.5 py-0.5 rounded border text-xs font-medium focus:outline-none cursor-pointer ${priority?.color}`}
+                            >
+                              {priorities.map(p => (
+                                <option key={p.value} value={p.value} className="bg-[#141414]">
+                                  {p.indicator} {p.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <p className={`text-white text-sm break-words ${task.completed ? 'line-through' : ''}`}>
+                            {task.title}
+                          </p>
+                          {task.dueDate && (
+                            <div className="flex items-center gap-1 mt-2 text-[#EBEBF599] text-xs">
+                              {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => onDeleteTask(task.id)}
+                          className="text-[#EBEBF54D] hover:text-[#FF453A] transition-colors text-sm"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            {filteredTasks.length > TASKS_PER_PAGE && (
+              <div className="flex justify-center items-center gap-4 mt-6 pb-8">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 text-sm rounded border ${
+                    currentPage === 1 
+                      ? 'bg-[#141414] text-[#EBEBF54D] border-[#38383A] cursor-not-allowed' 
+                      : 'bg-[#141414] text-white border-[#38383A] hover:bg-[#1C1C1C] hover:border-[#0A84FF]'
+                  }`}
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-[#EBEBF599]">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 text-sm rounded border ${
+                    currentPage === totalPages 
+                      ? 'bg-[#141414] text-[#EBEBF54D] border-[#38383A] cursor-not-allowed' 
+                      : 'bg-[#141414] text-white border-[#38383A] hover:bg-[#1C1C1C] hover:border-[#0A84FF]'
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Modules Tab */}
+            <div className="space-y-3">
+              <h2 className="text-lg font-medium text-white mb-4">Your Modules</h2>
+              {modules.length === 0 ? (
+                <div className="text-center py-16 text-[#EBEBF599]">
+                  <p className="text-sm">No modules yet. Add one in the Academic section!</p>
+                </div>
+              ) : (
+                modules.map(mod => {
+                  const color = getModuleColor(mod.code);
+                  const modStats = getModuleStats(mod.code);
+                  
+                  return (
+                    <div key={mod.id} className="bg-[#141414] border border-[#38383A] rounded-lg p-4 flex items-center justify-between group hover:border-[#0A84FF] transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${color?.class.split(' ')[2] || 'bg-gray-500/30'}`}></div>
+                        <div>
+                          <h3 className="font-medium text-white">{mod.code} - {mod.name}</h3>
+                          <p className="text-xs text-[#EBEBF599]">{modStats.completed}/{modStats.total} tasks completed</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
