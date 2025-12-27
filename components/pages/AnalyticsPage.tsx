@@ -152,7 +152,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
             </label>
             <input 
               type="number" 
-              step="0.01"
+              //step="0.01"
               value={academicProfile.targetCWA}
               onChange={(e) => setAcademicProfile({...academicProfile, targetCWA: Number(e.target.value)})}
               className="w-full bg-[#0A0A0A] border border-[#0A84FF]/30 rounded-lg px-4 py-3 text-2xl font-light text-white focus:outline-none focus:border-[#0A84FF]"
@@ -318,7 +318,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
             {selectedYear === 'all' ? 'All Modules' : `${selectedYear} Modules`}
           </h3>
           {filteredModules.map(mod => {
-            const isCompleted = mod.currentGrade > 0 && mod.progress === 100;
+            const isCompleted = mod.progress === 100;
             const target = (mod as any).targetMark ?? mod.targetGrade;
             const displayGrade = isCompleted ? mod.currentGrade : target;
             const totalCredits = selectedYear === 'all' ? 
@@ -413,14 +413,14 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
           <div>
             <h4 className="text-[#0A84FF] font-semibold mb-2">Programme Requirements</h4>
             <ul className="space-y-1 text-[#EBEBF599]">
-              <li>• Total Credits: 430 (over 3 years)</li>
+              <li>• Total Credits: 430 </li>
               <li>• Year 1: 142 credits minimum</li>
               <li>• Year 2: 144 credits minimum</li>
               <li>• Year 3: 144 credits minimum</li>
             </ul>
           </div>
           <div>
-            <h4 className="text-[#BF5AF2] font-semibold mb-2">Key Computational Modules</h4>
+            <h4 className="text-[#BF5AF2] font-semibold mb-2">Computational Physics Modules</h4>
             <ul className="space-y-1 text-[#EBEBF599]">
               <li>• COS 132, 110, 122, 151 (Year 1)</li>
               <li>• COS 210, 212, 226, 284 (Year 2)</li>

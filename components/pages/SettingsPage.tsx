@@ -4,7 +4,7 @@ import { useDatabase } from '@/hooks/useDatabase';
 import { Module } from '@/lib/types';
 //import { currentGrade } from '@/lib/types';
 
-export const ImportPastModulesSection = () => {
+export const SettingsPage = () => {
   const db = useDatabase();
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(false);
@@ -63,62 +63,63 @@ const pastModules: Array<{
     return coverImages[prefix] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
   };
 
-  const handleImport = async () => {
-    if (!confirm(`This will import ${pastModules.length} completed modules from 2024-2025. Continue?`)) {
-      return;
-    }
+const handleImport = async () => {
+  if (!confirm(`This will import ${pastModules.length} completed modules from 2024-2025. Continue?`)) {
+    return;
+  }
 
-    setImporting(true);
+  setImporting(true);
+  
+  try {
+    let successCount = 0;
     
-    try {
-      let successCount = 0;
-      
-      for (const mod of pastModules) {
-        // Skip if this module already exists in the database (avoid duplicates on re-import)
-        const alreadyExists = db.modules.some(
-          m => m.code === mod.code && m.semester === mod.semester && m.credits === mod.credits && m.currentGrade === mod.grade
-        );
-        if (alreadyExists) {
-          continue;
-        }
-
-        // Use a "temp" ID without hyphens so saveModule treats this as a new record (INSERT)
-        const tempId = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
-        
-        const module: Module = {
-          id: tempId,
-          code: mod.code,
-          name: mod.name,
-          semester: mod.semester,
-          credits: mod.credits,
-          currentGrade: mod.grade, // Use grade from our typed module
-          targetGrade: mod.grade,  // Set target grade same as current grade for imports
-          targetMark: mod.grade,   // Set target mark same as current grade for imports
-          progress: 100,           // Mark as completed
-          assessments: [],
-          specialCode: mod.specialCode, // No need for type assertion anymore
-          coverImage: getCoverImage(mod.code),
-          created_at: new Date(`${mod.semester}-01-01`).toISOString(),
-          updated_at: new Date().toISOString(),
-          grade: mod.grade // Keep for backward compatibility
-        };
-
-        const success = await db.saveModule(module);
-        if (success) successCount++;
+    for (const mod of pastModules) {
+      // Skip if this module already exists in the database (avoid duplicates on re-import)
+      const alreadyExists = db.modules.some(
+        m => m.code === mod.code && m.semester === mod.semester && m.credits === mod.credits && m.currentGrade === mod.grade
+      );
+      if (alreadyExists) {
+        continue;
       }
 
-      setImported(true);
-      alert(`Successfully imported ${successCount} out of ${pastModules.length} modules!`);
+      // Use a "temp" ID without hyphens so saveModule treats this as a new record (INSERT)
+      const tempId = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
       
-      // Calculate and display CWA
-      const totalCredits = pastModules.reduce((sum, m) => sum + (m.credits || 0), 0);
-      const totalGP = pastModules.reduce((sum, m) => sum + ((m.credits || 0) * (m.grade || 0)), 0);
-      const cwa = totalGP / totalCredits;
-      alert(`CWA: ${cwa.toFixed(2)}`);
-    } finally {
-      setImporting(false);
+      const module: Module = {
+        id: tempId,
+        code: mod.code,
+        name: mod.name,
+        semester: mod.semester,
+        credits: mod.credits,
+        currentGrade: mod.grade, // Use grade from our typed module
+        targetGrade: mod.grade,  // Set target grade same as current grade for imports
+        targetMark: mod.grade,   // Set target mark same as current grade for imports
+        progress: 100,           // Mark as completed
+        assessments: [],
+        specialCode: mod.specialCode,
+        coverImage: getCoverImage(mod.code),
+        created_at: new Date(`${mod.semester}-01-01`).toISOString(),
+        updated_at: new Date().toISOString(),
+        // Remove the grade property since it doesn't exist in Module type
+        // grade: mod.grade // Remove this line
+      };
+
+      const success = await db.saveModule(module);
+      if (success) successCount++;
     }
-  };
+
+    setImported(true);
+    alert(`Successfully imported ${successCount} out of ${pastModules.length} modules!`);
+    
+    // Calculate and display CWA
+    const totalCredits = pastModules.reduce((sum, m) => sum + (m.credits || 0), 0);
+    const totalGP = pastModules.reduce((sum, m) => sum + ((m.credits || 0) * (m.grade || 0)), 0);
+    const cwa = totalGP / totalCredits;
+    alert(`CWA: ${cwa.toFixed(2)}`);
+  } finally {
+    setImporting(false);
+  }
+};
 
   const totalCredits = pastModules.reduce((sum, m) => sum + (m.credits || 0), 0);
   const totalGP = pastModules.reduce((sum, m) => sum + ((m.credits || 0) * (m.grade || 0)), 0);

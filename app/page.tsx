@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react'
 import React, { useState, useEffect } from 'react';
-import { Calendar, BookOpen, CheckSquare, DollarSign, Settings, User, Menu, X, Plus, Edit, Trash2, ArrowLeft, Download, Upload, Upload as UploadIcon, Camera, Target as TargetIcon, TrendingUp, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, BookOpen, CheckSquare, DollarSign, Settings, User, Menu, X, Plus, Edit, Trash2, ArrowLeft, Download, Upload, Upload as UploadIcon, Camera, Target as TargetIcon, TrendingUp, Info, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { useDatabase } from '@/hooks/useDatabase';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { AnalyticsPage } from '@/components/pages/AnalyticsPage';
@@ -27,9 +27,11 @@ import { Modal } from '@/components/ui/Modal';
 // Pages
 import { TasksPage } from '@/components/pages/TasksPage';
 import { SettingsPage } from '@/components/pages/SettingsPage';
+import { FinancesPage } from '@/components/pages/FinancesPage';
 
 // Utilities
 import { calculateCWA, calculateTermAverage } from '@/lib/utils/calculations';
+import { parseYearbookPDF, mapModulesToSemesters, type ExtractedModule } from '@/lib/utils/pdfParser';
 
 import { useRouter } from 'next/navigation'; // <--- Add this
 import { createClient } from '@supabase/supabase-js'; // <--- Add this
@@ -161,6 +163,10 @@ const ModuleForm = () => {
     try {
       const moduleToSave: Module = {
         ...formState,
+        credits: formState.credits ?? 16,
+        currentGrade: formState.currentGrade ?? 0,
+        targetGrade: formState.targetGrade ?? 60,
+        progress: formState.progress ?? 0,
         id: store.editingModule?.id || Date.now().toString(),
         assessments: store.editingModule?.assessments || [],
         coverImage: store.editingModule?.coverImage || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -207,9 +213,20 @@ const ModuleForm = () => {
       <div className="grid grid-cols-3 gap-4">
         <Input 
           label="Credits" 
-          type="number" 
-          value={formState.credits || 16} 
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState({...formState, credits: parseInt(e.target.value)})} 
+          type="text" 
+          inputMode="numeric"
+          value={formState.credits === undefined || formState.credits === null ? '' : String(formState.credits)} 
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+            if (val === '') {
+              setFormState({...formState, credits: undefined as any});
+            } else {
+              const num = parseInt(val);
+              if (!isNaN(num)) {
+                setFormState({...formState, credits: num});
+              }
+            }
+          }} 
           placeholder="16" 
           required 
           min="1"
@@ -218,9 +235,20 @@ const ModuleForm = () => {
         />
         <Input 
           label="Current Grade" 
-          type="number" 
-          value={formState.currentGrade || 0} 
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState({...formState, currentGrade: parseInt(e.target.value)})} 
+          type="text" 
+          inputMode="numeric"
+          value={formState.currentGrade === undefined || formState.currentGrade === null ? '' : String(formState.currentGrade)} 
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+            if (val === '') {
+              setFormState({...formState, currentGrade: undefined as any});
+            } else {
+              const num = parseInt(val);
+              if (!isNaN(num)) {
+                setFormState({...formState, currentGrade: num});
+              }
+            }
+          }} 
           placeholder="75" 
           min="0"
           max="100"
@@ -228,9 +256,20 @@ const ModuleForm = () => {
         />
         <Input 
           label="Target Grade" 
-          type="number" 
-          value={formState.targetGrade || 60} 
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState({...formState, targetGrade: parseInt(e.target.value)})} 
+          type="text" 
+          inputMode="numeric"
+          value={formState.targetGrade === undefined || formState.targetGrade === null ? '' : String(formState.targetGrade)} 
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+            if (val === '') {
+              setFormState({...formState, targetGrade: undefined as any});
+            } else {
+              const num = parseInt(val);
+              if (!isNaN(num)) {
+                setFormState({...formState, targetGrade: num});
+              }
+            }
+          }} 
           placeholder="80" 
           min="0"
           max="100"
@@ -253,9 +292,20 @@ const ModuleForm = () => {
         />
         <Input 
           label="Progress (%)" 
-          type="number" 
-          value={formState.progress || 0} 
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState({...formState, progress: parseInt(e.target.value)})} 
+          type="text" 
+          inputMode="numeric"
+          value={formState.progress === undefined || formState.progress === null ? '' : String(formState.progress)} 
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+            if (val === '') {
+              setFormState({...formState, progress: undefined as any});
+            } else {
+              const num = parseInt(val);
+              if (!isNaN(num)) {
+                setFormState({...formState, progress: num});
+              }
+            }
+          }} 
           placeholder="75" 
           min="0"
           max="100"
@@ -582,6 +632,262 @@ const TransactionForm = () => {
   );
 };
 
+const YearbookUploadForm = () => {
+  const db = useDatabase();
+  const [file, setFile] = useState<File | null>(null);
+  const [startingYear, setStartingYear] = useState<number>(new Date().getFullYear());
+  const [extractedModules, setExtractedModules] = useState<Array<ExtractedModule & { semester: string }>>([]);
+  const [originalModules, setOriginalModules] = useState<ExtractedModule[]>([]);
+  const [isParsing, setIsParsing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+
+  const getCoverImage = (code: string) => {
+    const prefix = code.substring(0, 3);
+    const coverImages: Record<string, string> = {
+      'AIM': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      'COS': 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+      'LST': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      'PHY': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      'WTW': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      'STK': 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+      'WST': 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+    };
+    return coverImages[prefix] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+  };
+
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    if (selectedFile.type !== 'application/pdf') {
+      setParseError('Please select a PDF file');
+      return;
+    }
+
+    setFile(selectedFile);
+    setParseError(null);
+    setIsParsing(true);
+
+    try {
+      const modules = await parseYearbookPDF(selectedFile);
+      setOriginalModules(modules);
+      const mappedModules = mapModulesToSemesters(modules, startingYear);
+      setExtractedModules(mappedModules);
+    } catch (error) {
+      console.error('Error parsing PDF:', error);
+      setParseError('Failed to parse PDF. Please make sure it is a valid University yearbook PDF.');
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  const handleYearChange = (year: number) => {
+    setStartingYear(year);
+    if (originalModules.length > 0) {
+      // Re-map modules with new starting year
+      const mappedModules = mapModulesToSemesters(originalModules, year);
+      setExtractedModules(mappedModules);
+    }
+  };
+
+  const handleImport = async () => {
+    if (extractedModules.length === 0) return;
+
+    setIsImporting(true);
+    
+    try {
+      let successCount = 0;
+      let skippedCount = 0;
+
+      for (const mod of extractedModules) {
+        // Check if module already exists (by code and semester)
+        const alreadyExists = db.modules.some(
+          m => m.code === mod.code && m.semester === mod.semester
+        );
+
+        if (alreadyExists) {
+          skippedCount++;
+          continue;
+        }
+
+        // Create new module
+        const tempId = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
+        const module: Module = {
+          id: tempId,
+          code: mod.code,
+          name: mod.name,
+          semester: mod.semester,
+          credits: mod.credits,
+          currentGrade: 0,
+          targetGrade: 60,
+          targetMark: 60,
+          progress: 0,
+          assessments: [],
+          coverImage: getCoverImage(mod.code),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        const success = await db.saveModule(module);
+        if (success) successCount++;
+      }
+
+      alert(`Successfully imported ${successCount} modules! ${skippedCount > 0 ? `${skippedCount} modules were skipped (already exist).` : ''}`);
+      
+      // Close modal and reset
+      store.setShowModal(null);
+      setFile(null);
+      setExtractedModules([]);
+    } catch (error) {
+      console.error('Error importing modules:', error);
+      alert('Error importing modules. Please try again.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-white mb-2">
+          Upload Yearbook PDF <span className="text-[#FF453A]">*</span>
+        </label>
+        <div className="relative">
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={handleFileSelect}
+            className="hidden"
+            id="yearbook-upload"
+            disabled={isParsing || isImporting}
+          />
+          <label
+            htmlFor="yearbook-upload"
+            className={`flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+              isParsing || isImporting
+                ? 'border-[#38383A] bg-[#0A0A0A] cursor-not-allowed'
+                : 'border-[#38383A] bg-[#0A0A0A] hover:border-[#0A84FF] hover:bg-[#141414]'
+            }`}
+          >
+            {isParsing ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#0A84FF]"></div>
+                <span className="text-sm text-[#EBEBF599]">Parsing PDF...</span>
+              </>
+            ) : file ? (
+              <>
+                <FileText size={20} className="text-[#0A84FF]" />
+                <span className="text-sm text-white">{file.name}</span>
+              </>
+            ) : (
+              <>
+                <Upload size={20} className="text-[#EBEBF599]" />
+                <span className="text-sm text-[#EBEBF599]">Click to upload yearbook PDF</span>
+              </>
+            )}
+          </label>
+        </div>
+        {parseError && (
+          <p className="mt-2 text-sm text-[#FF453A]">{parseError}</p>
+        )}
+      </div>
+
+      {extractedModules.length > 0 && (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              Starting Year
+            </label>
+            <Input
+              label=""
+              type="text"
+              inputMode="numeric"
+              value={startingYear.toString()}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const year = parseInt(e.target.value);
+                if (!isNaN(year) && year >= 2020 && year <= 2030) {
+                  handleYearChange(year);
+                }
+              }}
+              placeholder="2025"
+            />
+            <p className="mt-1 text-xs text-[#EBEBF599]">
+              Year 1 modules will be assigned to {startingYear}, Year 2 to {startingYear + 1}, Year 3 to {startingYear + 2}
+            </p>
+          </div>
+
+          <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4 max-h-96 overflow-y-auto">
+            <div className="text-sm font-semibold text-white mb-3">
+              Found {extractedModules.length} modules:
+            </div>
+            <div className="space-y-2">
+              {extractedModules.map((mod, idx) => {
+                const alreadyExists = db.modules.some(
+                  m => m.code === mod.code && m.semester === mod.semester
+                );
+                return (
+                  <div
+                    key={idx}
+                    className={`flex items-center justify-between py-2 px-3 rounded ${
+                      alreadyExists ? 'bg-[#FF9F0A]/10 border border-[#FF9F0A]/30' : 'bg-[#141414]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <span className="text-xs px-2 py-0.5 bg-[#38383A] rounded text-[#EBEBF599] shrink-0">
+                        {mod.semester}
+                      </span>
+                      <span className="text-sm text-white font-medium shrink-0">{mod.code}</span>
+                      <span className="text-xs text-[#EBEBF599] truncate">{mod.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-xs text-[#EBEBF599]">{mod.credits} cr</span>
+                      {alreadyExists && (
+                        <span className="text-xs text-[#FF9F0A]">Already exists</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      <div className="flex gap-3 justify-end pt-4">
+        <Button
+          variant="secondary"
+          onClick={() => {
+            store.setShowModal(null);
+            setFile(null);
+            setExtractedModules([]);
+            setParseError(null);
+          }}
+          type="button"
+          disabled={isImporting}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleImport}
+          disabled={extractedModules.length === 0 || isImporting}
+          className="min-w-[120px]"
+        >
+          {isImporting ? (
+            <span className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+              Importing...
+            </span>
+          ) : (
+            `Import ${extractedModules.length} Modules`
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
   const DashboardPage = () => {
     const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentCalendarDate);
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -780,9 +1086,17 @@ return (
   <div className="space-y-6">
     <div className="flex items-center justify-between">
       <h1 className="text-3xl font-semibold text-white">Academic</h1>
-      <Button onClick={() => { store.setEditingModule(null); store.setShowModal('module'); }}>
-        <Plus size={16} className="mr-1" />Add Module
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          variant="secondary" 
+          onClick={() => { store.setShowModal('yearbook'); }}
+        >
+          <FileText size={16} className="mr-1" />Upload Yearbook
+        </Button>
+        <Button onClick={() => { store.setEditingModule(null); store.setShowModal('module'); }}>
+          <Plus size={16} className="mr-1" />Add Module
+        </Button>
+      </div>
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -859,10 +1173,10 @@ return (
               <div>
                 <div className="flex justify-between text-xs text-[#EBEBF599] mb-1">
                   <span>Progress to target</span>
-                  <span>{Math.min(Math.round((module.currentGrade / module.targetGrade) * 100), 100)}%</span>
+                  <span>{module.progress}%</span>
                 </div>
                 <ProgressBar 
-                  percentage={Math.min((module.currentGrade / module.targetGrade) * 100, 100)}
+                  percentage={module.progress}
                   color={targetDiff >= 0 ? '#30D158' : '#FF9F0A'}
                 />
               </div>
@@ -1053,61 +1367,7 @@ return (
   </div>
 );
 };
-const FinancesPage = () => {
-const totalBalance = db.transactions.reduce((sum, t) => sum + t.amount, 0);
-const thisMonth = db.transactions.filter(t => t.date.startsWith('2024-12')).reduce((sum, t) => sum + t.amount, 0);
-return (
-  <div className="space-y-6">
-    <div className="flex items-center justify-between">
-      <h1 className="text-3xl font-semibold text-white">Finances</h1>
-      <Button onClick={() => { store.setEditingTransaction(null); store.setShowModal('transaction'); }}>
-        <Plus size={16} className="mr-1" />Add Transaction
-      </Button>
-    </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-        <h3 className="text-base font-semibold text-white mb-3">Total Balance</h3>
-        <div className="text-3xl font-bold text-white mb-1">R{totalBalance.toFixed(2)}</div>
-      </div>
-      <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-        <h3 className="text-base font-semibold text-white mb-3">This Month</h3>
-        <div className={`text-3xl font-bold mb-1 ${thisMonth < 0 ? 'text-[#FF453A]' : 'text-[#30D158]'}`}>
-          R{thisMonth.toFixed(2)}
-        </div>
-      </div>
-      <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-        <h3 className="text-base font-semibold text-white mb-3">Transactions</h3>
-        <div className="text-3xl font-bold text-white">{db.transactions.length}</div>
-      </div>
-    </div>
-
-    <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
-      <h2 className="text-xl font-semibold text-white mb-4">Recent Transactions</h2>
-      <div className="space-y-3">
-        {db.transactions.slice().reverse().map((transaction, i) => (
-          <div key={i} className="flex items-center justify-between py-2 border-b border-[#38383A]/50">
-            <div className="flex-1">
-              <div className="text-sm text-white">{transaction.description}</div>
-              <div className="text-xs text-[#EBEBF599] font-mono">{transaction.date}</div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs px-2 py-1 bg-[#38383A]/30 rounded text-[#EBEBF599]">{transaction.category}</span>
-              <div className={`text-sm font-mono font-semibold ${transaction.amount > 0 ? 'text-[#30D158]' : 'text-white'}`}>
-                R{transaction.amount.toFixed(2)}
-              </div>
-              <button onClick={() => { store.setEditingTransaction(transaction); store.setShowModal('transaction'); }}
-                className="text-[#EBEBF54D] hover:text-white">
-                <Edit size={14} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-};
 const renderPage = () => {
   switch (store.currentPage) {
     case 'dashboard': return <DashboardPage />;
@@ -1138,7 +1398,21 @@ const renderPage = () => {
           onSaveTask={db.saveTask}
         />
       );
-    case 'finances': return <FinancesPage />;
+      case 'finances': 
+      return (
+        <FinancesPage
+          transactions={db.transactions}
+          onAddTransaction={() => {
+            store.setEditingTransaction(null);
+            store.setShowModal('transaction');
+          }}
+          onEditTransaction={(transaction) => {
+            store.setEditingTransaction(transaction);
+            store.setShowModal('transaction');
+          }}
+          onDeleteTransaction={db.deleteTransaction}
+        />
+      );
     case 'settings': return <SettingsPage />;
     default: return <DashboardPage />;
   }
@@ -1233,6 +1507,16 @@ return (
       title={store.editingTransaction ? 'Edit Transaction' : 'Add New Transaction'}
     >
       <TransactionForm />
+    </Modal>
+
+    <Modal 
+      isOpen={store.showModal === 'yearbook'} 
+      onClose={() => { 
+        store.setShowModal(null); 
+      }}
+      title="Upload Yearbook PDF"
+    >
+      <YearbookUploadForm />
     </Modal>
   </div>
 );

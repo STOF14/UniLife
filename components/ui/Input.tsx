@@ -11,6 +11,7 @@ export const Input = ({
   step,
   min,
   max,
+  inputMode,
   'data-testid': testId
 }: InputProps) => (
   <div>
@@ -26,6 +27,7 @@ export const Input = ({
       step={step}
       min={min}
       max={max}
+      inputMode={inputMode}
       data-testid={testId}
       className="w-full bg-[#0A0A0A] border border-[#38383A] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#0A84FF]"
     />

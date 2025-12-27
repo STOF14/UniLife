@@ -41,6 +41,7 @@ export type InputProps = {
   step?: string;
   min?: string;
   max?: string;
+  inputMode?: 'text' | 'search' | 'email' | 'tel' | 'url' | 'none' | 'numeric' | 'decimal';
   'data-testid'?: string;
 };
 
