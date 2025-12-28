@@ -24,6 +24,10 @@ import { ProgressRing } from '@/components/ui/ProgressRing';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Modal } from '@/components/ui/Modal';
 
+import { ModuleList } from '@/components/academic/ModuleList';
+import { ModuleForm } from '@/components/academic/ModuleForm';
+import { useAcademic } from '@/hooks/useAcademic';
+
 // Pages
 import { TasksPage } from '@/components/pages/TasksPage';
 import { SettingsPage } from '@/components/pages/SettingsPage';
@@ -102,7 +106,16 @@ const navigation = [
   { id: 'finances' as PageType, icon: DollarSign, label: 'Finances' },
   { id: 'settings' as PageType, icon: Settings, label: 'Settings' },
 ];
-
+  const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
+  const { isLoading: modulesLoading } = useAcademic();
+const handleAddModule = async (moduleData: any) => {
+  try {
+    await useAcademic().createModule(moduleData);
+    setIsModuleModalOpen(false);
+  } catch (error) {
+    console.error('Failed to add module:', error);
+  }
+};
   const cwa = calculateCWA(db.modules);
   const term2024 = calculateTermAverage(db.modules, '2024');
   const term2025 = calculateTermAverage(db.modules, '2025');
@@ -170,7 +183,7 @@ const ModuleForm = () => {
         id: store.editingModule?.id || Date.now().toString(),
         assessments: store.editingModule?.assessments || [],
         coverImage: store.editingModule?.coverImage || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        created_at: store.editingModule?.created_at || new Date().toISOString(),
+        created_at: store.editingModule?.createdAt || new Date().toISOString(),
         updated_at: new Date().toISOString(),
       } as Module;
       
@@ -692,16 +705,16 @@ const YearbookUploadForm = () => {
     }
   };
 
-  const handleImport = async () => {
-    if (extractedModules.length === 0) return;
-
-    setIsImporting(true);
-    
-    try {
-      let successCount = 0;
-      let skippedCount = 0;
-
-      for (const mod of extractedModules) {
+const handleImport = async (extractedModules: ExtractedModule[]) => {
+  try {
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    let successCount = 0;
+    let skippedCount = 0;
+    for (const mod of extractedModules) {
         // Check if module already exists (by code and semester)
         const alreadyExists = db.modules.some(
           m => m.code === mod.code && m.semester === mod.semester
@@ -715,38 +728,29 @@ const YearbookUploadForm = () => {
         // Create new module
         const tempId = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
         const module: Module = {
-          id: tempId,
-          code: mod.code,
-          name: mod.name,
-          semester: mod.semester,
-          credits: mod.credits,
-          currentGrade: 0,
-          targetGrade: 60,
-          targetMark: 60,
-          progress: 0,
-          assessments: [],
-          coverImage: getCoverImage(mod.code),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        const success = await db.saveModule(module);
-        if (success) successCount++;
-      }
-
-      alert(`Successfully imported ${successCount} modules! ${skippedCount > 0 ? `${skippedCount} modules were skipped (already exist).` : ''}`);
-      
-      // Close modal and reset
-      store.setShowModal(null);
-      setFile(null);
-      setExtractedModules([]);
-    } catch (error) {
-      console.error('Error importing modules:', error);
-      alert('Error importing modules. Please try again.');
-    } finally {
-      setIsImporting(false);
+        id: tempId,
+        code: mod.code,
+        name: mod.name,
+        semester: mod.semester,
+        credits: mod.credits,
+        currentGrade: 0,
+        targetGrade: 60,
+        progress: 0,
+        assessments: [],
+        coverImage: getCoverImage(mod.code),
+        userId: user.id,  // Add the user ID here
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const success = await db.saveModule(module);
+      if (success) successCount++;
     }
-  };
+    alert(`Successfully imported ${successCount} modules! ${skippedCount > 0 ? `${skippedCount} modules were skipped (already exist).` : ''}`);
+  } catch (error) {
+    console.error('Error importing modules:', error);
+    alert('Failed to import modules. Please try again.');
+  }
+};
 
   return (
     <div className="space-y-4">
@@ -908,6 +912,7 @@ const YearbookUploadForm = () => {
     const thisWeekTasks = getTasksThisWeek();
 
     return (
+      
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-semibold text-white">Dashboard</h1>
@@ -1154,7 +1159,7 @@ return (
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <ProgressRing percentage={module.currentGrade} size={50} strokeWidth={5} />
+                  <ProgressRing percentage={module.currentGrade ?? 0} size={50} strokeWidth={5} />
                   <div>
                     <div className="text-xs text-[#EBEBF599]">Current</div>
                     <div className="text-sm font-mono text-white">{module.currentGrade}%</div>
@@ -1307,7 +1312,7 @@ return (
                     <div className="text-xs text-[#EBEBF599] line-clamp-1">{module.name}</div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <ProgressRing percentage={module.currentGrade} size={45} strokeWidth={4} />
+                    <ProgressRing percentage={module.currentGrade ?? 0} size={45} strokeWidth={4} />
                   </div>
                 </div>
 

@@ -23,11 +23,13 @@ export type ModalProps = {
 
 export type ButtonProps = {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'outline';
   onClick?: () => void;
   className?: string;
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  loading?: boolean;
+  size?: 'sm' | 'md' | 'lg';
   'data-testid'?: string;
 };
 
@@ -41,6 +43,7 @@ export type InputProps = {
   step?: string;
   min?: string;
   max?: string;
+  error?: string;
   inputMode?: 'text' | 'search' | 'email' | 'tel' | 'url' | 'none' | 'numeric' | 'decimal';
   'data-testid'?: string;
 };
@@ -51,33 +54,8 @@ export type SelectProps = {
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: { value: string; label: string }[];
   required?: boolean;
+  error?: string;
   'data-testid'?: string;
-};
-
-export type Assessment = {
-  id: string;
-  name: string;
-  type: 'assignment' | 'test' | 'exam';
-  dueDate: string;
-  weight?: number;
-};
-
-export type Module = {
-  id: string;
-  code: string;
-  name: string;
-  semester: string;
-  credits: number;
-  currentGrade: number;
-  targetGrade: number;
-  progress: number;
-  coverImage?: string;
-  assessments: Assessment[];
-  specialCode?: number;
-  created_at?: string;
-  updated_at?: string;
-  user_id?: string;
-  targetMark: number; // <--- ADD THIS
 };
 
 export type Task = {
@@ -102,5 +80,80 @@ export type Transaction = {
   created_at?: string;
   user_id?: string;
 };
+
+
+
+// Base types
+export interface BaseEntity {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+}
+
+// Module and Assessment types
+export interface Assessment extends BaseEntity {
+  name: string;
+  weight: number;
+  dueDate: string;
+  grade?: number;
+  submitted: boolean;
+  graded: boolean;
+  type: 'exam' | 'assignment' | 'quiz' | 'project' | 'presentation' | 'participation' | 'other';
+  moduleId: string;
+  description?: string;
+  rubric?: {
+    criteria: string;
+    weight: number;
+    score?: number;
+    maxScore: number;
+  }[];
+  resources?: Resource[];
+}
+
+export interface Module extends BaseEntity {
+  code: string;
+  name: string;
+  credits: number;
+  semester: string;
+  currentGrade: number;
+  targetGrade: number;
+  progress: number;
+  assessments: Assessment[];
+  color?: string;
+  professor?: string;
+  schedule?: ClassSchedule[];
+  resources?: Resource[];
+  prerequisites?: string[];
+  corequisites?: string[];
+  description?: string;
+  learningOutcomes?: string[];
+  coverImage?: string;  
+  targetMark?: number;  
+}
+
+// Additional types
+export interface Resource {
+  id: string;
+  name: string;
+  type: 'syllabus' | 'slides' | 'notes' | 'assignment' | 'other';
+  url: string;
+  uploadedAt: string;
+  size?: number;
+  moduleId?: string;
+  assessmentId?: string;
+}
+
+export interface ClassSchedule {
+  id: string;
+  day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  startTime: string;
+  endTime: string;
+  location: string;
+  type: 'lecture' | 'tutorial' | 'lab' | 'seminar';
+  recurring: boolean;
+  frequency?: 'weekly' | 'biweekly' | 'monthly';
+  exceptions?: string[]; // Dates when class doesn't occur
+}
 
 export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'tasks' | 'finances' | 'analytics' | 'settings';

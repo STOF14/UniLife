@@ -471,6 +471,7 @@ export const useDatabase = () => {
     tasks,
     transactions,
     loading,
+    error: null,
     saveModule,
     saveTask,
     saveTransaction,
