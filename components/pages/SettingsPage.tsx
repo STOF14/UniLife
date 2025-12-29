@@ -87,6 +87,7 @@ const handleImport = async () => {
       
       const module: Module = {
         id: tempId,
+        userId: 'current-user', // TODO: Get actual user ID from auth
         code: mod.code,
         name: mod.name,
         semester: mod.semester,
@@ -98,8 +99,8 @@ const handleImport = async () => {
         assessments: [],
         specialCode: mod.specialCode,
         coverImage: getCoverImage(mod.code),
-        created_at: new Date(`${mod.semester}-01-01`).toISOString(),
-        updated_at: new Date().toISOString(),
+        createdAt: new Date(`${mod.semester}-01-01`).toISOString(),
+        updatedAt: new Date().toISOString(),
         // Remove the grade property since it doesn't exist in Module type
         // grade: mod.grade // Remove this line
       };

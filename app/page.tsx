@@ -3,11 +3,40 @@
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react'
 import React, { useState, useEffect } from 'react';
-import { Calendar, BookOpen, CheckSquare, DollarSign, Settings, User, Menu, X, Plus, Edit, Trash2, ArrowLeft, Download, Upload, Upload as UploadIcon, Camera, Target as TargetIcon, TrendingUp, Info, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { 
+  Calendar, 
+  BookOpen, 
+  TrendingUp, 
+  Target as TargetIcon,
+  CheckSquare, 
+  DollarSign, 
+  Settings,
+  Plus,
+  Edit,
+  Trash2,
+  Upload,
+  X,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  Bell,
+  Search,
+  Filter,
+  BarChart3,
+  PieChart,
+  Activity,
+  Users,
+  Clock,
+  AlertCircle,
+  FileText,
+  Download,
+  RefreshCw,
+  Menu
+} from 'lucide-react';
 import { useDatabase } from '@/hooks/useDatabase';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { AnalyticsPage } from '@/components/pages/AnalyticsPage';
-
 
 
 // Types
@@ -25,7 +54,10 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Modal } from '@/components/ui/Modal';
 
 import { ModuleList } from '@/components/academic/ModuleList';
-import { ModuleForm } from '@/components/academic/ModuleForm';
+import { ModuleForm as AcademicModuleForm } from '@/components/academic/ModuleForm';
+import { AcademicDashboard } from '@/components/academic/AcademicDashboard';
+import { YearbookImport } from '@/components/academic/YearbookImport';
+import { RoadmapPage } from '@/components/academic/RoadmapPage';
 import { useAcademic } from '@/hooks/useAcademic';
 
 // Pages
@@ -55,7 +87,50 @@ const UniLife = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const [currentPage, setCurrentPage] = useState<PageType | 'analytics'>('dashboard');
+  
+  // Academic state - Move ALL hooks here, before any conditional logic
+  const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
+  const [isYearbookImportOpen, setIsYearbookImportOpen] = useState(false);
+  const { 
+    modules, 
+    isLoading: modulesLoading, 
+    error: modulesError,
+    createModule,
+    fetchModules 
+  } = useAcademic();
 
+  // Load modules on component mount
+  useEffect(() => {
+    fetchModules();
+  }, [fetchModules]);
+
+  const handleAddModule = async (moduleData: any) => {
+    try {
+      await createModule(moduleData);
+      setIsModuleModalOpen(false);
+    } catch (error) {
+      console.error('Failed to add module:', error);
+    }
+  };
+
+  const handleYearbookImport = async (importedModules: Module[]) => {
+    try {
+      // Create each imported module
+      for (const module of importedModules) {
+        await createModule(module);
+      }
+      setIsYearbookImportOpen(false);
+    } catch (error) {
+      console.error('Failed to import modules:', error);
+    }
+  };
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -77,13 +152,6 @@ const UniLife = () => {
     checkUser();
   }, [router]);
 
-    useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   // Show a loading screen while checking auth
   if (isLoading) {
     return (
@@ -97,25 +165,16 @@ const UniLife = () => {
   }
   // --- 🔒 AUTH PROTECTION END ---  
 
-const navigation = [
+  const navigation = [
   { id: 'dashboard' as PageType, icon: Calendar, label: 'Dashboard' },
   { id: 'academic' as PageType, icon: BookOpen, label: 'Academic' },
   { id: 'academic-progress' as PageType, icon: TrendingUp, label: 'Progress' },
+  { id: 'roadmap' as PageType, icon: TargetIcon, label: 'Roadmap' },
   { id: 'analytics' as PageType, icon: TargetIcon, label: 'Analytics' },  // ← ADD THIS LINE
   { id: 'tasks' as PageType, icon: CheckSquare, label: 'Tasks' },
   { id: 'finances' as PageType, icon: DollarSign, label: 'Finances' },
   { id: 'settings' as PageType, icon: Settings, label: 'Settings' },
 ];
-  const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
-  const { isLoading: modulesLoading } = useAcademic();
-const handleAddModule = async (moduleData: any) => {
-  try {
-    await useAcademic().createModule(moduleData);
-    setIsModuleModalOpen(false);
-  } catch (error) {
-    console.error('Failed to add module:', error);
-  }
-};
   const cwa = calculateCWA(db.modules);
   const term2024 = calculateTermAverage(db.modules, '2024');
   const term2025 = calculateTermAverage(db.modules, '2025');
@@ -705,7 +764,7 @@ const YearbookUploadForm = () => {
     }
   };
 
-const handleImport = async (extractedModules: ExtractedModule[]) => {
+const handleImport = async (extractedModules: Array<ExtractedModule & { semester: string }>) => {
   try {
     // Get the current user
     const { data: { user } } = await supabase.auth.getUser();
@@ -874,7 +933,7 @@ const handleImport = async (extractedModules: ExtractedModule[]) => {
           Cancel
         </Button>
         <Button
-          onClick={handleImport}
+          onClick={() => handleImport(extractedModules)}
           disabled={extractedModules.length === 0 || isImporting}
           className="min-w-[120px]"
         >
@@ -1001,6 +1060,49 @@ const handleImport = async (extractedModules: ExtractedModule[]) => {
             </div>
           </div>
 
+          {/* Modules Section */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-white">My Modules</h2>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => setIsModuleModalOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Module
+              </Button>
+            </div>
+            <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
+              {modulesLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0A84FF] mx-auto"></div>
+                  <p className="mt-2 text-[#EBEBF599]">Loading modules...</p>
+                </div>
+              ) : modulesError ? (
+                <div className="text-center py-8">
+                  <div className="text-red-500">Error loading modules: {modulesError}</div>
+                </div>
+              ) : modules.length > 0 ? (
+                <ModuleList modules={modules} />
+              ) : (
+                <div className="text-center py-8">
+                  <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-white">No modules yet</h3>
+                  <p className="mt-1 text-sm text-[#EBEBF599]">
+                    Get started by adding your first module.
+                  </p>
+                  <div className="mt-6">
+                    <Button onClick={() => setIsModuleModalOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Module
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-6">
             <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
@@ -1073,154 +1175,17 @@ No tasks this week! 🎉
   </div>
 );
 };
-const AcademicPage = () => {
-const handlePhotoUpload = (moduleId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-const file = e.target.files?.[0];
-if (!file) return;
-  const reader = new FileReader();
-  reader.onloadend = async () => {
-    const module = db.modules.find(m => m.id === moduleId);
-    if (module) {
-      await db.saveModule({ ...module, coverImage: reader.result as string });
-    }
-  };
-  reader.readAsDataURL(file);
-};
 
-return (
-  <div className="space-y-6">
-    <div className="flex items-center justify-between">
-      <h1 className="text-3xl font-semibold text-white">Academic</h1>
-      <div className="flex gap-2">
-        <Button 
-          variant="secondary" 
-          onClick={() => { store.setShowModal('yearbook'); }}
-        >
-          <FileText size={16} className="mr-1" />Upload Yearbook
-        </Button>
-        <Button onClick={() => { store.setEditingModule(null); store.setShowModal('module'); }}>
-          <Plus size={16} className="mr-1" />Add Module
-        </Button>
-      </div>
-    </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {db.modules.map(module => {
-        const thisWeekTasks = getThisWeekTasks(module.code);
-        const targetDiff = module.currentGrade - module.targetGrade;
-        
-        return (
-          <div 
-            key={module.id} 
-            className="bg-[#141414] border border-[#38383A] rounded-xl overflow-hidden transition-all duration-200 hover:border-[#0A84FF] hover:shadow-lg hover:-translate-y-1"
-          >
-            <div className="h-32 relative group cursor-pointer" style={{ 
-              background: module.coverImage?.startsWith('data:') ? 'none' : module.coverImage || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              backgroundImage: module.coverImage?.startsWith('data:') ? `url(${module.coverImage})` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-              <div className="absolute top-3 right-3 flex gap-2">
-                <label className="p-2 bg-black/50 hover:bg-black/70 rounded-lg backdrop-blur-sm transition-colors cursor-pointer">
-                  <Camera size={16} className="text-white" />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={(e) => handlePhotoUpload(module.id, e)}
-                  />
-                </label>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); store.setEditingModule(module); store.setShowModal('module'); }}
-                  className="p-2 bg-black/50 hover:bg-black/70 rounded-lg backdrop-blur-sm transition-colors"
-                >
-                  <Edit size={16} className="text-white" />
-                </button>
-                <button 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    if (confirm(`Delete ${module.code}?`)) {
-                      db.deleteModule(module.id);
-                    }
-                  }}
-                  className="p-2 bg-black/50 hover:bg-[#FF453A]/70 rounded-lg backdrop-blur-sm transition-colors"
-                >
-                  <Trash2 size={16} className="text-white" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 space-y-3">
-              <div>
-                <div className="text-xs text-[#EBEBF599] mb-1">{module.code} · {module.credits} credits</div>
-                <h3 className="text-base font-semibold text-white line-clamp-2">{module.name}</h3>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ProgressRing percentage={module.currentGrade ?? 0} size={50} strokeWidth={5} />
-                  <div>
-                    <div className="text-xs text-[#EBEBF599]">Current</div>
-                    <div className="text-sm font-mono text-white">{module.currentGrade}%</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-[#EBEBF599]">Target: {module.targetGrade}%</div>
-                  <div className={`text-sm font-mono font-semibold ${
-                    targetDiff >= 0 ? 'text-[#30D158]' : 'text-[#FF453A]'
-                  }`}>
-                    {targetDiff >= 0 ? '+' : ''}{targetDiff}%
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-xs text-[#EBEBF599] mb-1">
-                  <span>Progress to target</span>
-                  <span>{module.progress}%</span>
-                </div>
-                <ProgressBar 
-                  percentage={module.progress}
-                  color={targetDiff >= 0 ? '#30D158' : '#FF9F0A'}
-                />
-              </div>
-
-              {thisWeekTasks.length > 0 && (
-                <div className="pt-3 border-t border-[#38383A]">
-                  <div className="text-xs font-medium text-[#EBEBF599] mb-2">📋 This Week:</div>
-                  <div className="space-y-1">
-                    {thisWeekTasks.slice(0, 2).map(task => (
-                      <div key={task.id} className="text-xs text-white flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${
-                          task.priority === 'high' ? 'bg-[#FF453A]' : 'bg-[#FF9F0A]'
-                        }`} />
-                        <span className="truncate">{task.title}</span>
-                      </div>
-                    ))}
-                    {thisWeekTasks.length > 2 && (
-                      <div className="text-xs text-[#EBEBF599]">+{thisWeekTasks.length - 2} more</div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  </div>
-);
-};
 const AcademicProgressPage = () => {
-const currentYear = '2025';
-const currentYearModules = db.modules.filter(m => m.semester === currentYear);
-const currentYearAverage = calculateTermAverage(db.modules, currentYear);
-const years = [...new Set(db.modules.map(m => m.semester))].sort();
+  const currentYear = '2025';
+  const currentYearModules = db.modules.filter(m => m.semester === currentYear);
+  const currentYearAverage = calculateTermAverage(db.modules, currentYear);
+  const years = [...new Set(db.modules.map(m => m.semester))].sort();
+  const cwa = calculateCWA(db.modules);
 
-return (
-  <div className="space-y-6">
-    <h1 className="text-3xl font-semibold text-white">Academic Progress</h1>
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-semibold text-white">Academic Progress</h1>
 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
@@ -1373,11 +1338,21 @@ return (
 );
 };
 
-const renderPage = () => {
+const AcademicPage = () => {
+    return (
+      <AcademicDashboard 
+        modules={modules}
+        onImportYearbook={() => setIsYearbookImportOpen(true)}
+      />
+    );
+  };
+
+  const renderPage = () => {
   switch (store.currentPage) {
     case 'dashboard': return <DashboardPage />;
     case 'academic': return <AcademicPage />;
     case 'academic-progress': return <AcademicProgressPage />;
+    case 'roadmap': return <RoadmapPage modules={modules} major="Physics" secondMajor="Mathematics" />;
     case 'analytics': return <AnalyticsPage modules={db.modules} />;
     case 'tasks':
     
@@ -1393,7 +1368,11 @@ const renderPage = () => {
             store.setEditingTask(task);
             store.setShowModal('task');
           }}
-          onDeleteTask={db.deleteTask}
+          onDeleteTask={(id: string) => {
+            if (confirm('Are you sure you want to delete this task?')) {
+              db.deleteTask(id);
+            }
+          }}
           onToggleComplete={async (id) => {
             const task = db.tasks.find(t => t.id === id);
             if (task) {
@@ -1415,7 +1394,11 @@ const renderPage = () => {
             store.setEditingTransaction(transaction);
             store.setShowModal('transaction');
           }}
-          onDeleteTransaction={db.deleteTransaction}
+          onDeleteTransaction={(id: string) => {
+            if (confirm('Are you sure you want to delete this transaction?')) {
+              db.deleteTransaction(id);
+            }
+          }}
         />
       );
     case 'settings': return <SettingsPage />;
@@ -1523,6 +1506,26 @@ return (
     >
       <YearbookUploadForm />
     </Modal>
+
+    {/* Module Modal */}
+    <Modal
+      isOpen={isModuleModalOpen}
+      onClose={() => setIsModuleModalOpen(false)}
+      title="Add New Module"
+    >
+      <AcademicModuleForm 
+        onSubmit={handleAddModule}
+        onCancel={() => setIsModuleModalOpen(false)}
+        isSubmitting={false}
+      />
+    </Modal>
+
+    {/* Yearbook Import Modal */}
+    <YearbookImport
+      isOpen={isYearbookImportOpen}
+      onClose={() => setIsYearbookImportOpen(false)}
+      onImport={handleYearbookImport}
+    />
   </div>
 );
 };

@@ -56,7 +56,6 @@ export default function ModulesPage() {
 
       <ModuleList 
         modules={modules} 
-        onAddModule={() => setIsModalOpen(true)} 
       />
 
       <Modal

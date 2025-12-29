@@ -43,8 +43,9 @@ export type InputProps = {
   step?: string;
   min?: string;
   max?: string;
-  error?: string;
   inputMode?: 'text' | 'search' | 'email' | 'tel' | 'url' | 'none' | 'numeric' | 'decimal';
+  error?: string;
+  className?: string;
   'data-testid'?: string;
 };
 
@@ -55,6 +56,7 @@ export type SelectProps = {
   options: { value: string; label: string }[];
   required?: boolean;
   error?: string;
+  className?: string;
   'data-testid'?: string;
 };
 
@@ -120,16 +122,17 @@ export interface Module extends BaseEntity {
   targetGrade: number;
   progress: number;
   assessments: Assessment[];
-  color?: string;
-  professor?: string;
-  schedule?: ClassSchedule[];
-  resources?: Resource[];
   prerequisites?: string[];
   corequisites?: string[];
   description?: string;
   learningOutcomes?: string[];
   coverImage?: string;  
-  targetMark?: number;  
+  targetMark?: number;
+  specialCode?: number;
+  color?: string;
+  professor?: string;
+  schedule?: ClassSchedule[];
+  resources?: Resource[];
 }
 
 // Additional types
@@ -156,4 +159,4 @@ export interface ClassSchedule {
   exceptions?: string[]; // Dates when class doesn't occur
 }
 
-export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'tasks' | 'finances' | 'analytics' | 'settings';
+export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'roadmap' | 'tasks' | 'finances' | 'analytics' | 'settings';

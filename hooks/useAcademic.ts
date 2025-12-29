@@ -22,9 +22,26 @@ export function useAcademic(): UseAcademicReturn {
       const { data, error: fetchError } = await supabase
         .from('modules')
         .select('*')
-        .order('createdAt', { ascending: false });
+        .order('created_at', { ascending: false });
       if (fetchError) throw fetchError;
-      setModules(data || []);
+      
+      // Convert snake_case to camelCase for frontend
+      const modules = (data || []).map((module: any) => ({
+        id: module.id,
+        code: module.code,
+        name: module.name,
+        credits: module.credits,
+        semester: module.semester,
+        currentGrade: module.current_grade || 0,
+        targetGrade: module.target_grade || 0,
+        progress: module.progress || 0,
+        assessments: module.assessments || [],
+        userId: module.user_id,
+        createdAt: module.created_at,
+        updatedAt: module.updated_at,
+      }));
+      
+      setModules(modules);
     } catch (err) {
       const error = err as Error;
       setError(error.message || 'Failed to fetch modules');
@@ -38,20 +55,46 @@ export function useAcademic(): UseAcademicReturn {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
-      const newModule: Module = {
-        ...moduleData,
-        id: uuidv4(),
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+
+      // Convert to snake_case for database
+      const dbData = {
+        code: moduleData.code,
+        name: moduleData.name,
+        credits: moduleData.credits,
+        semester: moduleData.semester,
+        current_grade: moduleData.currentGrade || 0,
+        target_grade: moduleData.targetGrade,
         progress: moduleData.progress || 0,
-        currentGrade: moduleData.currentGrade || 0,
         assessments: moduleData.assessments || [],
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
-      const { error } = await supabase
+
+      const { data, error } = await supabase
         .from('modules')
-        .insert(newModule);
+        .insert([dbData])
+        .select()
+        .single();
+
       if (error) throw error;
+
+      // Convert back to camelCase for frontend
+      const newModule: Module = {
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        credits: data.credits,
+        semester: data.semester,
+        currentGrade: data.current_grade,
+        targetGrade: data.target_grade,
+        progress: data.progress,
+        assessments: data.assessments || [],
+        userId: data.user_id,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
+
       setModules(prev => [newModule, ...prev]);
       return newModule;
     } catch (err) {

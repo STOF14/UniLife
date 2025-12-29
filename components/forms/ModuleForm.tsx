@@ -10,7 +10,7 @@ type ModuleFormProps = {
   onClose: () => void;
 };
 
-export const ModuleForm = ({ editingModule, onSave, onClose }: ModuleFormProps) => {
+export const LegacyModuleForm = ({ editingModule, onSave, onClose }: ModuleFormProps) => {
   const [formState, setFormState] = useState<Partial<Module>>(editingModule || {
     code: '', name: '', semester: '2025', credits: 16, currentGrade: 0, targetGrade: 60, progress: 0, assessments: []
   });
@@ -26,8 +26,8 @@ export const ModuleForm = ({ editingModule, onSave, onClose }: ModuleFormProps) 
         id: editingModule?.id || Date.now().toString(),
         assessments: editingModule?.assessments || [],
         coverImage: editingModule?.coverImage || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        created_at: editingModule?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        createdAt: editingModule?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       } as Module;
       
       const success = await onSave(moduleToSave);
