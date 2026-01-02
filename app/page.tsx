@@ -69,8 +69,11 @@ import { FinancesPage } from '@/components/pages/FinancesPage';
 import { calculateCWA, calculateTermAverage } from '@/lib/utils/calculations';
 import { parseYearbookPDF, mapModulesToSemesters, type ExtractedModule } from '@/lib/utils/pdfParser';
 
-import { useRouter } from 'next/navigation'; // <--- Add this
-import { createClient } from '@supabase/supabase-js'; // <--- Add this
+import { useRouter } from 'next/navigation'; 
+import { createClient } from '@supabase/supabase-js'; 
+
+import { Analytics } from "@vercel/analytics/next"
+
 
 // Initialize Supabase (Client Side)
 const supabase = createClient(
