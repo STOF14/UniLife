@@ -209,35 +209,35 @@ export class AcademicValidator {
       }
 
       // Validate year level
-      if (!module.yearLevel || module.yearLevel < 1 || module.yearLevel > 6) {
+      if (!(currModule as any).yearLevel || (currModule as any).yearLevel < 1 || (currModule as any).yearLevel > 6) {
         return { 
           valid: false, 
-          error: `Invalid year level: ${module.yearLevel} for module ${module.moduleCode}` 
+          error: `Invalid year level: ${(currModule as any).yearLevel} for module ${currModule.moduleCode}` 
         };
       }
 
       // Validate semester
-      if (module.semester && !['First', 'Second', 'Year'].includes(module.semester)) {
+      if ((currModule as any).semester && !['First', 'Second', 'Year'].includes((currModule as any).semester)) {
         return { 
           valid: false, 
-          error: `Invalid semester: ${module.semester} for module ${module.moduleCode}` 
+          error: `Invalid semester: ${(currModule as any).semester} for module ${currModule.moduleCode}` 
         };
       }
 
       // Validate module type
-      if (module.moduleType && !['core', 'fundamental', 'elective'].includes(module.moduleType)) {
+      if ((currModule as any).moduleType && !['core', 'fundamental', 'elective'].includes((currModule as any).moduleType)) {
         return { 
           valid: false, 
-          error: `Invalid module type: ${module.moduleType} for module ${module.moduleCode}` 
+          error: `Invalid module type: ${(currModule as any).moduleType} for module ${currModule.moduleCode}` 
         };
       }
     }
 
     // Check for reasonable progression
-    const yearGroups: { [key: number]: any[] } = modules.reduce((groups, module) => {
-      const year = module.yearLevel;
+    const yearGroups: { [key: number]: any[] } = modules.reduce((groups, moduleItem: any) => {
+      const year = moduleItem.yearLevel;
       if (!groups[year]) groups[year] = [];
-      groups[year].push(module);
+      groups[year].push(moduleItem);
       return groups;
     }, {});
 

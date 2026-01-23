@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, 
+  Calendar,
+  BookOpen,
   TrendingUp, 
   Target as TargetIcon,
   CheckSquare, 
