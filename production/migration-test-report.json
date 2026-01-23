@@ -1,0 +1,125 @@
+{
+  "timestamp": "2026-01-22T07:00:02.653Z",
+  "summary": {
+    "totalTests": 19,
+    "passed": 3,
+    "successRate": 15.8,
+    "readyForProduction": false
+  },
+  "results": [
+    {
+      "category": "Data Integrity",
+      "test": "Student Profiles Count",
+      "status": "FAIL",
+      "details": "Invalid"
+    },
+    {
+      "category": "Data Integrity",
+      "test": "Module Instances Count",
+      "status": "PASS",
+      "details": "Valid"
+    },
+    {
+      "category": "Data Integrity",
+      "test": "Curriculum Versions Active",
+      "status": "FAIL",
+      "details": "Invalid"
+    },
+    {
+      "category": "Data Integrity",
+      "test": "No Orphaned Module Instances",
+      "status": "ERROR",
+      "details": "Cannot read properties of null (reading 'length')"
+    },
+    {
+      "category": "Curriculum Compatibility",
+      "test": "All Students Have Curriculum Versions",
+      "status": "ERROR",
+      "details": "Cannot read properties of null (reading 'length')"
+    },
+    {
+      "category": "Curriculum Compatibility",
+      "test": "Valid Curriculum Version References",
+      "status": "ERROR",
+      "details": "profiles is not iterable"
+    },
+    {
+      "category": "Curriculum Compatibility",
+      "test": "Degree Modules Match Curriculum",
+      "status": "PASS",
+      "details": "Compatible"
+    },
+    {
+      "category": "Student Profile Migration",
+      "test": "Complete Profile Data",
+      "status": "ERROR",
+      "details": "Cannot read properties of null (reading 'every')"
+    },
+    {
+      "category": "Student Profile Migration",
+      "test": "Valid User References",
+      "status": "ERROR",
+      "details": "profiles is not iterable"
+    },
+    {
+      "category": "Student Profile Migration",
+      "test": "Unique Student Profiles",
+      "status": "ERROR",
+      "details": "Cannot read properties of null (reading 'map')"
+    },
+    {
+      "category": "Module Instance Migration",
+      "test": "Valid Grade Conversion",
+      "status": "ERROR",
+      "details": "Cannot read properties of null (reading 'every')"
+    },
+    {
+      "category": "Module Instance Migration",
+      "test": "Consistent Status Logic",
+      "status": "ERROR",
+      "details": "Cannot read properties of null (reading 'every')"
+    },
+    {
+      "category": "Module Instance Migration",
+      "test": "Valid Module References",
+      "status": "ERROR",
+      "details": "instances is not iterable"
+    },
+    {
+      "category": "Academic Events Audit",
+      "test": "Migration Events Logged",
+      "status": "FAIL",
+      "details": "Audit Issues Found"
+    },
+    {
+      "category": "Academic Events Audit",
+      "test": "Event Data Integrity",
+      "status": "ERROR",
+      "details": "Cannot read properties of null (reading 'every')"
+    },
+    {
+      "category": "Academic Events Audit",
+      "test": "Valid Profile References",
+      "status": "ERROR",
+      "details": "events is not iterable"
+    },
+    {
+      "category": "Rollback Capability",
+      "test": "Backup Tables Exist",
+      "status": "FAIL",
+      "details": "Rollback Issues"
+    },
+    {
+      "category": "Rollback Capability",
+      "test": "Backup Data Integrity",
+      "status": "PASS",
+      "details": "Rollback Ready"
+    },
+    {
+      "category": "Rollback Capability",
+      "test": "Rollback Script Available",
+      "status": "FAIL",
+      "details": "Rollback Issues"
+    }
+  ]
+}

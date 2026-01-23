@@ -1,0 +1,153 @@
+{
+  "currentStructure": {
+    "moduleInterface": {
+      "fields": [
+        {
+          "name": "code",
+          "type": "unknown",
+          "optional": false
+        },
+        {
+          "name": "name",
+          "type": "unknown",
+          "optional": false
+        },
+        {
+          "name": "credits",
+          "type": "unknown",
+          "optional": false
+        },
+        {
+          "name": "semester",
+          "type": "unknown",
+          "optional": false
+        },
+        {
+          "name": "currentGrade",
+          "type": "unknown",
+          "optional": false
+        },
+        {
+          "name": "targetGrade",
+          "type": "unknown",
+          "optional": false
+        },
+        {
+          "name": "progress",
+          "type": "unknown",
+          "optional": false
+        },
+        {
+          "name": "assessments",
+          "type": "unknown",
+          "optional": false
+        },
+        {
+          "name": "prerequisites",
+          "type": "?",
+          "optional": true
+        },
+        {
+          "name": "corequisites",
+          "type": "?",
+          "optional": true
+        },
+        {
+          "name": "description",
+          "type": "?",
+          "optional": true
+        },
+        {
+          "name": "learningOutcomes",
+          "type": "?",
+          "optional": true
+        },
+        {
+          "name": "coverImage",
+          "type": "?",
+          "optional": true
+        },
+        {
+          "name": "targetMark",
+          "type": "?",
+          "optional": true
+        },
+        {
+          "name": "specialCode",
+          "type": "?",
+          "optional": true
+        },
+        {
+          "name": "color",
+          "type": "?",
+          "optional": true
+        },
+        {
+          "name": "professor",
+          "type": "?",
+          "optional": true
+        },
+        {
+          "name": "schedule",
+          "type": "?",
+          "optional": true
+        },
+        {
+          "name": "resources",
+          "type": "?",
+          "optional": true
+        }
+      ]
+    },
+    "taskInterface": {
+      "fields": []
+    },
+    "transactionInterface": {
+      "fields": []
+    },
+    "existingMigrations": [
+      "20241229_add_missing_columns.sql",
+      "20250121_phase1_authoritative_schema.sql",
+      "20250121_phase2_data_migration.sql"
+    ],
+    "componentUsage": {
+      "totalFiles": 27,
+      "supabaseUsage": 0,
+      "moduleUsage": 11,
+      "taskUsage": 4
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "✅ CRITICAL",
+      "description": "Modules table has currentGrade field - can migrate to pass/fail status"
+    }
+  ],
+  "migrationPlan": {
+    "step1": {
+      "action": "CREATE BACKUPS",
+      "description": "Backup modules, tasks, transactions tables",
+      "sql": "CREATE TABLE modules_backup AS TABLE modules; -- etc"
+    },
+    "step2": {
+      "action": "CREATE STUDENT PROFILES",
+      "description": "Create student profiles from existing module users",
+      "sql": "INSERT INTO student_profiles (user_id, start_year, status)\n              SELECT DISTINCT userId, EXTRACT(YEAR FROM createdAt), 'active' \n              FROM modules WHERE userId IS NOT NULL;"
+    },
+    "step3": {
+      "action": "MIGRATE MODULES",
+      "description": "Convert modules to student_module_instances",
+      "sql": "INSERT INTO student_module_instances (student_profile_id, module_code, status, grade)\n              SELECT sp.id, m.code, \n                CASE WHEN m.currentGrade >= 50 THEN 'passed' \n                     WHEN m.currentGrade IS NOT NULL THEN 'failed' \n                     ELSE 'pending' END,\n                m.currentGrade\n              FROM modules m\n              JOIN student_profiles sp ON sp.user_id = m.userId;"
+    },
+    "step4": {
+      "action": "MIGRATE TASKS",
+      "description": "Convert tasks to academic events or keep separate",
+      "sql": "Tasks need separate analysis - not clear mapping to new schema"
+    },
+    "step5": {
+      "action": "MIGRATE TRANSACTIONS",
+      "description": "Link transactions to student profiles",
+      "sql": "UPDATE transactions SET student_profile_id = (SELECT id FROM student_profiles WHERE user_id = transactions.user_id);"
+    }
+  }
+}

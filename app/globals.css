@@ -8,36 +8,154 @@
   }
   body {
     @apply bg-black text-white antialiased;
+    /* iPhone-specific optimizations */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent pull-to-refresh and overscroll behaviors */
+    overscroll-behavior: none;
+    /* Safe area support for iPhone X and newer */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  
+  html {
+    /* Prevent zoom on input focus */
+    touch-action: manipulation;
+    /* Smooth scrolling for iOS */
+    -webkit-overflow-scrolling: touch;
   }
 }
 
-/* Custom scrollbar */
+/* iPhone-specific custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 3px;
+  height: 3px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0A0A;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #38383A;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #4A4A4C;
 }
 
-/* Add to your globals.css */
-@media (max-width: 768px) {
-  button, [role="button"], .clickable {
-    min-height: 44px;
-    min-width: 44px;
+/* iPhone-specific mobile optimizations */
+@media (max-width: 428px) {
+  /* iPhone Pro Max and smaller */
+  body {
+    font-size: 16px;
+    line-height: 1.5;
   }
   
+  /* Safe area padding for notched iPhones */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Optimize touch targets for iPhone */
+  button, [role="button"], .clickable, a {
+    min-height: 44px;
+    min-width: 44px;
+    /* Prevent tap highlight */
+    -webkit-tap-highlight-color: transparent;
+    /* Smooth transitions */
+    transition: all 0.2s ease;
+  }
+  
+  /* Form optimizations for iOS */
   input, select, textarea {
     font-size: 16px; /* Prevents iOS zoom */
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 12px;
+    /* Remove iOS shadows and borders */
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    outline: none;
+  }
+  
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    /* Custom styling for date inputs on iOS */
+    padding: 12px 16px;
+  }
+  
+  /* Optimize scrolling performance */
+  .scroll-container {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    /* Hide scrollbars but keep functionality */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .scroll-container::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Prevent text selection on UI elements */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Optimize images for iPhone */
+  img {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+  
+  /* Haptic feedback triggers */
+  .haptic-feedback {
+    cursor: pointer;
+  }
+  
+  /* Bottom navigation safe area */
+  .bottom-nav-safe-area {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
+  }
+}
+
+/* iPhone landscape optimizations */
+@media (max-width: 926px) and (orientation: landscape) {
+  .safe-area-landscape {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Dark mode optimizations for iOS */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

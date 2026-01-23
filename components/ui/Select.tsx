@@ -2,6 +2,16 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { SelectProps } from '@/lib/types';
 
+export interface SelectProps {
+  value?: string;
+  onChange: (value: string) => void;
+  onBlur?: () => void;
+  disabled?: boolean | undefined;
+  name?: string;
+  ref?: React.RefCallBack<any, any>;
+  children?: React.ReactNode;
+}
+
 export const Select = ({ 
   label, 
   value, 

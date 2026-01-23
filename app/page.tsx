@@ -37,6 +37,7 @@ import {
 import { useDatabase } from '@/hooks/useDatabase';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { AnalyticsPage } from '@/components/pages/AnalyticsPage';
+import { iPhoneInteractions } from '@/lib/utils/iphoneInteractions';
 
 
 // Types
@@ -129,11 +130,256 @@ const UniLife = () => {
   };
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => {
+      const isIPhone = /iPhone/i.test(navigator.userAgent) || 
+                     (window.innerWidth <= 428 && window.innerHeight >= 800);
+      setIsMobile(isIPhone);
+    };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Initialize iPhone-specific optimizations
+  useEffect(() => {
+    iPhoneInteractions.initialize();
+  }, []);
+
+  // Page Components - moved inside to access required variables
+  const DashboardPage = () => {
+    const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentCalendarDate);
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const today = new Date();
+    const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+
+    const getTasksThisWeek = () => {
+      const startOfWeek = new Date(today);
+      const endOfWeek = new Date(today);
+      endOfWeek.setDate(today.getDate() + 7);
+      
+      return db.tasks.filter(task => {
+        const taskDate = new Date(task.dueDate);
+        return taskDate >= startOfWeek && taskDate <= endOfWeek && !task.completed;
+      }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    };
+
+    const thisWeekTasks = getTasksThisWeek();
+
+    return (
+      <div className="space-y-4 max-w-[428px] mx-auto">
+        {/* Mobile Header */}
+        <div className="flex items-center justify-between px-2 pt-2">
+          <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+          <Button variant="secondary" size="sm" onClick={exportData} className="h-10 px-3">
+            <Download size={16} />
+          </Button>
+        </div>
+
+        {/* Stats Cards - Mobile First */}
+        <div className="grid grid-cols-2 gap-3 px-2">
+          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen size={16} className="text-[#0A84FF]" />
+              <span className="text-xs text-[#EBEBF599]">Modules</span>
+            </div>
+            <div className="text-2xl font-bold text-white">{modules.length}</div>
+          </div>
+          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckSquare size={16} className="text-[#30D158]" />
+              <span className="text-xs text-[#EBEBF599]">Tasks</span>
+            </div>
+            <div className="text-2xl font-bold text-white">{thisWeekTasks.length}</div>
+          </div>
+        </div>
+
+        {/* Calendar - Mobile Optimized */}
+        <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-4 mx-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">
+              {monthNames[month]} {year}
+            </h2>
+            <div className="flex gap-1">
+              <button 
+                onClick={() => setCurrentCalendarDate(new Date(year, month - 1, 1))}
+                className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
+              >
+                <ChevronLeft size={18} className="text-white" />
+              </button>
+              <button 
+                onClick={() => setCurrentCalendarDate(new Date())}
+                className="px-3 py-2 hover:bg-[#38383A] rounded-lg transition-colors text-sm text-white"
+              >
+                Today
+              </button>
+              <button 
+                onClick={() => setCurrentCalendarDate(new Date(year, month + 1, 1))}
+                className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
+              >
+                <ChevronRight size={18} className="text-white" />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Calendar Grid */}
+          <div className="grid grid-cols-7 gap-1 text-xs">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+              <div key={day} className="text-center text-[#EBEBF599] py-1 font-medium">
+                {day}
+              </div>
+            ))}
+
+            {Array.from({ length: startingDayOfWeek }).map((_, i) => (
+              <div key={`empty-${i}`} className="aspect-square" />
+            ))}
+
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const date = new Date(year, month, day);
+              const dateStr = date.toISOString().split('T')[0];
+              const events = getEventsForDate(date);
+              const isToday = isCurrentMonth && day === today.getDate();
+
+              return (
+                <div 
+                  key={day}
+                  className={`aspect-square border border-[#38383A] rounded-lg p-1 hover:border-[#0A84FF] transition-all cursor-pointer ${
+                    isToday ? 'bg-[#0A84FF]/20 border-[#0A84FF]' : 'bg-[#0A0A0A]'
+                  }`}
+                >
+                  <div className={`text-xs font-medium mb-1 ${isToday ? 'text-[#0A84FF]' : 'text-white'}`}>
+                    {day}
+                  </div>
+                  <div className="space-y-1">
+                    {events.slice(0, 1).map(event => (
+                      <div 
+                        key={event.id}
+                        className={`w-1 h-1 rounded-full mx-auto ${
+                          event.priority === 'high' ? 'bg-[#FF453A]' :
+                          event.priority === 'medium' ? 'bg-[#FF9F0A]' :
+                          'bg-[#30D158]'
+                        }`}
+                        title={event.title}
+                      />
+                    ))}
+                    {events.length > 1 && (
+                      <div className="w-1 h-1 rounded-full mx-auto bg-[#38383A]" />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* This Week Tasks - Mobile */}
+        <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-4 mx-2">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">This Week</h3>
+            <span className="text-xs px-2 py-1 bg-[#FF453A]/20 text-[#FF453A] rounded-full">
+              {thisWeekTasks.length} tasks
+            </span>
+          </div>
+          <div className="space-y-2 max-h-[250px] overflow-y-auto scroll-container">
+            {thisWeekTasks.length > 0 ? (
+              thisWeekTasks.slice(0, 5).map(task => (
+                <div key={task.id} className="flex items-start gap-3 p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors">
+                  <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
+                    task.priority === 'high' ? 'bg-[#FF453A]' : 
+                    task.priority === 'medium' ? 'bg-[#FF9F0A]' : 'bg-[#30D158]'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-white font-medium truncate">{task.title}</div>
+                    <div className="text-xs text-[#EBEBF599] mt-1">
+                      {new Date(task.dueDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-6">
+                <CheckSquare className="mx-auto h-8 w-8 text-[#38383A]" />
+                <p className="mt-2 text-sm text-[#EBEBF599]">No tasks this week</p>
+              </div>
+            )}
+          </div>
+          {thisWeekTasks.length > 5 && (
+            <button 
+              onClick={() => store.setCurrentPage('tasks')}
+              className="w-full mt-3 py-2 text-sm text-[#0A84FF] hover:text-[#409CFF] transition-colors"
+            >
+              View all tasks →
+            </button>
+          )}
+        </div>
+
+        {/* Modules Section - Mobile */}
+        <div className="px-2 pb-4">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold text-white">My Modules</h2>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => setIsModuleModalOpen(true)}
+              className="h-9 px-3"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Add
+            </Button>
+          </div>
+          <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-4">
+            {modulesLoading ? (
+              <div className="text-center py-6">
+                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#0A84FF] mx-auto"></div>
+                <p className="mt-2 text-[#EBEBF599] text-sm">Loading modules...</p>
+              </div>
+            ) : modulesError ? (
+              <div className="text-center py-6">
+                <div className="text-red-500 text-sm">Error loading modules: {modulesError}</div>
+              </div>
+            ) : modules.length > 0 ? (
+              <div className="space-y-2">
+                {modules.slice(0, 3).map(module => (
+                  <div key={module.id} className="flex items-center gap-3 p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0A84FF] to-[#409CFF] flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">{module.code.substring(0, 2)}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-white font-medium truncate">{module.code}</div>
+                      <div className="text-xs text-[#EBEBF599] truncate">{module.name}</div>
+                    </div>
+                    <div className="text-xs text-[#EBEBF599]">{module.credits}cr</div>
+                  </div>
+                ))}
+                {modules.length > 3 && (
+                  <button 
+                    onClick={() => store.setCurrentPage('academic')}
+                    className="w-full py-2 text-sm text-[#0A84FF] hover:text-[#409CFF] transition-colors"
+                  >
+                    View all modules →
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <BookOpen className="mx-auto h-10 w-10 text-[#38383A]" />
+                <h3 className="mt-2 text-sm font-medium text-white">No modules yet</h3>
+                <p className="mt-1 text-xs text-[#EBEBF599]">
+                  Get started by adding your first module.
+                </p>
+                <div className="mt-4">
+                  <Button size="sm" onClick={() => setIsModuleModalOpen(true)}>
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Module
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -151,11 +397,9 @@ const UniLife = () => {
         router.push('/login');
       }
     };
-    
     checkUser();
   }, [router]);
 
-  // Show a loading screen while checking auth
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -166,7 +410,6 @@ const UniLife = () => {
       </div>
     );
   }
-  // --- 🔒 AUTH PROTECTION END ---  
 
   const navigation = [
   { id: 'dashboard' as PageType, icon: Calendar, label: 'Dashboard' },
@@ -178,6 +421,66 @@ const UniLife = () => {
   { id: 'finances' as PageType, icon: DollarSign, label: 'Finances' },
   { id: 'settings' as PageType, icon: Settings, label: 'Settings' },
 ];
+
+  const renderPage = () => {
+    switch (store.currentPage) {
+      case 'dashboard': return <DashboardPage />;
+      case 'academic': return <AcademicPage />;
+      case 'academic-progress': return <AcademicProgressPage />;
+      case 'roadmap': return <RoadmapPage modules={modules} major="Physics" secondMajor="Mathematics" />;
+      case 'analytics': return <AnalyticsPage modules={db.modules} />;
+      case 'tasks':
+        
+        return (
+          <TasksPage
+            tasks={db.tasks}
+            modules={db.modules}
+            onAddTask={() => {
+              store.setEditingTask(null);
+              store.setShowModal('task');
+            }}
+            onEditTask={(task: Task) => {
+              store.setEditingTask(task);
+              store.setShowModal('task');
+            }}
+            onDeleteTask={(id: string) => {
+              if (confirm('Are you sure you want to delete this task?')) {
+                db.deleteTask(id);
+              }
+            }}
+            onToggleComplete={async (id: string) => {
+              const task = db.tasks.find((t: Task) => t.id === id);
+              if (task) {
+                await db.saveTask({ ...task, completed: !task.completed });
+              }
+            }}
+            onSaveTask={db.saveTask}
+          />
+        );
+      case 'finances': 
+        return (
+          <FinancesPage
+            transactions={db.transactions}
+            onAddTransaction={() => {
+              store.setEditingTransaction(null);
+              store.setShowModal('transaction');
+            }}
+            onEditTransaction={(transaction: Transaction) => {
+              store.setEditingTransaction(transaction);
+              store.setShowModal('transaction');
+            }}
+            onDeleteTransaction={(id: string) => {
+              if (confirm('Are you sure you want to delete this transaction?')) {
+                db.deleteTransaction(id);
+              }
+            }}
+          />
+        );
+      case 'settings': return <SettingsPage />;
+      default: return <DashboardPage />;
+    }
+  };
+
   const cwa = calculateCWA(db.modules);
   const term2024 = calculateTermAverage(db.modules, '2024');
   const term2025 = calculateTermAverage(db.modules, '2025');
@@ -954,257 +1257,32 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
   );
 };
 
-  const DashboardPage = () => {
-    const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentCalendarDate);
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const today = new Date();
-    const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
-
-    const getTasksThisWeek = () => {
-      const startOfWeek = new Date(today);
-      const endOfWeek = new Date(today);
-      endOfWeek.setDate(today.getDate() + 7);
-      
-      return db.tasks.filter(task => {
-        const taskDate = new Date(task.dueDate);
-        return taskDate >= startOfWeek && taskDate <= endOfWeek && !task.completed;
-      }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-    };
-
-    const thisWeekTasks = getTasksThisWeek();
-
-    return (
-      
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold text-white">Dashboard</h1>
-          <Button variant="secondary" onClick={exportData}><Download size={16} className="mr-2" />Export</Button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-[#141414] border border-[#38383A] rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-white">
-                {monthNames[month]} {year}
-              </h2>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setCurrentCalendarDate(new Date(year, month - 1, 1))}
-                  className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
-                >
-                  <ChevronLeft size={20} className="text-white" />
-                </button>
-                <button 
-                  onClick={() => setCurrentCalendarDate(new Date())}
-                  className="px-4 py-2 hover:bg-[#38383A] rounded-lg transition-colors text-sm text-white"
-                >
-                  Today
-                </button>
-                <button 
-                  onClick={() => setCurrentCalendarDate(new Date(year, month + 1, 1))}
-                  className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
-                >
-                  <ChevronRight size={20} className="text-white" />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-7 gap-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-xs font-medium text-[#EBEBF599] py-2">
-                  {day}
-                </div>
-              ))}
-
-              {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                <div key={`empty-${i}`} className="aspect-square" />
-              ))}
-
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1;
-                const date = new Date(year, month, day);
-                const dateStr = date.toISOString().split('T')[0];
-                const events = getEventsForDate(date);
-                const isToday = isCurrentMonth && day === today.getDate();
-
-                return (
-                  <div 
-                    key={day}
-                    className={`aspect-square border border-[#38383A] rounded-lg p-2 hover:border-[#0A84FF] transition-all cursor-pointer ${
-                      isToday ? 'bg-[#0A84FF]/20 border-[#0A84FF]' : 'bg-[#0A0A0A]'
-                    }`}
-                  >
-                    <div className={`text-sm font-medium mb-1 ${isToday ? 'text-[#0A84FF]' : 'text-white'}`}>
-                      {day}
-                    </div>
-                    <div className="space-y-1">
-                      {events.slice(0, 2).map(event => (
-                        <div 
-                          key={event.id}
-                          className={`text-[10px] px-1 py-0.5 rounded truncate ${
-                            event.priority === 'high' ? 'bg-[#FF453A]/20 text-[#FF453A]' :
-                            event.priority === 'medium' ? 'bg-[#FF9F0A]/20 text-[#FF9F0A]' :
-                            'bg-[#30D158]/20 text-[#30D158]'
-                          }`}
-                          title={event.title}
-                        >
-                          {event.title}
-                        </div>
-                      ))}
-                      {events.length > 2 && (
-                        <div className="text-[9px] text-[#EBEBF599] px-1">
-                          +{events.length - 2} more
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Modules Section */}
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-white">My Modules</h2>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => setIsModuleModalOpen(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Module
-              </Button>
-            </div>
-            <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
-              {modulesLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0A84FF] mx-auto"></div>
-                  <p className="mt-2 text-[#EBEBF599]">Loading modules...</p>
-                </div>
-              ) : modulesError ? (
-                <div className="text-center py-8">
-                  <div className="text-red-500">Error loading modules: {modulesError}</div>
-                </div>
-              ) : modules.length > 0 ? (
-                <ModuleList modules={modules} />
-              ) : (
-                <div className="text-center py-8">
-                  <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-white">No modules yet</h3>
-                  <p className="mt-1 text-sm text-[#EBEBF599]">
-                    Get started by adding your first module.
-                  </p>
-                  <div className="mt-6">
-                    <Button onClick={() => setIsModuleModalOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Module
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">This Week</h3>
-                <span className="text-xs px-2 py-1 bg-[#FF453A]/20 text-[#FF453A] rounded-full">
-                  {thisWeekTasks.length} tasks
-                </span>
-              </div>
-              <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                {thisWeekTasks.length > 0 ? (
-                  thisWeekTasks.map(task => (
-                    <div key={task.id} className="flex items-start gap-3 p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors">
-                      <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
-                        task.priority === 'high' ? 'bg-[#FF453A]' : 
-                        task.priority === 'medium' ? 'bg-[#FF9F0A]' : 'bg-[#30D158]'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-white font-medium">{task.title}</div>
-<div className="text-xs text-[#EBEBF599] mt-1">
-{task.moduleCode} · {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-</div>
-</div>
-</div>
-))
-) : (
-<div className="text-center py-8 text-[#EBEBF599] text-sm">
-No tasks this week! 🎉
-</div>
-)}
-</div>
-</div>
-        <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Quick Stats</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-[#EBEBF599]">Current CWA</span>
-                <span className="text-2xl font-bold font-mono text-[#0A84FF]">{cwa}%</span>
-              </div>
-            </div>
-            <div className="h-px bg-[#38383A]" />
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-[#EBEBF599]">Active Modules</span>
-                <span className="text-lg font-bold text-white">{db.modules.length}</span>
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-[#EBEBF599]">Tasks Completed</span>
-                <span className="text-lg font-bold text-white">
-                  {db.tasks.filter(t => t.completed).length}/{db.tasks.length}
-                </span>
-              </div>
-              <ProgressBar percentage={(db.tasks.filter(t => t.completed).length / db.tasks.length) * 100} height={3} />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-[#EBEBF599]">Avg Progress</span>
-                <span className="text-lg font-bold text-white">
-                  {Math.round(db.modules.reduce((sum, m) => sum + m.progress, 0) / db.modules.length)}%
-                </span>
-              </div>
-              <ProgressBar percentage={db.modules.reduce((sum, m) => sum + m.progress, 0) / db.modules.length} height={3} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-};
-
-const AcademicProgressPage = () => {
-  const currentYear = '2025';
-  const currentYearModules = db.modules.filter(m => m.semester === currentYear);
-  const currentYearAverage = calculateTermAverage(db.modules, currentYear);
-  const years = [...new Set(db.modules.map(m => m.semester))].sort();
-  const cwa = calculateCWA(db.modules);
+  const AcademicProgressPage = () => {
+    const currentYear = '2025';
+    const currentYearModules = db.modules.filter((m: Module) => m.semester === currentYear);
+    const currentYearAverage = calculateTermAverage(db.modules, currentYear);
+    const years = [...new Set(db.modules.map((m: Module) => m.semester))].sort() as string[];
+    const cwa = calculateCWA(db.modules);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-semibold text-white">Academic Progress</h1>
+    <div className="space-y-4 max-w-[428px] mx-auto">
+      <h1 className="text-2xl font-semibold text-white pt-2">Academic Progress</h1>
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 gap-4">
       <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
         <div className="text-center mb-8">
           <div className="text-sm text-[#EBEBF599] mb-2">Cumulative Weighted Average</div>
           <div className="text-6xl font-mono font-bold text-[#0A84FF] mb-2">{cwa}%</div>
           <div className="text-xs text-[#EBEBF599]">
-            Based on {db.modules.reduce((sum, m) => sum + m.credits, 0)} total credits
+            Based on {db.modules.reduce((sum: number, m: Module) => sum + m.credits, 0)} total credits
           </div>
         </div>
 
         <div className="space-y-6">
-          {years.map(year => {
-            const yearModules = db.modules.filter(m => m.semester === year);
+          {years.map((year: string) => {
+            const yearModules = db.modules.filter((m: Module) => m.semester === year);
             const yearAverage = calculateTermAverage(db.modules, year);
-            const yearCredits = yearModules.reduce((sum, m) => sum + m.credits, 0);
+            const yearCredits = yearModules.reduce((sum: number, m: Module) => sum + m.credits, 0);
 
             return (
               <div key={year} className="space-y-3">
@@ -1217,7 +1295,7 @@ const AcademicProgressPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  {yearModules.map(module => (
+                  {yearModules.map((module: Module) => (
                     <div 
                       key={module.id} 
                       className="flex items-center justify-between p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors"
@@ -1258,14 +1336,14 @@ const AcademicProgressPage = () => {
           <div className="text-sm text-[#EBEBF599] mb-2">Current Year Average</div>
           <div className="text-6xl font-mono font-bold text-[#30D158] mb-2">{currentYearAverage}%</div>
           <div className="text-xs text-[#EBEBF599]">
-            Term {currentYear} • {currentYearModules.reduce((sum, m) => sum + m.credits, 0)} credits
+            Term {currentYear} • {currentYearModules.reduce((sum: number, m: Module) => sum + m.credits, 0)} credits
           </div>
         </div>
 
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-white mb-4">Module Performance</h3>
           
-          {currentYearModules.map(module => {
+          {currentYearModules.map((module: Module) => {
             const targetDiff = module.currentGrade - module.targetGrade;
             const progressToTarget = Math.min((module.currentGrade / module.targetGrade) * 100, 100);
 
@@ -1350,107 +1428,52 @@ const AcademicPage = () => {
     );
   };
 
-  const renderPage = () => {
-  switch (store.currentPage) {
-    case 'dashboard': return <DashboardPage />;
-    case 'academic': return <AcademicPage />;
-    case 'academic-progress': return <AcademicProgressPage />;
-    case 'roadmap': return <RoadmapPage modules={modules} major="Physics" secondMajor="Mathematics" />;
-    case 'analytics': return <AnalyticsPage modules={db.modules} />;
-    case 'tasks':
-    
-      return (
-        <TasksPage
-          tasks={db.tasks}
-          modules={db.modules}
-          onAddTask={() => {
-            store.setEditingTask(null);
-            store.setShowModal('task');
-          }}
-          onEditTask={(task) => {
-            store.setEditingTask(task);
-            store.setShowModal('task');
-          }}
-          onDeleteTask={(id: string) => {
-            if (confirm('Are you sure you want to delete this task?')) {
-              db.deleteTask(id);
-            }
-          }}
-          onToggleComplete={async (id) => {
-            const task = db.tasks.find(t => t.id === id);
-            if (task) {
-              await db.saveTask({ ...task, completed: !task.completed });
-            }
-          }}
-          onSaveTask={db.saveTask}
-        />
-      );
-      case 'finances': 
-      return (
-        <FinancesPage
-          transactions={db.transactions}
-          onAddTransaction={() => {
-            store.setEditingTransaction(null);
-            store.setShowModal('transaction');
-          }}
-          onEditTransaction={(transaction) => {
-            store.setEditingTransaction(transaction);
-            store.setShowModal('transaction');
-          }}
-          onDeleteTransaction={(id: string) => {
-            if (confirm('Are you sure you want to delete this transaction?')) {
-              db.deleteTransaction(id);
-            }
-          }}
-        />
-      );
-    case 'settings': return <SettingsPage />;
-    default: return <DashboardPage />;
-  }
-};
-
-return (
-  <div className="min-h-screen bg-black text-white font-sans">
-    <div 
-      className={`fixed left-0 top-0 h-full bg-[#0A0A0A] border-r border-[#38383A] transition-all duration-300 z-50 ${
-        store.sidebarExpanded ? 'w-60' : 'w-16'
-      } ${isMobile && !store.sidebarExpanded ? '-translate-x-full' : ''}`}
-    >
-      <div className="p-4 border-b border-[#38383A]">
-        <div className="text-xl font-bold text-white">{store.sidebarExpanded ? 'UniLife' : 'UL'}</div>
+  return (
+  <div className="min-h-screen bg-black text-white font-sans safe-area-top">
+    {/* Desktop Sidebar - Hidden on iPhone */}
+    {!isMobile && (
+      <div 
+        className={`fixed left-0 top-0 h-full bg-[#0A0A0A] border-r border-[#38383A] transition-all duration-300 z-50 ${
+          store.sidebarExpanded ? 'w-60' : 'w-16'
+        }`}
+      >
+        <div className="p-4 border-b border-[#38383A]">
+          <div className="text-xl font-bold text-white">{store.sidebarExpanded ? 'UniLife' : 'UL'}</div>
+        </div>
+        <nav className="p-2 flex-1 overflow-y-auto">
+          {navigation.map(item => {
+            const Icon = item.icon;
+            const isActive = store.currentPage === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => store.setCurrentPage(item.id)}
+                data-testid={`nav-${item.id}`}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg mb-1 transition-all ${
+                  isActive 
+                    ? 'bg-[#0A84FF]/10 text-[#0A84FF] border-l-4 border-[#0A84FF]' 
+                    : 'text-[#EBEBF599] hover:bg-[#141414] hover:text-white'
+                }`}
+              >
+                <Icon size={20} className="shrink-0" />
+                {store.sidebarExpanded && <span className="text-sm font-medium truncate">{item.label}</span>}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="p-4 border-t border-[#38383A]">
+          <button
+            onClick={() => store.setSidebarExpanded(!store.sidebarExpanded)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[#EBEBF599] hover:bg-[#141414] hover:text-white"
+          >
+            {store.sidebarExpanded ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
-      <nav className="p-2 flex-1 overflow-y-auto">
-        {navigation.map(item => {
-          const Icon = item.icon;
-          const isActive = store.currentPage === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => store.setCurrentPage(item.id)}
-              data-testid={`nav-${item.id}`}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg mb-1 transition-all ${
-                isActive 
-                  ? 'bg-[#0A84FF]/10 text-[#0A84FF] border-l-4 border-[#0A84FF]' 
-                  : 'text-[#EBEBF599] hover:bg-[#141414] hover:text-white'
-              }`}
-            >
-              <Icon size={20} className="shrink-0" />
-              {store.sidebarExpanded && <span className="text-sm font-medium truncate">{item.label}</span>}
-            </button>
-          );
-        })}
-      </nav>
-      <div className="p-4 border-t border-[#38383A]">
-        <button
-          onClick={() => store.setSidebarExpanded(!store.sidebarExpanded)}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[#EBEBF599] hover:bg-[#141414] hover:text-white"
-        >
-          {store.sidebarExpanded ? <X size={20} /> : <Menu size={20} />}
-        </button>
-      </div>
-    </div>
+    )}
 
-    {!store.sidebarExpanded && (
+    {/* Desktop Menu Button - Hidden on iPhone */}
+    {!isMobile && !store.sidebarExpanded && (
       <button
         onClick={() => store.setSidebarExpanded(true)}
         className="fixed top-4 left-4 z-50 p-3 bg-[#141414] border border-[#38383A] rounded-lg hover:bg-[#1C1C1C] hover:border-[#0A84FF] transition-colors shadow-lg"
@@ -1459,13 +1482,82 @@ return (
       </button>
     )}
 
-    {isMobile && store.sidebarExpanded && (
-      <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => store.setSidebarExpanded(false)} />
+    {/* iPhone Bottom Navigation */}
+    {isMobile && (
+      <>
+        <div className={`pb-20 safe-area-bottom ${store.sidebarExpanded ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div className="max-w-[428px] mx-auto p-4 scroll-container">
+            {renderPage()}
+          </div>
+        </div>
+
+        {/* Bottom Tab Bar */}
+        <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-[#38383A] bottom-nav-safe-area z-50">
+          <div className="max-w-[428px] mx-auto">
+            <div className="flex justify-around items-center py-2 safe-area-bottom">
+              {navigation.slice(0, 5).map(item => {
+                const Icon = item.icon;
+                const isActive = store.currentPage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      store.setCurrentPage(item.id);
+                      // Enhanced haptic feedback for iPhone
+                      if (iPhoneInteractions.supportsHaptic()) {
+                        iPhoneInteractions.haptic('selection');
+                      }
+                    }}
+                    onTouchStart={(e) => {
+                      // Add touch feedback
+                      const target = e.currentTarget as HTMLElement;
+                      iPhoneInteractions.touchFeedback(target, 'light');
+                    }}
+                    data-testid={`nav-${item.id}`}
+                    className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all no-select haptic-feedback ${
+                      isActive 
+                        ? 'text-[#0A84FF]' 
+                        : 'text-[#EBEBF599] hover:text-white'
+                    }`}
+                  >
+                    <Icon size={22} className="mb-1" />
+                    <span className="text-xs font-medium leading-tight">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            
+            {/* More Options Button */}
+            <div className="flex justify-center pb-2">
+              <button
+                onClick={() => {
+                  // Show more options modal or navigate to settings
+                  store.setCurrentPage('settings');
+                  if (iPhoneInteractions.supportsHaptic()) {
+                    iPhoneInteractions.haptic('medium');
+                  }
+                }}
+                onTouchStart={(e) => {
+                  const target = e.currentTarget as HTMLElement;
+                  iPhoneInteractions.touchFeedback(target, 'light');
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#EBEBF599] hover:text-white transition-all no-select haptic-feedback"
+              >
+                <Settings size={20} />
+                <span className="text-sm">More</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
     )}
 
-    <div className={`transition-all duration-300 ${store.sidebarExpanded ? 'ml-60' : 'ml-16'} ${isMobile ? 'ml-0' : ''}`}>
-      <div className="max-w-[1440px] mx-auto p-6 md:p-12">{renderPage()}</div>
-    </div>
+    {/* Desktop Content Area */}
+    {!isMobile && (
+      <div className={`transition-all duration-300 ${store.sidebarExpanded ? 'ml-60' : 'ml-16'}`}>
+        <div className="max-w-[1440px] mx-auto p-6 md:p-12">{renderPage()}</div>
+      </div>
+    )}
 
     <Modal 
       isOpen={store.showModal === 'module'} 
@@ -1533,3 +1625,4 @@ return (
 );
 };
 export default UniLife;
+

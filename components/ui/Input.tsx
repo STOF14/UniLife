@@ -15,7 +15,8 @@ export const Input = ({
   inputMode,
   error,
   className,
-  'data-testid': testId
+  'data-testid': testId,
+  disabled
 }: InputProps) => (
   <div className={cn('space-y-1', className)}>
     <label className="block text-sm font-medium text-white">

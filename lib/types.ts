@@ -160,3 +160,6 @@ export interface ClassSchedule {
 }
 
 export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'roadmap' | 'tasks' | 'finances' | 'analytics' | 'settings';
+
+// Export Button component for easy importing
+export { Button } from '@/components/ui/Button';

@@ -1,0 +1,389 @@
+# GitHub Actions Workflow: UP_Scraper CI/CD Integration
+# Automated curriculum updates with safe deployment
+
+name: UP_Scraper Integration
+
+on:
+  schedule:
+    # Run monthly on the 1st at 2 AM UTC
+    - cron: '0 2 1 * *'
+  workflow_dispatch:
+    inputs:
+      force_run:
+        description: 'Force run regardless of schedule'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '18'
+  SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+jobs:
+  validate-scraper:
+    runs-on: ubuntu-latest
+    outputs:
+      scraper_status: ${{ steps.check_scraper.outputs.status }}
+      curriculum_changes: ${{ steps.check_changes.outputs.changes_found }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          cd lib/ingestion/up
+          npm install
+          
+      - name: Validate scraper configuration
+        id: check_scraper
+        run: |
+          echo "🔍 Validating UP_Scraper configuration..."
+          
+          # Check if scraper is accessible
+          if curl -f -s "https://www.up.ac.za/academic" > /dev/null; then
+            echo "status=running" >> $GITHUB_OUTPUT
+            echo "✅ UP_Scraper accessible"
+          else
+            echo "status=error" >> $GITHUB_OUTPUT
+            echo "❌ UP_Scraper not accessible"
+            exit 1
+          fi
+          
+      - name: Check for curriculum changes
+        id: check_changes
+        run: |
+          echo "🔍 Checking for curriculum changes..."
+          
+          # Get last successful ingestion date
+          LAST_INGESTION=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"SELECT MAX(created_at) FROM academic_events WHERE event_type = '\''ingestion_completed'\''"}' \
+            "${{ env.SUPABASE_URL }}/rest/v1/rpc/" | jq -r '.[0].max // "1970-01-01"')
+          
+          # Check if new curriculum data is available
+          if node lib/ingestion/up/test-scraper.js; then
+            echo "changes_found=true" >> $GITHUB_OUTPUT
+            echo "✅ New curriculum changes detected"
+          else
+            echo "changes_found=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  No curriculum changes detected"
+          fi
+
+  dry-run-ingestion:
+    needs: validate-scraper
+    if: needs.validate-scraper.outputs.scraper_status == 'running' && (needs.validate-scraper.outputs.curriculum_changes == 'true' || github.event.inputs.force_run == 'true')
+    runs-on: ubuntu-latest
+    outputs:
+      dry_run_status: ${{ steps.dry_run.outputs.status }}
+      modules_count: ${{ steps.dry_run.outputs.modules_count }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          cd lib/ingestion/up
+          npm install
+          
+      - name: Run dry-run ingestion
+        id: dry_run
+        run: |
+          echo "🧪 Running dry-run ingestion..."
+          
+          # Run ingestion with dry-run flag
+          cd lib/ingestion/up
+          node pipeline.js --dry-run > ../dry-run-results.json
+          
+          # Check dry-run results
+          if [ -f "../dry-run-results.json" ]; then
+            MODULES_COUNT=$(cat ../dry-run-results.json | jq '.stats?.curriculumItems // 0')
+            echo "modules_count=$MODULES_COUNT" >> $GITHUB_OUTPUT
+            
+            if [ "$MODULES_COUNT" -gt 0 ]; then
+              echo "status=success" >> $GITHUB_OUTPUT
+              echo "✅ Dry-run successful: $MODULES_COUNT curriculum items found"
+            else
+              echo "status=no_data" >> $GITHUB_OUTPUT
+              echo "ℹ️  Dry-run: No new curriculum data"
+            fi
+          else
+            echo "status=error" >> $GITHUB_OUTPUT
+            echo "❌ Dry-run failed"
+            exit 1
+          fi
+          
+      - name: Upload dry-run results
+        uses: actions/upload-artifact@v4
+        if: steps.dry_run.outputs.status == 'success'
+        with:
+          name: dry-run-results
+          path: lib/ingestion/up/dry-run-results.json
+          retention-days: 30
+
+  safety-check:
+    needs: [validate-scraper, dry-run-ingestion]
+    if: needs.dry-run-ingestion.outputs.dry_run_status == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      safety_status: ${{ steps.safety.outputs.status }}
+      warnings: ${{ steps.safety.outputs.warnings }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          cd lib/ingestion/up
+          npm install
+          
+      - name: Run safety checks
+        id: safety
+        run: |
+          echo "🛡️  Running safety checks..."
+          
+          # Check for active student bindings
+          ACTIVE_BINDINGS=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"SELECT COUNT(*) FROM student_profiles WHERE status = '\''active'\''"}' \
+            "${{ env.SUPABASE_URL }}/rest/v1/rpc/" | jq -r '.[0].count // 0')
+          
+          # Check for ongoing migrations
+          ONGOING_MIGRATIONS=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"SELECT COUNT(*) FROM academic_events WHERE event_type = '\''migration_started'\'' AND created_at > NOW() - INTERVAL '\''1 hour'\''"}' \
+            "${{ env.SUPABASE_URL }}/rest/v1/rpc/" | jq -r '.[0].count // 0')
+          
+          WARNINGS=0
+          
+          if [ "$ACTIVE_BINDINGS" -gt 0 ] && [ "$ONGOING_MIGRATIONS" -gt 0 ]; then
+            echo "⚠️  Warning: Active students detected during migration window"
+            WARNINGS=$((WARNINGS + 1))
+          fi
+          
+          # Check for recent curriculum changes
+          RECENT_CHANGES=$(cat lib/ingestion/up/dry-run-results.json | jq '.stats?.curriculumItems // 0')
+          if [ "$RECENT_CHANGES" -gt 100 ]; then
+            echo "⚠️  Warning: Large curriculum change detected ($RECENT_CHANGES items)"
+            WARNINGS=$((WARNINGS + 1))
+          fi
+          
+          echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
+          
+          if [ "$WARNINGS" -eq 0 ]; then
+            echo "status=safe" >> $GITHUB_OUTPUT
+            echo "✅ Safety checks passed"
+          elif [ "$WARNINGS" -le 2 ]; then
+            echo "status=warning" >> $GITHUB_OUTPUT
+            echo "⚠️  Minor warnings detected"
+          else
+            echo "status=unsafe" >> $GITHUB_OUTPUT
+            echo "❌ Safety checks failed - Too many warnings"
+            exit 1
+          fi
+
+  production-ingestion:
+    needs: [validate-scraper, dry-run-ingestion, safety-check]
+    if: needs.safety-check.outputs.safety_status == 'safe' || needs.safety-check.outputs.safety_status == 'warning'
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      ingestion_status: ${{ steps.ingest.outputs.status }}
+      curriculum_version: ${{ steps.ingest.outputs.version_id }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          cd lib/ingestion/up
+          npm install
+          
+      - name: Create backup before ingestion
+        run: |
+          echo "💾 Creating backup before production ingestion..."
+          
+          # Create timestamped backup
+          BACKUP_NAME="pre-ingestion-$(date +%Y%m%d-%H%M%S)"
+          
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"CREATE TABLE IF NOT EXISTS curriculum_backup_${BACKUP_NAME} AS TABLE curriculum_versions; CREATE TABLE IF NOT EXISTS degrees_backup_${BACKUP_NAME} AS TABLE degrees_catalog; CREATE TABLE IF NOT EXISTS modules_backup_${BACKUP_NAME} AS TABLE modules_catalog;\"}" \
+            "${{ env.SUPABASE_URL }}/rest/v1/rpc/"
+          
+          echo "✅ Backup created: ${BACKUP_NAME}"
+          echo "backup_name=${BACKUP_NAME}" >> $GITHUB_ENV
+          
+      - name: Run production ingestion
+        id: ingest
+        run: |
+          echo "🚀 Running production ingestion..."
+          
+          # Run full ingestion pipeline
+          cd lib/ingestion/up
+          node pipeline.js --production
+          
+          # Get results
+          if [ -f "ingestion-results.json" ]; then
+            VERSION_ID=$(cat ingestion-results.json | jq -r '.curriculumVersionId // "unknown"')
+            echo "version_id=$VERSION_ID" >> $GITHUB_OUTPUT
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ Production ingestion successful"
+          else
+            echo "status=error" >> $GITHUB_OUTPUT
+            echo "❌ Production ingestion failed"
+            exit 1
+          fi
+          
+      - name: Verify ingestion
+        run: |
+          echo "🔍 Verifying ingestion results..."
+          
+          # Verify new curriculum version was created
+          if [ -n "${{ needs.production-ingestion.outputs.curriculum_version }}" ]; then
+            echo "✅ Curriculum version created: ${{ needs.production-ingestion.outputs.curriculum_version }}"
+          else
+            echo "❌ No curriculum version created"
+            exit 1
+          fi
+          
+          # Verify data integrity
+          INTEGRITY_CHECK=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"SELECT COUNT(*) FROM degree_modules WHERE curriculum_version_id = '\''${{ needs.production-ingestion.outputs.curriculum_version }}'\''"}' \
+            "${{ env.SUPABASE_URL }}/rest/v1/rpc/" | jq -r '.[0].count // 0')
+          
+          if [ "$INTEGRITY_CHECK" -gt 0 ]; then
+            echo "✅ Data integrity verified: $INTEGRITY_CHECK curriculum items"
+          else
+            echo "❌ Data integrity check failed"
+            exit 1
+          fi
+          
+      - name: Notify on success
+        if: steps.ingest.outputs.status == 'success'
+        run: |
+          echo "📢 Sending success notification..."
+          
+          # Send Slack/Teams notification (example)
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": "🎉 UP_Scraper ingestion completed successfully!\nCurriculum Version: ${{ needs.production-ingestion.outputs.curriculum_version }}\nTimestamp: '$(date)'",
+              "channel": "#academic-updates"
+            }' \
+            "${{ secrets.SLACK_WEBHOOK_URL }}" || echo "Slack notification failed"
+            
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "📢 Sending failure notification..."
+          
+          # Send alert notification
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": "🚨 UP_Scraper ingestion FAILED!\nTimestamp: '\''$(date)'\''\nBackup: ${{ env.backup_name }}",
+              "channel": "#alerts"
+            }' \
+            "${{ secrets.SLACK_WEBHOOK_URL }}" || echo "Alert notification failed"
+
+  rollback-on-failure:
+    needs: production-ingestion
+    if: failure() && needs.production-ingestion.outputs.ingestion_status == 'error'
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Rollback ingestion
+        run: |
+          echo "🔄 Rolling back failed ingestion..."
+          
+          # Restore from backup
+          if [ -n "${{ needs.production-ingestion.outputs.backup_name }}" ]; then
+            curl -s -X POST \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\":\"DROP TABLE IF EXISTS curriculum_versions; CREATE TABLE curriculum_versions AS TABLE curriculum_backup_${{ needs.production-ingestion.outputs.backup_name }}; DROP TABLE IF EXISTS degrees_catalog; CREATE TABLE degrees_catalog AS TABLE degrees_backup_${{ needs.production-ingestion.outputs.backup_name }}; DROP TABLE IF EXISTS modules_catalog; CREATE TABLE modules_catalog AS TABLE modules_backup_${{ needs.production-ingestion.outputs.backup_name }};\"}" \
+              "${{ env.SUPABASE_URL }}/rest/v1/rpc/"
+            
+            echo "✅ Rollback completed from backup: ${{ needs.production-ingestion.outputs.backup_name }}"
+          else
+            echo "❌ No backup available for rollback"
+            exit 1
+          fi
+          
+      - name: Notify rollback
+        run: |
+          echo "📢 Sending rollback notification..."
+          
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": "🔄 UP_Scraper ingestion rolled back!\nBackup: ${{ needs.production-ingestion.outputs.backup_name }}\nTimestamp: '\''$(date)'\''",
+              "channel": "#alerts"
+            }' \
+            "${{ secrets.SLACK_WEBHOOK_URL }}" || echo "Rollback notification failed"
+
+  cleanup:
+    needs: [production-ingestion, rollback-on-failure]
+    if: always() && (needs.production-ingestion.result == 'success' || needs.rollback-on-failure.result == 'success')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Cleanup old backups
+        run: |
+          echo "🧹 Cleaning up old backups..."
+          
+          # Keep only last 5 backups
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "query": "SELECT table_name FROM information_schema.tables WHERE table_schema = '\''public'\'' AND table_name LIKE '\''%_backup%'\'' ORDER BY table_name DESC OFFSET 5"
+            }' \
+            "${{ env.SUPABASE_URL }}/rest/v1/rpc/" | jq -r '.[].table_name' | while read table; do
+              curl -s -X POST \
+                -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+                -H "Content-Type: application/json" \
+                -d "{\"query\":\"DROP TABLE IF EXISTS ${table};\"}" \
+                "${{ env.SUPABASE_URL }}/rest/v1/rpc/"
+            done
+          
+          echo "✅ Old backups cleaned up"
