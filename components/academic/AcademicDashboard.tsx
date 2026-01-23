@@ -1,16 +1,14 @@
 // components/academic/AcademicDashboard.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Module, Assessment } from '@/lib/types';
+import { useState } from 'react';
+import { Module } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Progress } from '@/components/ui/Progress';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { ModuleForm } from '@/components/academic/ModuleForm';
 import { 
-  BookOpen, 
   TrendingUp, 
   Plus,
   Edit,
@@ -19,8 +17,6 @@ import {
   BarChart3,
   Clock,
   CheckCircle,
-  XCircle,
-  Calendar,
   Award,
   Upload
 } from 'lucide-react';

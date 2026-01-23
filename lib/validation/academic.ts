@@ -198,12 +198,12 @@ export class AcademicValidator {
     }
 
     // Validate each module
-    for (const module of modules) {
-      if (!module.moduleCode) {
+    for (const currModule of modules) {
+      if (!currModule.moduleCode) {
         return { valid: false, error: 'All modules must have a module code' };
       }
 
-      const codeValidation = this.validateModuleCode(module.moduleCode);
+      const codeValidation = this.validateModuleCode(currModule.moduleCode);
       if (!codeValidation.valid) {
         return codeValidation;
       }

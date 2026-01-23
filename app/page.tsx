@@ -1,47 +1,28 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import { Suspense } from 'react'
 import React, { useState, useEffect } from 'react';
 import { 
   Calendar, 
-  BookOpen, 
   TrendingUp, 
   Target as TargetIcon,
   CheckSquare, 
   DollarSign, 
   Settings,
   Plus,
-  Edit,
-  Trash2,
   Upload,
   X,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  User,
-  Bell,
-  Search,
-  Filter,
-  BarChart3,
-  PieChart,
-  Activity,
-  Users,
-  Clock,
-  AlertCircle,
   FileText,
   Download,
-  RefreshCw,
   Menu
 } from 'lucide-react';
 import { useDatabase } from '@/hooks/useDatabase';
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import { AnalyticsPage } from '@/components/pages/AnalyticsPage';
 import { iPhoneInteractions } from '@/lib/utils/iphoneInteractions';
 
-
 // Types
-import type { Module, Task, Transaction, PageType, Assessment, ButtonProps, InputProps, SelectProps, ProgressRingProps, ProgressBarProps, ModalProps } from '@/lib/types';
+import type { Module, Task, Transaction, PageType } from '@/lib/types';
 
 // Hooks
 import { useStore } from '@/hooks/useStore';
@@ -54,7 +35,6 @@ import { ProgressRing } from '@/components/ui/ProgressRing';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Modal } from '@/components/ui/Modal';
 
-import { ModuleList } from '@/components/academic/ModuleList';
 import { ModuleForm as AcademicModuleForm } from '@/components/academic/ModuleForm';
 import { AcademicDashboard } from '@/components/academic/AcademicDashboard';
 import { YearbookImport } from '@/components/academic/YearbookImport';
@@ -71,9 +51,7 @@ import { calculateCWA, calculateTermAverage } from '@/lib/utils/calculations';
 import { parseYearbookPDF, mapModulesToSemesters, type ExtractedModule } from '@/lib/utils/pdfParser';
 
 import { useRouter } from 'next/navigation'; 
-import { createClient } from '@supabase/supabase-js'; 
-
-import { Analytics } from "@vercel/analytics/next"
+import { createClient } from '@supabase/supabase-js';
 
 
 // Initialize Supabase (Client Side)
@@ -90,7 +68,6 @@ const UniLife = () => {
   const db = useDatabase();
   const [isMobile, setIsMobile] = useState(false);
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
-  const [currentPage, setCurrentPage] = useState<PageType | 'analytics'>('dashboard');
   
   // Academic state - Move ALL hooks here, before any conditional logic
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
@@ -120,8 +97,8 @@ const UniLife = () => {
   const handleYearbookImport = async (importedModules: Module[]) => {
     try {
       // Create each imported module
-      for (const module of importedModules) {
-        await createModule(module);
+      for (const moduleData of importedModules) {
+        await createModule(moduleData);
       }
       setIsYearbookImportOpen(false);
     } catch (error) {

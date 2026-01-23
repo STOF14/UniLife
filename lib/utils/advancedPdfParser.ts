@@ -326,9 +326,9 @@ function extractAllModules(text: string, curriculumStructure: CurriculumYear[]):
     const moduleSection = text.substring(startPos, endPos);
     
     // Parse module details
-    const module = parseModuleSection(code, fullName, moduleSection, curriculumStructure);
-    if (module) {
-      modules.push(module);
+    const moduleData = parseModuleSection(code, fullName, moduleSection, curriculumStructure);
+    if (moduleData) {
+      modules.push(moduleData);
     }
   }
   

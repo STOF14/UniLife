@@ -1,5 +1,5 @@
 // lib/utils/academicCalculations.ts
-import { Module, Assessment } from '@/lib/types';
+import { Module } from '@/lib/types';
 
 export function calculateCurrentGrade(module: Module): number {
   if (!module.assessments?.length) return 0;
