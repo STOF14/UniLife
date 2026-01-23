@@ -46,6 +46,7 @@ export type InputProps = {
   inputMode?: 'text' | 'search' | 'email' | 'tel' | 'url' | 'none' | 'numeric' | 'decimal';
   error?: string;
   className?: string;
+  disabled?: boolean;
   'data-testid'?: string;
 };
 

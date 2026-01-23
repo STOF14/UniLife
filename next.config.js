@@ -1,15 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable type checking during build (we'll handle separately)
+  // TypeScript type checking enabled
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
-  // Disable ESLint during build
+  // ESLint checking enabled
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // Webpack configuration to handle cache warnings
   webpack: (config, { isServer }) => {

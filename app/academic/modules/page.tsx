@@ -1,8 +1,7 @@
 // app/academic/modules/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useAcademic } from '@/hooks/useAcademic';
 import { ModuleList } from '@/components/academic/ModuleList';
 import { ModuleForm } from '@/components/academic/ModuleForm';
@@ -13,13 +12,12 @@ import { useDatabase } from '@/hooks/useDatabase';
 import { Module } from '@/lib/types';
 
 export default function ModulesPage() {
-  const router = useRouter();
   const { modules, loading: dbLoading, error: dbError } = useDatabase() as { 
   modules: Module[]; 
   loading: boolean; 
   error: Error | null 
 };
-  const { createModule, isLoading, error } = useAcademic();
+  const { createModule, isLoading } = useAcademic();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleCreateModule = async (data: any) => {

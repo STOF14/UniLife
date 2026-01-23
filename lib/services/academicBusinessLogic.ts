@@ -39,6 +39,18 @@ export interface CurriculumProgress {
   estimatedCompletion: string;
 }
 
+export interface CurriculumModule {
+  id: string;
+  curriculum_version_id: string;
+  module_code: string;
+  year_level: number;
+  semester?: string;
+  is_compulsory: boolean;
+  module_type: string;
+  credits_override?: number;
+  created_at: string;
+}
+
 export class AcademicBusinessLogic {
   // Calculate student's overall academic progress
   static async calculateAcademicProgress(studentProfileId: string): Promise<AcademicProgress> {
@@ -201,19 +213,9 @@ export class AcademicBusinessLogic {
         throw new Error(`Failed to fetch curriculum: ${curriculumError.message}`);
       }
 
-      // Get curriculum modules for the degree
-      const { data: curriculumModulesForDegree, error: curriculumErrorForDegree } = await supabase
-        .from('degree_modules')
-        .select('*')
-        .eq('curriculum_version_id', curriculumVersionId);
-
-      if (curriculumErrorForDegree) {
-        throw new Error(`Failed to check curriculum: ${curriculumErrorForDegree.message}`);
-      }
-
       // Group modules by year level
       const curriculumByYear: Record<number, CurriculumModule[]> = {};
-      for (const module of curriculumModulesForDegree || []) {
+      for (const module of curriculumModules || []) {
         const year = module.year_level || 1;
         if (!curriculumByYear[year]) {
           curriculumByYear[year] = [];
