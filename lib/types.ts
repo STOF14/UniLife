@@ -119,10 +119,13 @@ export interface Module extends BaseEntity {
   name: string;
   credits: number;
   semester: string;
+  year?: number; // Academic year (1, 2, 3, 4)
   currentGrade: number;
   targetGrade: number;
   progress: number;
   assessments: Assessment[];
+  completed?: boolean; // Whether the module is completed
+  completedAssessments?: number; // Number of completed assessments
   prerequisites?: string[];
   corequisites?: string[];
   description?: string;
@@ -160,7 +163,7 @@ export interface ClassSchedule {
   exceptions?: string[]; // Dates when class doesn't occur
 }
 
-export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'roadmap' | 'tasks' | 'finances' | 'analytics' | 'settings';
+export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'timetable' | 'roadmap' | 'tasks' | 'finances' | 'analytics' | 'settings';
 
 // Export Button component for easy importing
 export { Button } from '@/components/ui/Button';

@@ -136,6 +136,21 @@ export const TasksPage = ({
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   
   const TASKS_PER_PAGE = 20;
+    const currentYear = new Date().getFullYear();
+
+    const isPastYearModule = (module: Module) => {
+        const match = module.semester?.match(/\b20\d{2}\b/);
+        if (!match) return false;
+        return parseInt(match[0], 10) < currentYear;
+    };
+
+    const activeModules = modules.filter(
+        (m) => !(m.completed || m.currentGrade >= 100) && !isPastYearModule(m)
+    );
+    const activeModuleCodes = new Set(activeModules.map((m) => m.code));
+    const completedModulesCount = modules.filter(
+        (m) => (m.completed || m.currentGrade >= 100) || isPastYearModule(m)
+    ).length;
 
   const colorOptions = [
     { value: 'blue', class: 'border-blue-500/30 text-blue-400 bg-blue-500/10' },
@@ -161,12 +176,13 @@ export const TasksPage = ({
     setCurrentPage(1);
   }, [selectedModuleFilter, searchQuery, sortBy, activeTab]);
 
-  // Stats calculation
-  const stats = useMemo(() => ({
-    total: tasks.length,
-    completed: tasks.filter(t => t.completed).length,
-    pending: tasks.filter(t => !t.completed).length
-  }), [tasks]);
+    // Stats calculation (active modules only)
+    const activeTasks = tasks.filter((t) => activeModuleCodes.has(t.moduleCode));
+    const stats = useMemo(() => ({
+        total: activeTasks.length,
+        completed: activeTasks.filter(t => t.completed).length,
+        pending: activeTasks.filter(t => !t.completed).length
+    }), [activeTasks]);
 
   // Filtering and sorting
   const sortTasks = (tasksToSort: Task[]) => {
@@ -190,10 +206,10 @@ export const TasksPage = ({
     }
   };
 
-  const filteredTasks = useMemo(() => {
-    let filtered = selectedModuleFilter === 'all'
-      ? tasks
-      : tasks.filter(task => task.moduleCode === selectedModuleFilter);
+    const filteredTasks = useMemo(() => {
+        let filtered = selectedModuleFilter === 'all'
+            ? activeTasks
+            : activeTasks.filter(task => task.moduleCode === selectedModuleFilter);
 
     if (searchQuery) {
       filtered = filtered.filter(task => 
@@ -202,7 +218,7 @@ export const TasksPage = ({
     }
 
     return sortTasks(filtered);
-  }, [tasks, selectedModuleFilter, searchQuery, sortBy]);
+    }, [activeTasks, selectedModuleFilter, searchQuery, sortBy]);
 
 // --- TASK STATUS BREAKDOWN (FIX FOR TEST 7.1) ---
   const { upcomingTasks, completedTasks } = useMemo(() => {
@@ -238,8 +254,8 @@ export const TasksPage = ({
   const totalPages = Math.ceil(tasksToPage.length / TASKS_PER_PAGE); 
   
   // Module stats
-  const getModuleStats = (moduleCode: string) => {
-    const moduleTasks = tasks.filter(t => t.moduleCode === moduleCode);
+    const getModuleStats = (moduleCode: string) => {
+        const moduleTasks = activeTasks.filter(t => t.moduleCode === moduleCode);
     return {
       total: moduleTasks.length,
       completed: moduleTasks.filter(t => t.completed).length
@@ -261,12 +277,12 @@ export const TasksPage = ({
     }
   };
 
-  const getModuleColor = (moduleCode: string) => {
-    const module = modules.find(m => m.code === moduleCode);
-    // Use a simple hash to consistently map module codes to colors
-    const colorIndex = moduleCode.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colorOptions.length;
-    return colorOptions[colorIndex];
-  };
+    const getModuleColor = (moduleCode: string) => {
+        const module = modules.find(m => m.code === moduleCode);
+        // Use a simple hash to consistently map module codes to colors
+        const colorIndex = moduleCode.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colorOptions.length;
+        return colorOptions[colorIndex];
+    };
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] p-8">
@@ -277,6 +293,14 @@ export const TasksPage = ({
         </div>
 
         {/* Tab Navigation */}
+
+        {completedModulesCount > 0 && (
+          <div className="mb-6 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+            <p className="text-sm text-white">
+              ✓ {completedModulesCount} completed module{completedModulesCount !== 1 ? 's' : ''} hidden from view
+            </p>
+          </div>
+        )}
         <div className="flex gap-1 mb-8 border-b border-[#38383A]">
           <button
             onClick={() => setActiveTab('tasks')}
@@ -331,7 +355,7 @@ export const TasksPage = ({
                 >
                   All
                 </button>
-                {modules.map(mod => (
+                                {activeModules.map(mod => (
                   <button
                     key={mod.id}
                     onClick={() => setSelectedModuleFilter(mod.code)}
@@ -343,7 +367,7 @@ export const TasksPage = ({
                   >
                     {mod.code}
                   </button>
-                ))}
+                                ))}
               </div>
               
               <div className="flex gap-2 ml-auto">
@@ -397,7 +421,7 @@ export const TasksPage = ({
                             priority={priority}
                             editingTaskId={editingTaskId}
                             setEditingTaskId={setEditingTaskId}
-                            modules={modules}
+                            modules={activeModules}
                             updateTaskModule={updateTaskModule}
                             updateTaskPriority={updateTaskPriority}
                             onToggleComplete={onToggleComplete}
@@ -457,7 +481,7 @@ export const TasksPage = ({
                                     priority={priority}
                                     editingTaskId={editingTaskId}
                                     setEditingTaskId={setEditingTaskId}
-                                    modules={modules}
+                                    modules={activeModules}
                                     updateTaskModule={updateTaskModule}
                                     updateTaskPriority={updateTaskPriority}
                                     onToggleComplete={onToggleComplete}
@@ -475,12 +499,12 @@ export const TasksPage = ({
             {/* Modules Tab */}
             <div className="space-y-3">
               <h2 className="text-lg font-medium text-white mb-4">Your Modules</h2>
-              {modules.length === 0 ? (
+                {activeModules.length === 0 ? (
                 <div className="text-center py-16 text-[#EBEBF599]">
-                  <p className="text-sm">No modules yet. Add one in the Academic section!</p>
+                        <p className="text-sm">No active modules. Completed modules are in Analytics.</p>
                 </div>
-              ) : (
-                modules.map(mod => {
+                            ) : (
+                    activeModules.map(mod => {
                   const color = getModuleColor(mod.code);
                   const modStats = getModuleStats(mod.code);
                   

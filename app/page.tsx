@@ -46,20 +46,20 @@ import { useAcademic } from '@/hooks/useAcademic';
 import { TasksPage } from '@/components/pages/TasksPage';
 import { SettingsPage } from '@/components/pages/SettingsPage';
 import { FinancesPage } from '@/components/pages/FinancesPage';
+import { TimetablePage } from '@/components/pages/TimetablePage';
 
 // Utilities
 import { calculateCWA, calculateTermAverage } from '@/lib/utils/calculations';
 import { parseYearbookPDF, mapModulesToSemesters, type ExtractedModule } from '@/lib/utils/pdfParser';
 
 import { useRouter } from 'next/navigation'; 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase/supabase';
 
-
-// Initialize Supabase (Client Side)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Constants
+const MOBILE_WIDTH_THRESHOLD = 428;
+const MOBILE_HEIGHT_THRESHOLD = 800;
+const MAX_VISIBLE_TASKS_DASHBOARD = 5;
+const MAX_VISIBLE_MODULES_DASHBOARD = 3;
 
 const UniLife = () => {
   // ---  AUTH PROTECTION START ---
@@ -83,8 +83,10 @@ const UniLife = () => {
 
   // Load modules on component mount
   useEffect(() => {
-    fetchModules();
-  }, [fetchModules]);
+    fetchModules().catch(error => {
+      console.error('Failed to load modules:', error);
+    });
+  }, []); // Empty deps - fetchModules is stable from useAcademic hook
 
   const handleAddModule = async (moduleData: any) => {
     try {
@@ -92,6 +94,7 @@ const UniLife = () => {
       setIsModuleModalOpen(false);
     } catch (error) {
       console.error('Failed to add module:', error);
+      alert(`Failed to add module: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -109,9 +112,13 @@ const UniLife = () => {
 
   useEffect(() => {
     const checkMobile = () => {
-      const isIPhone = /iPhone/i.test(navigator.userAgent) || 
-                     (window.innerWidth <= 428 && window.innerHeight >= 800);
-      setIsMobile(isIPhone);
+      // Check for actual iPhone or mobile device
+      const isIPhone = /iPhone/i.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const isMobileDevice = isIPhone || isAndroid || 
+                            (window.innerWidth <= MOBILE_WIDTH_THRESHOLD && 
+                             'ontouchstart' in window); // Has touch capability
+      setIsMobile(prev => prev !== isMobileDevice ? isMobileDevice : prev);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -132,19 +139,29 @@ const UniLife = () => {
 
     const getTasksThisWeek = () => {
       const startOfWeek = new Date(today);
-      const endOfWeek = new Date(today);
-      endOfWeek.setDate(today.getDate() + 7);
+      startOfWeek.setHours(0, 0, 0, 0); // Start of today
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7);
+      endOfWeek.setHours(23, 59, 59, 999); // End of week
       
-      return db.tasks.filter(task => {
+      return (db.tasks || []).filter(task => {
+        if (!task.dueDate) return false;
         const taskDate = new Date(task.dueDate);
         return taskDate >= startOfWeek && taskDate <= endOfWeek && !task.completed;
       }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     };
 
     const thisWeekTasks = getTasksThisWeek();
+    const currentYear = new Date().getFullYear();
+    const activeModules = (modules || []).filter(m => {
+      const isCompleted = m.completed || m.currentGrade >= 100;
+      const yearMatch = m.semester?.match(/\b20\d{2}\b/);
+      const isPastYear = yearMatch ? parseInt(yearMatch[0], 10) < currentYear : false;
+      return !isCompleted && !isPastYear;
+    });
 
     return (
-      <div className="space-y-4 max-w-[428px] mx-auto">
+      <div className="space-y-4">
         {/* Mobile Header */}
         <div className="flex items-center justify-between px-2 pt-2">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
@@ -160,7 +177,7 @@ const UniLife = () => {
               <BookOpen size={16} className="text-[#0A84FF]" />
               <span className="text-xs text-[#EBEBF599]">Modules</span>
             </div>
-            <div className="text-2xl font-bold text-white">{modules.length}</div>
+            <div className="text-2xl font-bold text-white">{activeModules.length}</div>
           </div>
           <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -260,7 +277,7 @@ const UniLife = () => {
           </div>
           <div className="space-y-2 max-h-[250px] overflow-y-auto scroll-container">
             {thisWeekTasks.length > 0 ? (
-              thisWeekTasks.slice(0, 5).map(task => (
+              thisWeekTasks.slice(0, MAX_VISIBLE_TASKS_DASHBOARD).map(task => (
                 <div key={task.id} className="flex items-start gap-3 p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors">
                   <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
                     task.priority === 'high' ? 'bg-[#FF453A]' : 
@@ -281,7 +298,7 @@ const UniLife = () => {
               </div>
             )}
           </div>
-          {thisWeekTasks.length > 5 && (
+          {thisWeekTasks.length > MAX_VISIBLE_TASKS_DASHBOARD && (
             <button 
               onClick={() => store.setCurrentPage('tasks')}
               className="w-full mt-3 py-2 text-sm text-[#0A84FF] hover:text-[#409CFF] transition-colors"
@@ -315,9 +332,9 @@ const UniLife = () => {
               <div className="text-center py-6">
                 <div className="text-red-500 text-sm">Error loading modules: {modulesError}</div>
               </div>
-            ) : modules.length > 0 ? (
+            ) : activeModules.length > 0 ? (
               <div className="space-y-2">
-                {modules.slice(0, 3).map(module => (
+                {activeModules.slice(0, MAX_VISIBLE_MODULES_DASHBOARD).map(module => (
                   <div key={module.id} className="flex items-center gap-3 p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0A84FF] to-[#409CFF] flex items-center justify-center">
                       <span className="text-xs font-bold text-white">{module.code.substring(0, 2)}</span>
@@ -329,7 +346,7 @@ const UniLife = () => {
                     <div className="text-xs text-[#EBEBF599]">{module.credits}cr</div>
                   </div>
                 ))}
-                {modules.length > 3 && (
+                {activeModules.length > MAX_VISIBLE_MODULES_DASHBOARD && (
                   <button 
                     onClick={() => store.setCurrentPage('academic')}
                     className="w-full py-2 text-sm text-[#0A84FF] hover:text-[#409CFF] transition-colors"
@@ -359,23 +376,29 @@ const UniLife = () => {
     );
   };
 
+  // Auth state listener with session refresh
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          // No user found, redirect to login
-          router.push('/login');
-        } else {
-          // User exists, allow access
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
         router.push('/login');
+      } else {
+        setIsLoading(false);
       }
+    });
+
+    // Listen for auth changes (logout, token refresh, etc)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.push('/login');
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
     };
-    checkUser();
   }, [router]);
 
   if (isLoading) {
@@ -393,8 +416,9 @@ const UniLife = () => {
   { id: 'dashboard' as PageType, icon: Calendar, label: 'Dashboard' },
   { id: 'academic' as PageType, icon: BookOpen, label: 'Academic' },
   { id: 'academic-progress' as PageType, icon: TrendingUp, label: 'Progress' },
+  { id: 'timetable' as PageType, icon: FileText, label: 'Timetable' },
+  { id: 'analytics' as PageType, icon: TargetIcon, label: 'Analytics' },
   { id: 'roadmap' as PageType, icon: TargetIcon, label: 'Roadmap' },
-  { id: 'analytics' as PageType, icon: TargetIcon, label: 'Analytics' },  // ← ADD THIS LINE
   { id: 'tasks' as PageType, icon: CheckSquare, label: 'Tasks' },
   { id: 'finances' as PageType, icon: DollarSign, label: 'Finances' },
   { id: 'settings' as PageType, icon: Settings, label: 'Settings' },
@@ -407,6 +431,7 @@ const UniLife = () => {
       case 'academic-progress': return <AcademicProgressPage />;
       case 'roadmap': return <RoadmapPage modules={modules} major="Physics" secondMajor="Mathematics" />;
       case 'analytics': return <AnalyticsPage modules={db.modules} />;
+      case 'timetable': return <TimetablePage />;
       case 'tasks':
         
         return (
@@ -459,16 +484,20 @@ const UniLife = () => {
     }
   };
 
-  const cwa = calculateCWA(db.modules);
-  const term2024 = calculateTermAverage(db.modules, '2024');
-  const term2025 = calculateTermAverage(db.modules, '2025');
+  // Calculate on each render (simpler, no hook issues)
+  const cwa = calculateCWA(db.modules || []);
+  const term2024 = calculateTermAverage(db.modules || [], '2024');
+  const term2025 = calculateTermAverage(db.modules || [], '2025');
 
   const getThisWeekTasks = (moduleCode: string) => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    nextWeek.setHours(23, 59, 59, 999);
     
-    return db.tasks.filter(task => 
+    return (db.tasks || []).filter(task => 
       task.moduleCode === moduleCode &&
+      task.dueDate &&
       new Date(task.dueDate) >= today &&
       new Date(task.dueDate) <= nextWeek &&
       !task.completed
@@ -488,7 +517,7 @@ const UniLife = () => {
 
   const getEventsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return db.tasks.filter(task => task.dueDate === dateStr);
+    return (db.tasks || []).filter(task => task.dueDate === dateStr);
   };
 
   const exportData = () => {
@@ -1049,12 +1078,17 @@ const YearbookUploadForm = () => {
   };
 
 const handleImport = async (extractedModules: Array<ExtractedModule & { semester: string }>) => {
+  setIsImporting(true);
   try {
     // Get the current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new Error('User not authenticated');
     }
+    
+    // Refresh modules list before checking duplicates
+    await fetchModules();
+    
     let successCount = 0;
     let skippedCount = 0;
     for (const mod of extractedModules) {
@@ -1065,13 +1099,13 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
 
         if (alreadyExists) {
           skippedCount++;
+          console.warn(`Skipped duplicate module: ${mod.code} (${mod.semester})`);
           continue;
         }
 
-        // Create new module
-        const tempId = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
+        // Create new module with proper UUID
         const module: Module = {
-        id: tempId,
+        id: crypto.randomUUID(),
         code: mod.code,
         name: mod.name,
         semester: mod.semester,
@@ -1088,10 +1122,15 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
       const success = await db.saveModule(module);
       if (success) successCount++;
     }
-    alert(`Successfully imported ${successCount} modules! ${skippedCount > 0 ? `${skippedCount} modules were skipped (already exist).` : ''}`);
+    console.log(`Import complete: ${successCount} imported, ${skippedCount} skipped`);
+    setIsYearbookImportOpen(false);
+    // Refresh modules after import
+    await fetchModules();
   } catch (error) {
-    console.error('Error importing modules:', error);
+    console.error('Failed to import modules:', error);
     alert('Failed to import modules. Please try again.');
+  } finally {
+    setIsImporting(false);
   }
 };
 
@@ -1236,14 +1275,14 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
 };
 
   const AcademicProgressPage = () => {
-    const currentYear = '2025';
-    const currentYearModules = db.modules.filter((m: Module) => m.semester === currentYear);
-    const currentYearAverage = calculateTermAverage(db.modules, currentYear);
-    const years = [...new Set(db.modules.map((m: Module) => m.semester))].sort() as string[];
-    const cwa = calculateCWA(db.modules);
+    const currentYear = new Date().getFullYear().toString();
+    const currentYearModules = (db.modules || []).filter((m: Module) => m.semester === currentYear);
+    const currentYearAverage = calculateTermAverage(db.modules || [], currentYear);
+    const years = [...new Set((db.modules || []).map((m: Module) => m.semester))].sort() as string[];
+    const cwa = calculateCWA(db.modules || []);
 
   return (
-    <div className="space-y-4 max-w-[428px] mx-auto">
+    <div className="space-y-4">
       <h1 className="text-2xl font-semibold text-white pt-2">Academic Progress</h1>
 
     <div className="grid grid-cols-1 gap-4">
@@ -1464,7 +1503,7 @@ const AcademicPage = () => {
     {isMobile && (
       <>
         <div className={`pb-20 safe-area-bottom ${store.sidebarExpanded ? 'opacity-50 pointer-events-none' : ''}`}>
-          <div className="max-w-[428px] mx-auto p-4 scroll-container">
+          <div className="p-4 scroll-container">
             {renderPage()}
           </div>
         </div>

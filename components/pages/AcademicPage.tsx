@@ -34,6 +34,20 @@ export const AcademicPage = ({
     );
   };
 
+  const currentYear = new Date().getFullYear();
+
+  // Filter out completed and past-year modules from active view
+  const activeModules = modules.filter(module => {
+    const isCompleted = module.completed || module.currentGrade >= 100;
+    const yearMatch = module.semester?.match(/\b20\d{2}\b/);
+    const isPastYear = yearMatch ? parseInt(yearMatch[0], 10) < currentYear : false;
+    return !isCompleted && !isPastYear;
+  });
+  
+  const completedModules = modules.filter(module => 
+    module.completed || module.currentGrade >= 100
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -43,8 +57,36 @@ export const AcademicPage = ({
         </Button>
       </div>
 
+      {completedModules.length > 0 && (
+        <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                <span className="text-xl">✓</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">
+                  {completedModules.length} module{completedModules.length !== 1 ? 's' : ''} completed
+                </p>
+                <p className="text-xs text-[#EBEBF599]">
+                  View in Analytics to see your achievements
+                </p>
+              </div>
+            </div>
+            <div className="text-2xl">🎉</div>
+          </div>
+        </div>
+      )}
+
+      {activeModules.length === 0 && modules.length > 0 && (
+        <div className="text-center py-12 bg-[#141414] border border-[#38383A] rounded-xl">
+          <p className="text-[#EBEBF599] text-sm">All modules completed! 🎉</p>
+          <p className="text-[#EBEBF599] text-xs mt-2">View your achievements in Analytics</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {modules.map(module => {
+        {activeModules.map(module => {
           const thisWeekTasks = getThisWeekTasks(module.code);
           const targetDiff = module.currentGrade - module.targetGrade;
           

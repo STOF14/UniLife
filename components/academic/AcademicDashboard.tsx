@@ -61,6 +61,8 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
     return 'Other';
   }))].sort();
 
+  const currentYear = new Date().getFullYear();
+
   // Filter modules
   const filteredModules = modules.filter(module => {
     const matchesSearch = module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,8 +76,12 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
       (filterMajor === 'Chemistry' && module.code.startsWith('CMY')) ||
       (filterMajor === 'Academic Skills' && (module.code.startsWith('AIM') || module.code.startsWith('LST') || module.code.startsWith('UPO'))) ||
       (filterMajor === 'Other' && !['STK', 'WST', 'PHY', 'MAT', 'CMY', 'AIM', 'LST', 'UPO'].some(prefix => module.code.startsWith(prefix)));
+
+    const isCompleted = module.completed || module.currentGrade >= 100;
+    const yearMatch = module.semester?.match(/\b20\d{2}\b/);
+    const isPastYear = yearMatch ? parseInt(yearMatch[0], 10) < currentYear : false;
     
-    return matchesSearch && matchesSemester && matchesYear && matchesMajor;
+    return matchesSearch && matchesSemester && matchesYear && matchesMajor && !isCompleted && !isPastYear;
   });
 
   // Group modules by major

@@ -14,6 +14,15 @@ type DashboardPageProps = {
 export const DashboardPage = ({ modules, tasks, cwa, onExport }: DashboardPageProps) => {
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
 
+  const currentYear = new Date().getFullYear();
+  const activeModules = modules.filter(m => {
+    const isCompleted = m.completed || m.currentGrade >= 100;
+    const yearMatch = m.semester?.match(/\b20\d{2}\b/);
+    const isPastYear = yearMatch ? parseInt(yearMatch[0], 10) < currentYear : false;
+    return !isCompleted && !isPastYear;
+  });
+  const completedModules = modules.filter(m => m.completed || m.currentGrade >= 100);
+
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -183,9 +192,17 @@ export const DashboardPage = ({ modules, tasks, cwa, onExport }: DashboardPagePr
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm text-[#EBEBF599]">Active Modules</span>
-                  <span className="text-lg font-bold text-white">{modules.length}</span>
+                  <span className="text-lg font-bold text-white">{activeModules.length}</span>
                 </div>
               </div>
+              {completedModules.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-[#EBEBF599]">Completed Modules</span>
+                    <span className="text-lg font-bold text-green-400">{completedModules.length}</span>
+                  </div>
+                </div>
+              )}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm text-[#EBEBF599]">Tasks Completed</span>
@@ -199,10 +216,10 @@ export const DashboardPage = ({ modules, tasks, cwa, onExport }: DashboardPagePr
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm text-[#EBEBF599]">Avg Progress</span>
                   <span className="text-lg font-bold text-white">
-                    {Math.round(modules.reduce((sum, m) => sum + m.progress, 0) / modules.length)}%
+                    {activeModules.length > 0 ? Math.round(activeModules.reduce((sum, m) => sum + m.progress, 0) / activeModules.length) : 0}%
                   </span>
                 </div>
-                <ProgressBar percentage={modules.reduce((sum, m) => sum + m.progress, 0) / modules.length} height={3} />
+                <ProgressBar percentage={activeModules.length > 0 ? activeModules.reduce((sum, m) => sum + m.progress, 0) / activeModules.length : 0} height={3} />
               </div>
             </div>
           </div>
