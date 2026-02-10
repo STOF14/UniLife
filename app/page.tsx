@@ -39,7 +39,7 @@ import { Modal } from '@/components/ui/Modal';
 
 import { ModuleForm as AcademicModuleForm } from '@/components/academic/ModuleForm';
 import { AcademicDashboard } from '@/components/academic/AcademicDashboard';
-import { YearbookImport } from '@/components/academic/YearbookImport';
+import { DocumentImport } from '@/components/academic/DocumentImport';
 import { RoadmapPage } from '@/components/academic/RoadmapPage';
 import { useAcademic } from '@/hooks/useAcademic';
 
@@ -51,9 +51,10 @@ import { TimetablePage } from '@/components/pages/TimetablePage';
 
 // Utilities
 import { calculateCWA, calculateTermAverage } from '@/lib/utils/calculations';
-import { parseYearbookPDF, mapModulesToSemesters, type ExtractedModule } from '@/lib/utils/pdfParser';
+import type { ScheduleEntry } from '@/lib/import/scheduleParser';
+import type { ExamEntry } from '@/lib/import/examScheduleParser';
 
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/supabase';
 
 // Constants
@@ -73,7 +74,7 @@ const UniLife = () => {
   
   // Academic state - Move ALL hooks here, before any conditional logic
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
-  const [isYearbookImportOpen, setIsYearbookImportOpen] = useState(false);
+  const [isDocumentImportOpen, setIsDocumentImportOpen] = useState(false);
   const { 
     modules, 
     isLoading: modulesLoading, 
@@ -99,16 +100,24 @@ const UniLife = () => {
     }
   };
 
-  const handleYearbookImport = async (importedModules: Module[]) => {
+  const handleDocumentImportModules = async (importedModules: Module[]) => {
     try {
-      // Create each imported module
       for (const moduleData of importedModules) {
         await createModule(moduleData);
       }
-      setIsYearbookImportOpen(false);
     } catch (error) {
       console.error('Failed to import modules:', error);
     }
+  };
+
+  const handleImportSchedule = (entries: ScheduleEntry[]) => {
+    // TODO: Wire schedule entries to module ClassSchedule[] or timetable store
+    console.log('Imported schedule entries:', entries);
+  };
+
+  const handleImportAssessments = (entries: ExamEntry[], moduleCode: string) => {
+    // TODO: Wire exam entries to module assessments
+    console.log('Imported assessments for', moduleCode, entries);
   };
 
   useEffect(() => {
@@ -1112,263 +1121,6 @@ const TransactionForm = () => {
   );
 };
 
-const YearbookUploadForm = () => {
-  const db = useDatabase();
-  const [file, setFile] = useState<File | null>(null);
-  const [startingYear, setStartingYear] = useState<number>(new Date().getFullYear());
-  const [extractedModules, setExtractedModules] = useState<Array<ExtractedModule & { semester: string }>>([]);
-  const [originalModules, setOriginalModules] = useState<ExtractedModule[]>([]);
-  const [isParsing, setIsParsing] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [parseError, setParseError] = useState<string | null>(null);
-
-  const getCoverImage = (code: string) => {
-    const prefix = code.substring(0, 3);
-    const coverImages: Record<string, string> = {
-      'AIM': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      'COS': 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-      'LST': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      'PHY': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-      'WTW': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      'STK': 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-      'WST': 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-    };
-    return coverImages[prefix] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-  };
-
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    if (selectedFile.type !== 'application/pdf') {
-      setParseError('Please select a PDF file');
-      return;
-    }
-
-    setFile(selectedFile);
-    setParseError(null);
-    setIsParsing(true);
-
-    try {
-      const modules = await parseYearbookPDF(selectedFile);
-      setOriginalModules(modules);
-      const mappedModules = mapModulesToSemesters(modules, startingYear);
-      setExtractedModules(mappedModules);
-    } catch (error) {
-      console.error('Error parsing PDF:', error);
-      setParseError('Failed to parse PDF. Please make sure it is a valid University yearbook PDF.');
-    } finally {
-      setIsParsing(false);
-    }
-  };
-
-  const handleYearChange = (year: number) => {
-    setStartingYear(year);
-    if (originalModules.length > 0) {
-      // Re-map modules with new starting year
-      const mappedModules = mapModulesToSemesters(originalModules, year);
-      setExtractedModules(mappedModules);
-    }
-  };
-
-const handleImport = async (extractedModules: Array<ExtractedModule & { semester: string }>) => {
-  setIsImporting(true);
-  try {
-    // Get the current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-    
-    // Refresh modules list before checking duplicates
-    await fetchModules();
-    
-    let successCount = 0;
-    let skippedCount = 0;
-    for (const mod of extractedModules) {
-        // Check if module already exists (by code and semester)
-        const alreadyExists = db.modules.some(
-          m => m.code === mod.code && m.semester === mod.semester
-        );
-
-        if (alreadyExists) {
-          skippedCount++;
-          console.warn(`Skipped duplicate module: ${mod.code} (${mod.semester})`);
-          continue;
-        }
-
-        // Create new module with proper UUID
-        const module: Module = {
-        id: crypto.randomUUID(),
-        code: mod.code,
-        name: mod.name,
-        semester: mod.semester,
-        credits: mod.credits,
-        currentGrade: 0,
-        targetGrade: 60,
-        progress: 0,
-        assessments: [],
-        coverImage: getCoverImage(mod.code),
-        userId: user.id,  // Add the user ID here
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const success = await db.saveModule(module);
-      if (success) successCount++;
-    }
-    console.log(`Import complete: ${successCount} imported, ${skippedCount} skipped`);
-    setIsYearbookImportOpen(false);
-    // Refresh modules after import
-    await fetchModules();
-  } catch (error) {
-    console.error('Failed to import modules:', error);
-    alert('Failed to import modules. Please try again.');
-  } finally {
-    setIsImporting(false);
-  }
-};
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-2">
-          Upload Yearbook PDF <span className="text-danger">*</span>
-        </label>
-        <div className="relative">
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={handleFileSelect}
-            className="hidden"
-            id="yearbook-upload"
-            disabled={isParsing || isImporting}
-          />
-          <label
-            htmlFor="yearbook-upload"
-            className={`flex items-center justify-center gap-2 px-4 py-3 border border-dashed cursor-pointer transition-all duration-300 ${
-              isParsing || isImporting
-                ? 'border-border bg-background cursor-not-allowed'
-                : 'border-border bg-background hover:border-text-primary hover:bg-surface'
-            }`}
-          >
-            {isParsing ? (
-              <>
-                <div className="h-4 w-4 border-t border-text-primary animate-spin"></div>
-                <span className="text-xs uppercase tracking-wider text-text-tertiary">Parsing PDF...</span>
-              </>
-            ) : file ? (
-              <>
-                <FileText size={16} className="text-text-primary" />
-                <span className="text-sm text-text-primary font-mono">{file.name}</span>
-              </>
-            ) : (
-              <>
-                <UploadSimple size={16} className="text-text-tertiary" />
-                <span className="text-xs uppercase tracking-wider text-text-tertiary">Click to upload yearbook PDF</span>
-              </>
-            )}
-          </label>
-        </div>
-        {parseError && (
-          <p className="mt-2 text-xs text-danger">{parseError}</p>
-        )}
-      </div>
-
-      {extractedModules.length > 0 && (
-        <>
-          <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-2">
-              Starting Year
-            </label>
-            <Input
-              label=""
-              type="text"
-              inputMode="numeric"
-              value={startingYear.toString()}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const year = parseInt(e.target.value);
-                if (!isNaN(year) && year >= 2020 && year <= 2030) {
-                  handleYearChange(year);
-                }
-              }}
-              placeholder="2025"
-            />
-            <p className="mt-1 text-xs text-text-tertiary">
-              Year 1 modules will be assigned to {startingYear}, Year 2 to {startingYear + 1}, Year 3 to {startingYear + 2}
-            </p>
-          </div>
-
-          <div className="bg-background border-t border-border p-4 max-h-96 overflow-y-auto">
-            <div className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-3">
-              Found {extractedModules.length} modules:
-            </div>
-            <div className="space-y-0">
-              {extractedModules.map((mod, idx) => {
-                const alreadyExists = db.modules.some(
-                  m => m.code === mod.code && m.semester === mod.semester
-                );
-                return (
-                  <div
-                    key={idx}
-                    className={`flex items-center justify-between py-2 px-3 border-b border-border transition-colors hover:bg-surface ${
-                      alreadyExists ? 'bg-warning/5 border-l-2 border-l-warning' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <span className="text-xs font-mono px-2 py-0.5 bg-surface text-text-tertiary shrink-0">
-                        {mod.semester}
-                      </span>
-                      <span className="text-sm text-text-primary font-medium shrink-0">{mod.code}</span>
-                      <span className="text-xs text-text-tertiary truncate">{mod.name}</span>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-xs font-mono text-text-tertiary">{mod.credits} cr</span>
-                      {alreadyExists && (
-                        <span className="text-xs text-warning uppercase tracking-wider">Exists</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-
-      <div className="flex gap-3 justify-end pt-4">
-        <Button
-          variant="secondary"
-          onClick={() => {
-            store.setShowModal(null);
-            setFile(null);
-            setExtractedModules([]);
-            setParseError(null);
-          }}
-          type="button"
-          disabled={isImporting}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={() => handleImport(extractedModules)}
-          disabled={extractedModules.length === 0 || isImporting}
-          className="min-w-[120px]"
-        >
-          {isImporting ? (
-            <span className="flex items-center justify-center">
-              <div className="h-4 w-4 border-t border-text-primary animate-spin mr-2"></div>
-              Importing...
-            </span>
-          ) : (
-            `Import ${extractedModules.length} Modules`
-          )}
-        </Button>
-      </div>
-    </div>
-  );
-};
-
   const AcademicProgressPage = () => {
     const currentYear = new Date().getFullYear().toString();
     const currentYearModules = (db.modules || []).filter((m: Module) => m.semester === currentYear);
@@ -1535,7 +1287,7 @@ const AcademicPage = () => {
     return (
       <AcademicDashboard 
         modules={modules}
-        onImportYearbook={() => setIsYearbookImportOpen(true)}
+        onImportYearbook={() => setIsDocumentImportOpen(true)}
       />
     );
   };
@@ -1708,15 +1460,12 @@ const AcademicPage = () => {
       <TransactionForm />
     </Modal>
 
-    <Modal 
-      isOpen={store.showModal === 'yearbook'} 
-      onClose={() => { 
-        store.setShowModal(null); 
-      }}
-      title="Upload Yearbook PDF"
-    >
-      <YearbookUploadForm />
-    </Modal>
+    {/* Legacy yearbook modal redirects to document import */}
+    {store.showModal === 'yearbook' && (() => {
+      store.setShowModal(null);
+      setIsDocumentImportOpen(true);
+      return null;
+    })()}
 
     {/* Module Modal */}
     <Modal
@@ -1731,11 +1480,14 @@ const AcademicPage = () => {
       />
     </Modal>
 
-    {/* Yearbook Import Modal */}
-    <YearbookImport
-      isOpen={isYearbookImportOpen}
-      onClose={() => setIsYearbookImportOpen(false)}
-      onImport={handleYearbookImport}
+    {/* Document Import Hub */}
+    <DocumentImport
+      isOpen={isDocumentImportOpen}
+      onClose={() => setIsDocumentImportOpen(false)}
+      onImportModules={handleDocumentImportModules}
+      onImportSchedule={handleImportSchedule}
+      onImportAssessments={handleImportAssessments}
+      existingModules={modules}
     />
   </div>
 );
