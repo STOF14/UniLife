@@ -19,7 +19,7 @@ export function ModuleList({ modules, groupByYear = false }: ModuleListProps) {
   if (activeModules.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-[#EBEBF599] text-sm">
+        <p className="text-text-tertiary text-sm">
           {modules.length > 0 ? 'All modules completed! View in Analytics' : 'No modules yet'}
         </p>
       </div>
@@ -55,22 +55,22 @@ export function ModuleList({ modules, groupByYear = false }: ModuleListProps) {
           return (
             <div key={year} className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-white">Year {year}</h3>
+                <h3 className="text-lg font-semibold text-text-primary">Year {year}</h3>
                 <div className="flex gap-2 text-xs">
                   {completed.length > 0 && (
-                    <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded inline-flex items-center gap-1">
+                    <span className="px-2 py-1 bg-success/20 text-success inline-flex items-center gap-1">
                       <CheckCircle size={12} />
                       {completed.length} done
                     </span>
                   )}
                   {inProgress.length > 0 && (
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded inline-flex items-center gap-1">
+                    <span className="px-2 py-1 bg-text-primary/20 text-text-secondary inline-flex items-center gap-1">
                       <SpinnerGap size={12} className="animate-spin" />
                       {inProgress.length} active
                     </span>
                   )}
                   {upcoming.length > 0 && (
-                    <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded inline-flex items-center gap-1">
+                    <span className="px-2 py-1 bg-surface0/20 text-gray-400 inline-flex items-center gap-1">
                       <CircleDashed size={12} />
                       {upcoming.length} upcoming
                     </span>
@@ -121,11 +121,11 @@ function ModuleItem({
   const getStatusBadge = () => {
     switch (status) {
       case 'completed':
-        return { label: 'Done', icon: <CheckCircle size={12} />, color: 'bg-green-500/20 text-green-400', opacity: 'opacity-60' };
+        return { label: 'Done', icon: <CheckCircle size={12} />, color: 'bg-success/20 text-success', opacity: 'opacity-60' };
       case 'in-progress':
-        return { label: 'Active', icon: <SpinnerGap size={12} className="animate-spin" />, color: 'bg-blue-500/20 text-blue-400', opacity: 'opacity-100' };
+        return { label: 'Active', icon: <SpinnerGap size={12} className="animate-spin" />, color: 'bg-text-primary/20 text-text-secondary', opacity: 'opacity-100' };
       case 'upcoming':
-        return { label: 'Soon', icon: <CircleDashed size={12} />, color: 'bg-gray-500/20 text-gray-400', opacity: 'opacity-50' };
+        return { label: 'Soon', icon: <CircleDashed size={12} />, color: 'bg-surface0/20 text-gray-400', opacity: 'opacity-50' };
     }
   };
 
@@ -136,16 +136,16 @@ function ModuleItem({
       href={`/academic/modules/${module.id}`}
       className="block group"
     >
-      <div className={`bg-[#0A0A0A] hover:bg-[#1C1C1C] rounded-lg px-4 py-3 transition-all duration-200 ${badge.opacity}`}>
+      <div className={`bg-background hover:bg-surface/50  px-4 py-3 transition-all duration-200 ${badge.opacity}`}>
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
-                <p className="text-sm font-medium text-[#EBEBF599]">{module.code}</p>
+                <p className="text-sm font-medium text-text-tertiary">{module.code}</p>
               </div>
               <div className="flex-1 min-w-0 flex items-center gap-2">
-                <p className="text-sm font-medium text-white truncate">{module.name}</p>
-                <span className={`px-2 py-0.5 text-xs rounded inline-flex items-center gap-1 ${badge.color}`}>
+                <p className="text-sm font-medium text-text-primary truncate">{module.name}</p>
+                <span className={`px-2 py-0.5 text-xs inline-flex items-center gap-1 ${badge.color}`}>
                   {badge.icon}
                   {badge.label}
                 </span>
@@ -154,18 +154,18 @@ function ModuleItem({
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <p className="text-xs text-[#EBEBF599]">
+              <p className="text-xs text-text-tertiary">
                 {status === 'completed' ? 'Final' : 'Target'}
               </p>
               <p className={`text-sm font-medium ${
                 status === 'completed' && module.currentGrade >= module.targetGrade
-                  ? 'text-green-400'
-                  : 'text-white'
+                  ? 'text-success'
+                  : 'text-text-primary'
               }`}>
                 {status === 'completed' ? module.currentGrade : module.targetGrade}%
               </p>
             </div>
-            <CaretRight className="h-4 w-4 text-[#EBEBF599] group-hover:text-white transition-colors" />
+            <CaretRight className="h-4 w-4 text-text-tertiary group-hover:text-text-primary transition-colors" />
           </div>
         </div>
       </div>

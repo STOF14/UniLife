@@ -15,13 +15,13 @@ export function Progress({
   return (
     <div
       className={cn(
-        'relative h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700',
+        'relative h-[2px] w-full overflow-hidden bg-border',
         className
       )}
     >
       <div
         className={cn(
-          'h-full w-full flex-1 bg-blue-500 transition-all',
+          'h-full w-full flex-1 bg-text-primary transition-all duration-800 ease-swiss',
           indicatorClassName
         )}
         style={{ transform: `translateX(-${100 - (value || 0)}%)` }}

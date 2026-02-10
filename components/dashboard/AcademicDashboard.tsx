@@ -153,28 +153,28 @@ export default function AcademicDashboard({ studentProfileId }: { studentProfile
 
   const getStandingColor = (standing: string) => {
     switch (standing.toLowerCase()) {
-      case 'excellent': return 'text-green-600 bg-green-100';
-      case 'good': return 'text-blue-600 bg-blue-100';
-      case 'satisfactory': return 'text-yellow-600 bg-yellow-100';
-      case 'at_risk': return 'text-orange-600 bg-orange-100';
-      case 'failing': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'excellent': return 'text-success bg-success/10';
+      case 'good': return 'text-text-primary bg-text-primary/10';
+      case 'satisfactory': return 'text-warning bg-warning/10';
+      case 'at_risk': return 'text-warning bg-warning/10';
+      case 'failing': return 'text-danger bg-danger/10';
+      default: return 'text-gray-600 bg-surface';
     }
   };
 
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 80) return 'bg-green-500';
-    if (percentage >= 60) return 'bg-blue-500';
-    if (percentage >= 40) return 'bg-yellow-500';
-    if (percentage >= 20) return 'bg-orange-500';
-    return 'bg-red-500';
+    if (percentage >= 80) return 'bg-success';
+    if (percentage >= 60) return 'bg-text-primary';
+    if (percentage >= 40) return 'bg-warning';
+    if (percentage >= 20) return 'bg-warning';
+    return 'bg-danger/100';
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin  h-12 w-12 border-b-2 border-text-primary mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your academic dashboard...</p>
         </div>
       </div>
@@ -182,7 +182,7 @@ export default function AcademicDashboard({ studentProfileId }: { studentProfile
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-surface py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
@@ -201,7 +201,7 @@ export default function AcademicDashboard({ studentProfileId }: { studentProfile
                 onClick={() => setActiveTab(tab as any)}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-text-primary text-text-primary'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -267,10 +267,10 @@ function OverviewTab({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {/* GPA Card */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white  shadow p-6">
         <div className="flex items-center">
-          <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
-            <ChartLineUp size={24} className="text-white" />
+          <div className="flex-shrink-0 bg-text-primary p-3">
+            <ChartLineUp size={24} className="text-text-primary" />
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
@@ -284,16 +284,16 @@ function OverviewTab({
       </div>
 
       {/* Academic Standing */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white  shadow p-6">
         <div className="flex items-center">
-          <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
-            <GraduationCap size={24} className="text-white" />
+          <div className="flex-shrink-0 bg-success p-3">
+            <GraduationCap size={24} className="text-text-primary" />
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
               <dt className="text-sm font-medium text-gray-500 truncate">Standing</dt>
               <dd className="mt-1">
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStandingColor(metrics?.academicStanding || '')}`}>
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold  ${getStandingColor(metrics?.academicStanding || '')}`}>
                   {metrics?.academicStanding || 'Unknown'}
                 </span>
               </dd>
@@ -303,10 +303,10 @@ function OverviewTab({
       </div>
 
       {/* Credits Progress */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white  shadow p-6">
         <div className="flex items-center">
-          <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
-            <BookOpen size={24} className="text-white" />
+          <div className="flex-shrink-0 bg-text-secondary p-3">
+            <BookOpen size={24} className="text-text-primary" />
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
@@ -323,10 +323,10 @@ function OverviewTab({
       </div>
 
       {/* Progress Percentage */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white  shadow p-6">
         <div className="flex items-center">
-          <div className="flex-shrink-0 bg-orange-500 rounded-md p-3">
-            <TrendUp size={24} className="text-white" />
+          <div className="flex-shrink-0 bg-warning p-3">
+            <TrendUp size={24} className="text-text-primary" />
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
@@ -335,9 +335,9 @@ function OverviewTab({
                 {progress?.progressPercentage?.toFixed(1) || '0'}%
               </dd>
               <div className="mt-2">
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-border  h-2">
                   <div 
-                    className={`h-2 rounded-full ${getProgressColor(progress?.progressPercentage || 0)}`}
+                    className={`h-2  ${getProgressColor(progress?.progressPercentage || 0)}`}
                     style={{ width: `${progress?.progressPercentage || 0}%` }}
                   ></div>
                 </div>
@@ -375,26 +375,26 @@ function ProgressTab({
   return (
     <div className="space-y-6">
       {/* Progress Overview */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white  shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Academic Progress</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-text-primary">
               {progress?.completedModules || 0}
             </div>
             <p className="text-sm text-gray-500">Modules Completed</p>
           </div>
           
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-success">
               {progress?.averageGrade?.toFixed(1) || '0'}
             </div>
             <p className="text-sm text-gray-500">Average Grade</p>
           </div>
           
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-text-secondary">
               {creditMetrics?.creditsThisSemester || 0}
             </div>
             <p className="text-sm text-gray-500">Credits This Semester</p>
@@ -403,7 +403,7 @@ function ProgressTab({
       </div>
 
       {/* Detailed Progress Bar */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white  shadow p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-gray-900">Completion Progress</h3>
           <Button
@@ -420,9 +420,9 @@ function ProgressTab({
               <span>Overall Progress</span>
               <span>{progress?.progressPercentage?.toFixed(1)}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className="w-full bg-border  h-3">
               <div 
-                className={`h-3 rounded-full ${getProgressColor(progress?.progressPercentage || 0)}`}
+                className={`h-3  ${getProgressColor(progress?.progressPercentage || 0)}`}
                 style={{ width: `${progress?.progressPercentage || 0}%` }}
               ></div>
             </div>
@@ -431,7 +431,7 @@ function ProgressTab({
       </div>
 
       {/* Modules by Year and Status */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white  shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-6">Your Modules</h3>
         
         <div className="space-y-4">
@@ -452,24 +452,24 @@ function ProgressTab({
             return (
               <div 
                 key={year} 
-                className={`border rounded-lg overflow-hidden transition-all ${
-                  isCurrentYear ? 'border-blue-500 shadow-md' : 'border-gray-200'
+                className={`border  overflow-hidden transition-all ${
+                  isCurrentYear ? 'border-text-primary shadow-md' : 'border-gray-200'
                 }`}
               >
                 <button
                   onClick={() => toggleYear(year)}
                   className={`w-full px-4 py-3 flex items-center justify-between transition-colors ${
-                    isCurrentYear ? 'bg-blue-50 hover:bg-blue-100' : 'bg-gray-50 hover:bg-gray-100'
+                    isCurrentYear ? 'bg-text-primary/5 hover:bg-text-primary/10' : 'bg-surface hover:bg-surface'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className={`text-lg font-bold ${
-                      isCurrentYear ? 'text-blue-600' : 'text-gray-700'
+                      isCurrentYear ? 'text-text-primary' : 'text-gray-700'
                     }`}>
                       Year {year}
                     </span>
                     {isCurrentYear && (
-                      <span className="px-2 py-1 text-xs font-semibold bg-blue-600 text-white rounded-full">
+                      <span className="px-2 py-1 text-xs font-semibold bg-text-primary text-background ">
                         Current
                       </span>
                     )}
@@ -480,7 +480,7 @@ function ProgressTab({
                   <div className="flex items-center gap-4">
                     <div className="flex gap-2 text-xs">
                       {yearModules.inProgress.length > 0 && (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                        <span className="px-2 py-1 bg-text-primary/10 text-text-primary">
                           <span className="inline-flex items-center gap-1">
                             <SpinnerGap size={12} className="animate-spin" />
                             {yearModules.inProgress.length} active
@@ -488,7 +488,7 @@ function ProgressTab({
                         </span>
                       )}
                       {yearModules.upcoming.length > 0 && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                        <span className="px-2 py-1 bg-surface text-gray-700">
                           <span className="inline-flex items-center gap-1">
                             <CircleDashed size={12} />
                             {yearModules.upcoming.length} upcoming
@@ -514,8 +514,8 @@ function ProgressTab({
                     {/* In Progress Modules */}
                     {yearModules.inProgress.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-semibold text-blue-700 mb-3 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
+                        <h4 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-text-primary  animate-pulse"></span>
                           Currently Taking ({yearModules.inProgress.length})
                         </h4>
                         <div className="grid gap-3">
@@ -530,7 +530,7 @@ function ProgressTab({
                     {yearModules.upcoming.length > 0 && (
                       <div>
                         <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                          <span className="w-2 h-2 bg-text-tertiary "></span>
                           Upcoming ({yearModules.upcoming.length})
                         </h4>
                         <div className="grid gap-3 opacity-60">
@@ -543,12 +543,12 @@ function ProgressTab({
                     
                     {/* Note about completed modules */}
                     {yearModules.completed.length > 0 && (
-                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm text-green-700 flex items-center gap-2">
-                          <CheckCircle size={16} className="text-green-600" />
+                      <div className="mt-4 p-3 bg-success/5 border border-success/20 ">
+                        <p className="text-sm text-success flex items-center gap-2">
+                          <CheckCircle size={16} className="text-success" />
                           <span>
                             {yearModules.completed.length} module{yearModules.completed.length !== 1 ? 's' : ''} completed this year. 
-                            <span className="text-green-600">View in Analytics tab for details.</span>
+                            <span className="text-success">View in Analytics tab for details.</span>
                           </span>
                         </p>
                       </div>
@@ -563,7 +563,7 @@ function ProgressTab({
 
       {/* Graduation Tracking */}
       {creditMetrics?.estimatedGraduationDate && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white  shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Graduation Tracking</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -577,7 +577,7 @@ function ProgressTab({
             <div>
               <p className="text-sm text-gray-500">On Track</p>
               <p className={`text-lg font-medium flex items-center gap-2 ${
-                creditMetrics.onTrackForGraduation ? 'text-green-600' : 'text-red-600'
+                creditMetrics.onTrackForGraduation ? 'text-success' : 'text-danger'
               }`}>
                 {creditMetrics.onTrackForGraduation ? (
                   <CheckCircle size={18} />
@@ -636,7 +636,7 @@ function AnalyticsTab({
   return (
     <div className="space-y-6">
       {/* Performance Summary */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white  shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Performance Summary</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -662,7 +662,7 @@ function AnalyticsTab({
           
           <div>
             <h4 className="font-medium text-gray-700 mb-3">Academic Standing</h4>
-            <div className={`inline-flex px-3 py-2 text-sm font-semibold rounded-full ${getStandingColor(metrics?.academicStanding || '')}`}>
+            <div className={`inline-flex px-3 py-2 text-sm font-semibold  ${getStandingColor(metrics?.academicStanding || '')}`}>
               {metrics?.academicStanding || 'Unknown'}
             </div>
           </div>
@@ -671,7 +671,7 @@ function AnalyticsTab({
 
       {/* Completed Modules History */}
       {allCompletedModules.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white  shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             Completed Modules ({allCompletedModules.length})
           </h3>
@@ -684,13 +684,13 @@ function AnalyticsTab({
               if (yearModules.completed.length === 0) return null;
               
               return (
-                <div key={year} className="border-l-4 border-green-500 pl-4">
+                <div key={year} className="border-l-4 border-success pl-4">
                   <h4 className="font-semibold text-gray-800 mb-3">Year {year}</h4>
                   <div className="grid gap-2">
                     {yearModules.completed.map((module: ModuleWithStatus) => (
                       <div 
                         key={module.id} 
-                        className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                        className="flex items-center justify-between p-3 bg-success/5 border border-success/20  hover:bg-success/10 transition-colors"
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
@@ -702,9 +702,9 @@ function AnalyticsTab({
                           </p>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-green-600">{module.currentGrade}%</div>
+                          <div className="text-lg font-bold text-success">{module.currentGrade}%</div>
                           {module.currentGrade >= module.targetGrade && (
-                            <div className="text-xs text-green-600 inline-flex items-center gap-1">
+                            <div className="text-xs text-success inline-flex items-center gap-1">
                               <CheckCircle size={12} />
                               Target met
                             </div>
@@ -722,14 +722,14 @@ function AnalyticsTab({
 
       {/* Risk Factors */}
       {projection?.riskFactors && projection.riskFactors.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white  shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Risk Factors</h3>
           
           <div className="space-y-2">
             {projection.riskFactors.map((risk: string, index: number) => (
-              <div key={index} className="flex items-center p-3 bg-red-50 border border-red-200 rounded">
-                <WarningCircle size={16} className="text-red-600 mr-2" />
-                <span className="text-red-700 text-sm">{risk}</span>
+              <div key={index} className="flex items-center p-3 bg-danger/10 border border-danger/20">
+                <WarningCircle size={16} className="text-danger mr-2" />
+                <span className="text-danger text-sm">{risk}</span>
               </div>
             ))}
           </div>
@@ -738,14 +738,14 @@ function AnalyticsTab({
 
       {/* Recommendations */}
       {projection?.recommendations && projection.recommendations.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white  shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Recommendations</h3>
           
           <div className="space-y-2">
             {projection.recommendations.map((recommendation: string, index: number) => (
-              <div key={index} className="flex items-center p-3 bg-blue-50 border border-blue-200 rounded">
-                <Lightbulb size={16} className="text-blue-600 mr-2" />
-                <span className="text-blue-700 text-sm">{recommendation}</span>
+              <div key={index} className="flex items-center p-3 bg-text-primary/5 border border-text-primary/20">
+                <Lightbulb size={16} className="text-text-primary mr-2" />
+                <span className="text-text-primary text-sm">{recommendation}</span>
               </div>
             ))}
           </div>
@@ -761,22 +761,22 @@ function ModuleCard({ module, status }: { module: ModuleWithStatus; status: 'com
     switch (status) {
       case 'completed':
         return {
-          border: 'border-green-200 bg-green-50',
-          badge: 'bg-green-600 text-white',
+          border: 'border-success/20 bg-success/5',
+          badge: 'bg-success text-text-primary',
           badgeText: 'Completed',
           icon: <CheckCircle size={12} />
         };
       case 'in-progress':
         return {
-          border: 'border-blue-200 bg-blue-50',
-          badge: 'bg-blue-600 text-white',
+          border: 'border-text-primary/20 bg-text-primary/5',
+          badge: 'bg-text-primary text-background',
           badgeText: 'Active',
           icon: <SpinnerGap size={12} className="animate-spin" />
         };
       case 'upcoming':
         return {
-          border: 'border-gray-200 bg-gray-50',
-          badge: 'bg-gray-500 text-white',
+          border: 'border-gray-200 bg-surface',
+          badge: 'bg-surface0 text-text-primary',
           badgeText: 'Upcoming',
           icon: <CircleDashed size={12} />
         };
@@ -789,12 +789,12 @@ function ModuleCard({ module, status }: { module: ModuleWithStatus; status: 'com
     : 0;
 
   return (
-    <div className={`border rounded-lg p-4 transition-all hover:shadow-md ${style.border}`}>
+    <div className={`border  p-4 transition-all hover:shadow-md ${style.border}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono font-semibold text-gray-600">{module.code}</span>
-            <span className={`px-2 py-0.5 text-xs font-semibold rounded inline-flex items-center gap-1 ${style.badge}`}>
+            <span className={`px-2 py-0.5 text-xs font-semibold inline-flex items-center gap-1 ${style.badge}`}>
               {style.icon}
               {style.badgeText}
             </span>
@@ -810,8 +810,8 @@ function ModuleCard({ module, status }: { module: ModuleWithStatus; status: 'com
         <div>
           <p className="text-xs text-gray-500">Current</p>
           <p className={`text-lg font-bold ${
-            status === 'completed' ? 'text-green-600' : 
-            status === 'in-progress' ? 'text-blue-600' : 'text-gray-400'
+            status === 'completed' ? 'text-success' : 
+            status === 'in-progress' ? 'text-text-primary' : 'text-gray-400'
           }`}>
             {module.currentGrade}%
           </p>
@@ -834,9 +834,9 @@ function ModuleCard({ module, status }: { module: ModuleWithStatus; status: 'com
             <span>Progress</span>
             <span>{progressPercentage.toFixed(1)}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-border  h-2">
             <div 
-              className="h-2 rounded-full bg-blue-500"
+              className="h-2  bg-text-primary"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
@@ -844,7 +844,7 @@ function ModuleCard({ module, status }: { module: ModuleWithStatus; status: 'com
       )}
 
       {status === 'completed' && module.currentGrade >= module.targetGrade && (
-        <div className="mt-2 flex items-center gap-2 text-xs text-green-600">
+        <div className="mt-2 flex items-center gap-2 text-xs text-success">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
@@ -860,7 +860,7 @@ function ProjectionTab({ projection, creditMetrics, getStandingColor }: any) {
   return (
     <div className="space-y-6">
       {/* Graduation Projection */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white  shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Graduation Projection</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -870,7 +870,7 @@ function ProjectionTab({ projection, creditMetrics, getStandingColor }: any) {
               <div className="flex justify-between">
                 <span className="text-gray-500">On Track:</span>
                 <span className={`font-medium inline-flex items-center gap-2 ${
-                  projection?.onTime ? 'text-green-600' : 'text-red-600'
+                  projection?.onTime ? 'text-success' : 'text-danger'
                 }`}>
                   {projection?.onTime ? <CheckCircle size={16} /> : <XCircle size={16} />}
                   {projection?.onTime ? 'Yes' : 'No'}

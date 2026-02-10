@@ -3,13 +3,15 @@ import { cn } from '@/lib/utils';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
+  accent?: boolean;
 }
 
-export function Card({ className, ...props }: CardProps) {
+export function Card({ className, accent, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-lg border bg-card text-card-foreground shadow-sm',
+        'bg-surface border-t-2 transition-all duration-200 ease-swiss',
+        accent ? 'border-t-text-primary' : 'border-t-transparent hover:border-t-text-tertiary',
         className
       )}
       {...props}
@@ -24,7 +26,7 @@ interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
 export function CardHeader({ className, ...props }: CardHeaderProps) {
   return (
     <div
-      className={cn('flex flex-col space-y-1.5 p-6', className)}
+      className={cn('flex flex-col gap-1 p-4', className)}
       {...props}
     />
   );
@@ -37,7 +39,7 @@ interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
 export function CardTitle({ className, ...props }: CardTitleProps) {
   return (
     <h3
-      className={cn('text-lg font-semibold leading-none tracking-tight', className)}
+      className={cn('text-title-sm text-text-primary tracking-tight', className)}
       {...props}
     />
   );
@@ -48,5 +50,5 @@ interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function CardContent({ className, ...props }: CardContentProps) {
-  return <div className={cn('p-6 pt-0', className)} {...props} />;
+  return <div className={cn('p-4 pt-0', className)} {...props} />;
 }

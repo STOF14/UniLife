@@ -109,9 +109,9 @@ export const TaskForm = ({ editingTask, modules, onSave, onClose }: TaskFormProp
           id="completed"
           checked={formState.completed || false}
           onChange={e => setFormState({...formState, completed: e.target.checked})}
-          className="w-4 h-4 rounded border-[#38383A] bg-[#0A0A0A]"
+          className="w-4 h-4 rounded border-border bg-background"
         />
-        <label htmlFor="completed" className="text-sm text-white cursor-pointer">
+        <label htmlFor="completed" className="text-sm text-text-primary cursor-pointer">
           Mark as completed
         </label>
       </div>

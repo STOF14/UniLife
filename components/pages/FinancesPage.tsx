@@ -206,7 +206,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold text-white">Finances</h1>
+        <h1 className="text-3xl font-semibold text-text-primary">Finances</h1>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={exportToCSV}>
             <DownloadSimple size={16} className="mr-1" />Export CSV
@@ -224,10 +224,10 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
             <button
               key={filter}
               onClick={() => setTimeFilter(filter)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2  text-sm font-medium transition-colors ${
                 timeFilter === filter
-                  ? 'bg-[#0A84FF] text-white'
-                  : 'bg-[#141414] text-[#EBEBF599] hover:bg-[#1C1C1C] border border-[#38383A]'
+                  ? 'bg-text-primary text-background'
+                  : 'bg-surface text-text-tertiary hover:bg-surface/50 border border-border'
               }`}
             >
               {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -238,7 +238,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-4 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm focus:outline-none focus:border-[#0A84FF]"
+          className="px-4 py-2 bg-surface border border-border  text-text-primary text-sm focus:outline-none focus:border-text-primary"
         >
           <option value="all">All Categories</option>
           {categories.map(cat => (
@@ -248,7 +248,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
         <select
           value={monthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="px-4 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm focus:outline-none focus:border-[#0A84FF]"
+          className="px-4 py-2 bg-surface border border-border  text-text-primary text-sm focus:outline-none focus:border-text-primary"
         >
           {months.map(month => (
             <option key={month} value={month}>{month}</option>
@@ -256,8 +256,8 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
         </select>
         <button
           onClick={() => setShowRecurringOnly(!showRecurringOnly)}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            showRecurringOnly ? 'bg-[#0A84FF] text-white' : 'bg-[#141414] text-[#EBEBF599] hover:bg-[#1C1C1C] border border-[#38383A]'
+          className={`px-4 py-2  text-sm font-medium transition-colors ${
+            showRecurringOnly ? 'bg-text-primary text-background' : 'bg-surface text-text-tertiary hover:bg-surface/50 border border-border'
           }`}
         >
           Recurring
@@ -269,14 +269,14 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           <button
             key={cat}
             onClick={() => setCategoryFilter(cat)}
-            className="px-3 py-1.5 rounded-full text-xs border border-[#38383A] text-white hover:border-[#0A84FF]"
+            className="px-3 py-1.5  text-xs border border-border text-text-primary hover:border-text-primary"
           >
             {cat}
           </button>
         ))}
         <button
           onClick={() => setCategoryFilter('all')}
-          className="px-3 py-1.5 rounded-full text-xs border border-[#38383A] text-[#EBEBF599] hover:text-white"
+          className="px-3 py-1.5  text-xs border border-border text-text-tertiary hover:text-text-primary"
         >
           Clear
         </button>
@@ -284,67 +284,67 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-5">
+        <div className="bg-surface border border-border  p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-[#EBEBF599]">Income</h3>
-            <div className="p-2 bg-[#30D158]/10 rounded-lg">
-              <TrendUp size={16} className="text-[#30D158]" />
+            <h3 className="text-sm font-medium text-text-tertiary">Income</h3>
+            <div className="p-2 bg-success/10 ">
+              <TrendUp size={16} className="text-success" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-[#30D158]">R{stats.income.toFixed(2)}</div>
-          <div className="text-xs text-[#EBEBF599] mt-1">{stats.transactionCount} transactions</div>
+          <div className="text-3xl font-bold text-success">R{stats.income.toFixed(2)}</div>
+          <div className="text-xs text-text-tertiary mt-1">{stats.transactionCount} transactions</div>
         </div>
 
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-5">
+        <div className="bg-surface border border-border  p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-[#EBEBF599]">Expenses</h3>
-            <div className="p-2 bg-[#FF453A]/10 rounded-lg">
-              <TrendDown size={16} className="text-[#FF453A]" />
+            <h3 className="text-sm font-medium text-text-tertiary">Expenses</h3>
+            <div className="p-2 bg-danger/10 ">
+              <TrendDown size={16} className="text-danger" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-[#FF453A]">R{stats.expenses.toFixed(2)}</div>
-          <div className="text-xs text-[#EBEBF599] mt-1">Daily avg: R{stats.dailyAverage.toFixed(2)}</div>
+          <div className="text-3xl font-bold text-danger">R{stats.expenses.toFixed(2)}</div>
+          <div className="text-xs text-text-tertiary mt-1">Daily avg: R{stats.dailyAverage.toFixed(2)}</div>
         </div>
 
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-5">
+        <div className="bg-surface border border-border  p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-[#EBEBF599]">Net Balance</h3>
-            <div className="p-2 bg-[#0A84FF]/10 rounded-lg">
-              <Wallet size={16} className="text-[#0A84FF]" />
+            <h3 className="text-sm font-medium text-text-tertiary">Net Balance</h3>
+            <div className="p-2 bg-text-primary/10 ">
+              <Wallet size={16} className="text-text-primary" />
             </div>
           </div>
-          <div className={`text-3xl font-bold ${stats.balance >= 0 ? 'text-[#30D158]' : 'text-[#FF453A]'}`}>
+          <div className={`text-3xl font-bold ${stats.balance >= 0 ? 'text-success' : 'text-danger'}`}>
             R{stats.balance.toFixed(2)}
           </div>
-          <div className="text-xs text-[#EBEBF599] mt-1">
+          <div className="text-xs text-text-tertiary mt-1">
             {stats.balance >= 0 ? 'Surplus' : 'Deficit'}
           </div>
         </div>
 
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-5">
+        <div className="bg-surface border border-border  p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-[#EBEBF599]">Savings Rate</h3>
-            <div className="p-2 bg-[#FF9F0A]/10 rounded-lg">
-              <ChartPieSlice size={16} className="text-[#FF9F0A]" />
+            <h3 className="text-sm font-medium text-text-tertiary">Savings Rate</h3>
+            <div className="p-2 bg-warning/10 ">
+              <ChartPieSlice size={16} className="text-warning" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-[#FF9F0A]">
+          <div className="text-3xl font-bold text-warning">
             {stats.income > 0 ? ((stats.balance / stats.income) * 100).toFixed(1) : '0.0'}%
           </div>
-          <div className="text-xs text-[#EBEBF599] mt-1">Of income saved</div>
+          <div className="text-xs text-text-tertiary mt-1">Of income saved</div>
         </div>
 
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-5">
+        <div className="bg-surface border border-border  p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-[#EBEBF599]">Budget Used</h3>
-            <div className="p-2 bg-[#0A84FF]/10 rounded-lg">
-              <ChartBar size={16} className="text-[#0A84FF]" />
+            <h3 className="text-sm font-medium text-text-tertiary">Budget Used</h3>
+            <div className="p-2 bg-text-primary/10 ">
+              <ChartBar size={16} className="text-text-primary" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-white">{totalBudgetPercent.toFixed(1)}%</div>
-          <div className="text-xs text-[#EBEBF599] mt-1">R{totalSpent.toFixed(0)} / R{totalBudget.toFixed(0)}</div>
-          <div className="mt-3 h-2 bg-[#0A0A0A] rounded-full overflow-hidden">
-            <div className="h-full bg-[#0A84FF]" style={{ width: `${Math.min(totalBudgetPercent, 100)}%` }} />
+          <div className="text-3xl font-bold text-text-primary">{totalBudgetPercent.toFixed(1)}%</div>
+          <div className="text-xs text-text-tertiary mt-1">R{totalSpent.toFixed(0)} / R{totalBudget.toFixed(0)}</div>
+          <div className="mt-3 h-2 bg-background  overflow-hidden">
+            <div className="h-full bg-text-primary" style={{ width: `${Math.min(totalBudgetPercent, 100)}%` }} />
           </div>
         </div>
       </div>
@@ -352,10 +352,10 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Budget Tracking */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
+          <div className="bg-surface border border-border  p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-white">Budget Overview</h2>
-              <span className="text-sm text-[#EBEBF599]">{timeFilter === 'month' ? 'This Month' : timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)}</span>
+              <h2 className="text-xl font-semibold text-text-primary">Budget Overview</h2>
+              <span className="text-sm text-text-tertiary">{timeFilter === 'month' ? 'This Month' : timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)}</span>
             </div>
 
             <div className="space-y-4">
@@ -368,30 +368,30 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-xl">{getCategoryIcon(category)}</span>
-                        <span className="text-sm font-medium text-white">{category}</span>
+                        <span className="text-sm font-medium text-text-primary">{category}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm text-[#EBEBF599]">
+                        <span className="text-sm text-text-tertiary">
                           R{data.spent.toFixed(2)} / R{data.budget.toFixed(2)}
                         </span>
-                        {isOverBudget && <WarningCircle size={16} className="text-[#FF453A]" />}
+                        {isOverBudget && <WarningCircle size={16} className="text-danger" />}
                       </div>
                     </div>
-                    <div className="relative h-2 bg-[#0A0A0A] rounded-full overflow-hidden">
+                    <div className="relative h-2 bg-background  overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${
-                          isOverBudget ? 'bg-[#FF453A]' : isWarning ? 'bg-[#FF9F0A]' : 'bg-[#30D158]'
+                        className={`h-full  transition-all ${
+                          isOverBudget ? 'bg-danger' : isWarning ? 'bg-warning' : 'bg-success'
                         }`}
                         style={{ width: `${Math.min(data.percentage, 100)}%` }}
                       />
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className={`font-medium ${
-                        isOverBudget ? 'text-[#FF453A]' : isWarning ? 'text-[#FF9F0A]' : 'text-[#30D158]'
+                        isOverBudget ? 'text-danger' : isWarning ? 'text-warning' : 'text-success'
                       }`}>
                         {data.percentage.toFixed(1)}% used
                       </span>
-                      <span className="text-[#EBEBF599]">
+                      <span className="text-text-tertiary">
                         R{(data.budget - data.spent).toFixed(2)} remaining
                       </span>
                     </div>
@@ -402,8 +402,8 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           </div>
 
           {/* Recent Transactions */}
-          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Recent Transactions</h2>
+          <div className="bg-surface border border-border  p-6">
+            <h2 className="text-xl font-semibold text-text-primary mb-4">Recent Transactions</h2>
             <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {filteredTransactions.length > 0 ? (
                 filteredTransactions
@@ -412,15 +412,15 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                   .map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex items-center justify-between p-4 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors group"
+                      className="flex items-center justify-between p-4 bg-background  hover:bg-surface/50 transition-colors group"
                     >
                       <div className="flex items-center gap-4 flex-1">
                         <div className="text-2xl">{getCategoryIcon(transaction.category)}</div>
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-white">{transaction.description}</div>
+                          <div className="text-sm font-medium text-text-primary">{transaction.description}</div>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-[#EBEBF599]">{transaction.date}</span>
-                            <span className="text-xs px-2 py-0.5 bg-[#38383A]/30 rounded text-[#EBEBF599]">
+                            <span className="text-xs text-text-tertiary">{transaction.date}</span>
+                            <span className="text-xs px-2 py-0.5 bg-border/30 text-text-tertiary">
                               {transaction.category}
                             </span>
                           </div>
@@ -429,7 +429,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                       <div className="flex items-center gap-3">
                         <div
                           className={`text-lg font-mono font-semibold ${
-                            transaction.amount > 0 ? 'text-[#30D158]' : 'text-white'
+                            transaction.amount > 0 ? 'text-success' : 'text-text-primary'
                           }`}
                         >
                           {transaction.amount > 0 ? '+' : ''}R{transaction.amount.toFixed(2)}
@@ -437,16 +437,16 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => toggleRecurring(transaction.id)}
-                            className="p-2 hover:bg-[#38383A] rounded transition-colors"
+                            className="p-2 hover:bg-border transition-colors"
                             title="Toggle recurring"
                           >
-                            <span className={recurringIds.includes(transaction.id) ? 'text-[#FF9F0A]' : 'text-[#EBEBF599]'}>★</span>
+                            <span className={recurringIds.includes(transaction.id) ? 'text-warning' : 'text-text-tertiary'}>★</span>
                           </button>
                           <button
                             onClick={() => onEditTransaction(transaction)}
-                            className="p-2 hover:bg-[#38383A] rounded transition-colors"
+                            className="p-2 hover:bg-border transition-colors"
                           >
-                            <PencilSimple size={14} className="text-[#EBEBF599]" />
+                            <PencilSimple size={14} className="text-text-tertiary" />
                           </button>
                           <button
                             onClick={() => {
@@ -454,16 +454,16 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                                 onDeleteTransaction(transaction.id);
                               }
                             }}
-                            className="p-2 hover:bg-[#FF453A]/20 rounded transition-colors"
+                            className="p-2 hover:bg-danger/20 transition-colors"
                           >
-                            <Trash size={14} className="text-[#FF453A]" />
+                            <Trash size={14} className="text-danger" />
                           </button>
                         </div>
                       </div>
                     </div>
                   ))
               ) : (
-                <div className="text-center py-12 text-[#EBEBF599]">
+                <div className="text-center py-12 text-text-tertiary">
                   <Receipt size={48} className="mx-auto mb-3 opacity-30" />
                   <p className="text-sm">No transactions found</p>
                   <p className="text-xs mt-1">Add your first transaction to get started</p>
@@ -475,8 +475,8 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
 
         {/* Category Breakdown */}
         <div className="space-y-6">
-          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Spending by Category</h2>
+          <div className="bg-surface border border-border  p-6">
+            <h2 className="text-xl font-semibold text-text-primary mb-4">Spending by Category</h2>
             <div className="space-y-3">
               {Object.entries(stats.categoryBreakdown)
                 .sort((a, b) => b[1] - a[1])
@@ -488,18 +488,18 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">{getCategoryIcon(category)}</span>
-                          <span className="text-sm text-white">{category}</span>
+                          <span className="text-sm text-text-primary">{category}</span>
                         </div>
-                        <span className="text-sm font-mono text-white">R{amount.toFixed(2)}</span>
+                        <span className="text-sm font-mono text-text-primary">R{amount.toFixed(2)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-[#0A0A0A] rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-background  overflow-hidden">
                           <div
-                            className="h-full bg-[#0A84FF] rounded-full"
+                            className="h-full bg-text-primary "
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
-                        <span className="text-xs text-[#EBEBF599] w-12 text-right">
+                        <span className="text-xs text-text-tertiary w-12 text-right">
                           {percentage.toFixed(1)}%
                         </span>
                       </div>
@@ -510,19 +510,19 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           </div>
 
           {/* Quick Insights */}
-          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-              <Lightbulb size={20} className="text-[#FF9F0A]" />
+          <div className="bg-surface border border-border  p-6">
+            <h2 className="text-xl font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <Lightbulb size={20} className="text-warning" />
               Insights
             </h2>
             <div className="space-y-3">
               {stats.balance < 0 && (
-                <div className="p-3 bg-[#FF453A]/10 border border-[#FF453A]/30 rounded-lg">
+                <div className="p-3 bg-danger/10 border border-danger/30 ">
                   <div className="flex items-start gap-2">
-                    <WarningCircle size={16} className="text-[#FF453A] mt-0.5" />
+                    <WarningCircle size={16} className="text-danger mt-0.5" />
                     <div>
-                      <div className="text-sm font-medium text-[#FF453A]">Budget Alert</div>
-                      <div className="text-xs text-[#EBEBF599] mt-1">
+                      <div className="text-sm font-medium text-danger">Budget Alert</div>
+                      <div className="text-xs text-text-tertiary mt-1">
                         You&apos;re spending more than you earn this {timeFilter}
                       </div>
                     </div>
@@ -531,12 +531,12 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
               )}
 
               {Object.entries(budgetStatus).some(([_, data]) => data.percentage > 100) && (
-                <div className="p-3 bg-[#FF9F0A]/10 border border-[#FF9F0A]/30 rounded-lg">
+                <div className="p-3 bg-warning/10 border border-warning/30 ">
                   <div className="flex items-start gap-2">
-                    <WarningCircle size={16} className="text-[#FF9F0A] mt-0.5" />
+                    <WarningCircle size={16} className="text-warning mt-0.5" />
                     <div>
-                      <div className="text-sm font-medium text-[#FF9F0A]">Over Budget</div>
-                      <div className="text-xs text-[#EBEBF599] mt-1">
+                      <div className="text-sm font-medium text-warning">Over Budget</div>
+                      <div className="text-xs text-text-tertiary mt-1">
                         {Object.entries(budgetStatus).filter(([_, data]) => data.percentage > 100).length} categories over budget
                       </div>
                     </div>
@@ -545,14 +545,14 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
               )}
 
               {stats.balance >= 0 && stats.income > 0 && (stats.balance / stats.income) * 100 > 30 && (
-                <div className="p-3 bg-[#30D158]/10 border border-[#30D158]/30 rounded-lg">
+                <div className="p-3 bg-success/10 border border-success/30 ">
                   <div className="flex items-start gap-2">
-                    <TrendUp size={16} className="text-[#30D158] mt-0.5" />
+                    <TrendUp size={16} className="text-success mt-0.5" />
                     <div>
-                      <div className="text-sm font-medium text-[#30D158]">Great Saving!</div>
-                      <div className="text-xs text-[#EBEBF599] mt-1">
+                      <div className="text-sm font-medium text-success">Great Saving!</div>
+                      <div className="text-xs text-text-tertiary mt-1">
                         <span className="inline-flex items-center gap-2">
-                          <Star size={16} className="text-[#0A84FF]" />
+                          <Star size={16} className="text-text-primary" />
                           You&apos;re saving over 30% of your income
                         </span>
                       </div>
@@ -561,9 +561,9 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                 </div>
               )}
 
-              <div className="p-3 bg-[#0A84FF]/10 border border-[#0A84FF]/30 rounded-lg">
-                <div className="text-sm font-medium text-[#0A84FF] mb-2">Top Spending</div>
-                <div className="text-xs text-[#EBEBF599]">
+              <div className="p-3 bg-text-primary/10 border border-text-primary/30 ">
+                <div className="text-sm font-medium text-text-primary mb-2">Top Spending</div>
+                <div className="text-xs text-text-tertiary">
                   {Object.entries(stats.categoryBreakdown)
                     .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'} is your biggest expense
                 </div>

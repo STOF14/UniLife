@@ -126,7 +126,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
         !fundamentalModules.includes(m) && !coreModules.includes(m)
       );
 
-      const yearColors = ['#0A84FF', '#30D158', '#FF9F0A'];
+      const yearColors = ['#E8E8E8', '#34C759', '#FF9F0A'];
       const yearFocus = [
         ['Foundation Building', 'Core Sciences', 'Academic Skills'],
         ['Advanced Topics', 'Specialization', 'Research Methods'],
@@ -168,26 +168,26 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
   const selectedPlan = yearPlans.find(plan => plan.year === selectedYear) || yearPlans[0];
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] p-6">
+    <div className="min-h-screen bg-background p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <GraduationCap className="h-8 w-8 mr-3 text-[#0A84FF]" />
+            <h1 className="text-4xl font-bold text-text-primary mb-2 flex items-center">
+              <GraduationCap className="h-8 w-8 mr-3 text-text-primary" />
               University Journey Roadmap
             </h1>
-            <p className="text-[#EBEBF599] text-lg">
+            <p className="text-text-tertiary text-lg">
               Your personalized path to success in {major}
               {secondMajor && ` with ${secondMajor} as second major`}
             </p>
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <p className="text-[#EBEBF599] text-sm">Total Journey</p>
-              <p className="text-white text-2xl font-bold">3 Years</p>
+              <p className="text-text-tertiary text-sm">Total Journey</p>
+              <p className="text-text-primary text-2xl font-bold">3 Years</p>
             </div>
-            <RocketLaunch className="h-8 w-8 text-[#0A84FF]" />
+            <RocketLaunch className="h-8 w-8 text-text-primary" />
           </div>
         </div>
 
@@ -199,13 +199,13 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
               onClick={() => setSelectedYear(plan.year)}
               className={`flex-1 transition-all duration-300 transform hover:scale-105 ${
                 selectedYear === plan.year
-                  ? 'bg-[#0A84FF] text-white shadow-lg shadow-[#0A84FF]/30'
-                  : 'bg-[#1C1C1C] text-[#EBEBF599] hover:bg-[#38383A]'
+                  ? 'bg-text-primary text-background shadow-lg shadow-text-primary/30'
+                  : 'bg-surface text-text-tertiary hover:bg-border'
               }`}
             >
               <div className="flex items-center justify-center">
-                <div className={`w-3 h-3 rounded-full mr-2 ${
-                  selectedYear === plan.year ? 'bg-white' : 'bg-[#EBEBF599]'
+                <div className={`w-3 h-3  mr-2 ${
+                  selectedYear === plan.year ? 'bg-white' : 'bg-text-tertiary'
                 }`} />
                 <span className="font-medium">Year {plan.year}</span>
               </div>
@@ -219,55 +219,55 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
         {/* Year Overview */}
         <div className="lg:col-span-2 space-y-6">
           {/* Year Card */}
-          <Card className="bg-[#0A0A0A] border-[#38383A] overflow-hidden">
+          <Card className="bg-background border-border overflow-hidden">
             <div 
-              className="h-2 bg-gradient-to-r from-transparent via-[#0A84FF] to-transparent"
+              className="h-2 bg-gradient-to-r from-transparent via-text-primary to-transparent"
               style={{ backgroundColor: selectedPlan.color }}
             />
             <CardHeader>
-              <CardTitle className="text-white flex items-center justify-between">
+              <CardTitle className="text-text-primary flex items-center justify-between">
                 <div className="flex items-center">
                   <div 
-                    className="w-4 h-4 rounded-full mr-3"
+                    className="w-4 h-4  mr-3"
                     style={{ backgroundColor: selectedPlan.color }}
                   />
                   {selectedPlan.title}
                 </div>
-                <span className="text-sm text-[#EBEBF599]">
+                <span className="text-sm text-text-tertiary">
                   {selectedPlan.totalCredits} Credits
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-[#EBEBF599] mb-6">{selectedPlan.description}</p>
+              <p className="text-text-tertiary mb-6">{selectedPlan.description}</p>
               
               {/* Credit Breakdown */}
               <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="text-center p-4 bg-[#1C1C1C] rounded-lg">
-                  <p className="text-2xl font-bold text-[#30D158]">{selectedPlan.fundamentalCredits}</p>
-                  <p className="text-[#EBEBF599] text-sm">Fundamental</p>
+                <div className="text-center p-4 bg-surface ">
+                  <p className="text-2xl font-bold text-success">{selectedPlan.fundamentalCredits}</p>
+                  <p className="text-text-tertiary text-sm">Fundamental</p>
                 </div>
-                <div className="text-center p-4 bg-[#1C1C1C] rounded-lg">
-                  <p className="text-2xl font-bold text-[#0A84FF]">{selectedPlan.coreCredits}</p>
-                  <p className="text-[#EBEBF599] text-sm">Core</p>
+                <div className="text-center p-4 bg-surface ">
+                  <p className="text-2xl font-bold text-text-primary">{selectedPlan.coreCredits}</p>
+                  <p className="text-text-tertiary text-sm">Core</p>
                 </div>
-                <div className="text-center p-4 bg-[#1C1C1C] rounded-lg">
-                  <p className="text-2xl font-bold text-[#FF9F0A]">{selectedPlan.electiveCredits}</p>
-                  <p className="text-[#EBEBF599] text-sm">Elective</p>
+                <div className="text-center p-4 bg-surface ">
+                  <p className="text-2xl font-bold text-warning">{selectedPlan.electiveCredits}</p>
+                  <p className="text-text-tertiary text-sm">Elective</p>
                 </div>
               </div>
 
               {/* Focus Areas */}
               <div className="mb-6">
-                <h3 className="text-white font-semibold mb-3 flex items-center">
-                  <Target className="h-5 w-5 mr-2 text-[#0A84FF]" />
+                <h3 className="text-text-primary font-semibold mb-3 flex items-center">
+                  <Target className="h-5 w-5 mr-2 text-text-primary" />
                   Focus Areas
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedPlan.focus.map((focus, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-[#1C1C1C] text-[#EBEBF599] rounded-full text-sm border border-[#38383A]"
+                      className="px-3 py-1 bg-surface text-text-tertiary  text-sm border border-border"
                     >
                       {focus}
                     </span>
@@ -278,14 +278,14 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
               {/* Progress */}
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-[#EBEBF599]">Year Progress</span>
-                  <span className="text-white font-medium">
+                  <span className="text-text-tertiary">Year Progress</span>
+                  <span className="text-text-primary font-medium">
                     {Math.round(animatedProgress[selectedPlan.year] || 0)}%
                   </span>
                 </div>
-                <div className="w-full bg-[#38383A] rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-border  h-3 overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-[#0A84FF] to-[#30D158] rounded-full transition-all duration-1000 ease-out"
+                    className="h-full bg-gradient-to-r from-text-primary to-success  transition-all duration-1000 ease-out"
                     style={{ width: `${animatedProgress[selectedPlan.year] || 0}%` }}
                   />
                 </div>
@@ -294,10 +294,10 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
           </Card>
 
           {/* Modules Grid */}
-          <Card className="bg-[#0A0A0A] border-[#38383A]">
+          <Card className="bg-background border-border">
             <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <BookOpen className="h-5 w-5 mr-2 text-[#0A84FF]" />
+              <CardTitle className="text-text-primary flex items-center">
+                <BookOpen className="h-5 w-5 mr-2 text-text-primary" />
                 Year {selectedPlan.year} Modules
               </CardTitle>
             </CardHeader>
@@ -306,9 +306,9 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
                 {selectedPlan.modules.map((module, index) => (
                   <div
                     key={module.id}
-                    className={`p-4 bg-[#1C1C1C] border border-[#38383A] rounded-lg transition-all duration-300 cursor-pointer
-                      ${hoveredModule === module.id ? 'border-[#0A84FF] transform scale-105' : ''}
-                      ${module.progress === 100 ? 'bg-[#1C1C1C]/50' : ''}
+                    className={`p-4 bg-surface border border-border  transition-all duration-300 cursor-pointer
+                      ${hoveredModule === module.id ? 'border-text-primary transform scale-105' : ''}
+                      ${module.progress === 100 ? 'bg-surface/50' : ''}
                     `}
                     onMouseEnter={() => setHoveredModule(module.id)}
                     onMouseLeave={() => setHoveredModule(null)}
@@ -319,26 +319,26 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h4 className="text-white font-semibold">{module.code}</h4>
-                        <p className="text-[#EBEBF599] text-sm">{module.name}</p>
+                        <h4 className="text-text-primary font-semibold">{module.code}</h4>
+                        <p className="text-text-tertiary text-sm">{module.name}</p>
                       </div>
                       <div className="flex items-center">
                         {module.progress === 100 ? (
-                          <CheckCircle className="h-5 w-5 text-[#30D158]" />
+                          <CheckCircle className="h-5 w-5 text-success" />
                         ) : (
-                          <Circle className="h-5 w-5 text-[#EBEBF599]" />
+                          <Circle className="h-5 w-5 text-text-tertiary" />
                         )}
                       </div>
                     </div>
-                    <div className="flex justify-between text-sm text-[#EBEBF599]">
+                    <div className="flex justify-between text-sm text-text-tertiary">
                       <span>{module.credits} credits</span>
                       <span>{module.semester}</span>
                     </div>
                     {module.progress > 0 && (
                       <div className="mt-2">
-                        <div className="w-full bg-[#38383A] rounded-full h-1">
+                        <div className="w-full bg-border  h-1">
                           <div 
-                            className="bg-[#0A84FF] h-1 rounded-full transition-all duration-500"
+                            className="bg-text-primary h-1  transition-all duration-500"
                             style={{ width: `${module.progress}%` }}
                           />
                         </div>
@@ -354,10 +354,10 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Milestones */}
-          <Card className="bg-[#0A0A0A] border-[#38383A]">
+          <Card className="bg-background border-border">
             <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Star className="h-5 w-5 mr-2 text-[#FF9F0A]" />
+              <CardTitle className="text-text-primary flex items-center">
+                <Star className="h-5 w-5 mr-2 text-warning" />
                 Year {selectedPlan.year} Milestones
               </CardTitle>
             </CardHeader>
@@ -372,18 +372,18 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
                       animation: 'slideInRight 0.5s ease-out forwards'
                     }}
                   >
-                    <div className={`p-2 rounded-full ${
-                      milestone.completed ? 'bg-[#30D158]' : 'bg-[#38383A]'
+                    <div className={`p-2  ${
+                      milestone.completed ? 'bg-success' : 'bg-border'
                     }`}>
                       {milestone.icon}
                     </div>
                     <div className="flex-1">
                       <h4 className={`text-sm font-medium ${
-                        milestone.completed ? 'text-[#30D158]' : 'text-white'
+                        milestone.completed ? 'text-success' : 'text-text-primary'
                       }`}>
                         {milestone.title}
                       </h4>
-                      <p className="text-[#EBEBF599] text-xs mt-1">
+                      <p className="text-text-tertiary text-xs mt-1">
                         {milestone.description}
                       </p>
                     </div>
@@ -394,40 +394,40 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
           </Card>
 
           {/* Journey Stats */}
-          <Card className="bg-[#0A0A0A] border-[#38383A]">
+          <Card className="bg-background border-border">
             <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <TrendUp className="h-5 w-5 mr-2 text-[#30D158]" />
+              <CardTitle className="text-text-primary flex items-center">
+                <TrendUp className="h-5 w-5 mr-2 text-success" />
                 Journey Statistics
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-[#EBEBF599]">Total Modules</span>
-                  <span className="text-white font-bold">{modules.length}</span>
+                  <span className="text-text-tertiary">Total Modules</span>
+                  <span className="text-text-primary font-bold">{modules.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[#EBEBF599]">Completed</span>
-                  <span className="text-[#30D158] font-bold">
+                  <span className="text-text-tertiary">Completed</span>
+                  <span className="text-success font-bold">
                     {modules.filter(m => m.progress === 100).length}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[#EBEBF599]">In Progress</span>
-                  <span className="text-[#FF9F0A] font-bold">
+                  <span className="text-text-tertiary">In Progress</span>
+                  <span className="text-warning font-bold">
                     {modules.filter(m => m.progress > 0 && m.progress < 100).length}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[#EBEBF599]">Total Credits</span>
-                  <span className="text-white font-bold">
+                  <span className="text-text-tertiary">Total Credits</span>
+                  <span className="text-text-primary font-bold">
                     {modules.reduce((sum, m) => sum + m.credits, 0)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[#EBEBF599]">Avg Progress</span>
-                  <span className="text-[#0A84FF] font-bold">
+                  <span className="text-text-tertiary">Avg Progress</span>
+                  <span className="text-text-primary font-bold">
                     {Math.round(modules.reduce((sum, m) => sum + m.progress, 0) / modules.length)}%
                   </span>
                 </div>
@@ -436,24 +436,24 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
           </Card>
 
           {/* Quick Actions */}
-          <Card className="bg-[#0A0A0A] border-[#38383A]">
+          <Card className="bg-background border-border">
             <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Lightning className="h-5 w-5 mr-2 text-[#0A84FF]" />
+              <CardTitle className="text-text-primary flex items-center">
+                <Lightning className="h-5 w-5 mr-2 text-text-primary" />
                 Quick Actions
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <Button className="w-full bg-[#0A84FF] hover:bg-[#0066CC]">
+                <Button className="w-full bg-text-primary text-background hover:bg-text-secondary">
                   <Calendar className="h-4 w-4 mr-2" />
                   View Academic Calendar
                 </Button>
-                <Button className="w-full bg-[#1C1C1C] hover:bg-[#38383A] text-white">
+                <Button className="w-full bg-surface hover:bg-border text-text-primary">
                   <Target className="h-4 w-4 mr-2" />
                   Set Goals
                 </Button>
-                <Button className="w-full bg-[#1C1C1C] hover:bg-[#38383A] text-white">
+                <Button className="w-full bg-surface hover:bg-border text-text-primary">
                   <Trophy className="h-4 w-4 mr-2" />
                   Track Achievements
                 </Button>

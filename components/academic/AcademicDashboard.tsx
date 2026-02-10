@@ -107,98 +107,98 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
   const semesters = [...new Set(modules.map(m => m.semester))].sort();
 
   const getGradeColor = (grade: number) => {
-    if (grade >= 75) return 'text-green-500';
-    if (grade >= 60) return 'text-blue-500';
+    if (grade >= 75) return 'text-success';
+    if (grade >= 60) return 'text-text-primary';
     if (grade >= 50) return 'text-yellow-500';
-    return 'text-red-500';
+    return 'text-danger';
   };
 
   const getProgressColor = (progress: number) => {
-    if (progress === 100) return 'bg-green-500';
-    if (progress >= 75) return 'bg-blue-500';
-    if (progress >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (progress === 100) return 'bg-success';
+    if (progress >= 75) return 'bg-text-primary';
+    if (progress >= 50) return 'bg-warning';
+    return 'bg-danger';
   };
 
   return (
     <div className="space-y-6">
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-[#0A0A0A] border-[#38383A]">
+        <Card className="bg-background border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#EBEBF599] text-sm">CWA</p>
-                <p className="text-2xl font-bold text-white">{parseFloat(cwa).toFixed(1)}</p>
+                <p className="text-text-tertiary text-sm">CWA</p>
+                <p className="text-2xl font-bold text-text-primary">{parseFloat(cwa).toFixed(1)}</p>
               </div>
-              <ChartBar className="h-8 w-8 text-[#0A84FF]" />
+              <ChartBar className="h-8 w-8 text-text-primary" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#0A0A0A] border-[#38383A]">
+        <Card className="bg-background border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#EBEBF599] text-sm">Average Grade</p>
+                <p className="text-text-tertiary text-sm">Average Grade</p>
                 <p className={`text-2xl font-bold ${getGradeColor(averageGrade)}`}>
                   {averageGrade.toFixed(1)}%
                 </p>
               </div>
-              <TrendUp className="h-8 w-8 text-[#0A84FF]" />
+              <TrendUp className="h-8 w-8 text-text-primary" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#0A0A0A] border-[#38383A]">
+        <Card className="bg-background border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#EBEBF599] text-sm">Total Credits</p>
-                <p className="text-2xl font-bold text-white">{totalCredits}</p>
+                <p className="text-text-tertiary text-sm">Total Credits</p>
+                <p className="text-2xl font-bold text-text-primary">{totalCredits}</p>
               </div>
-              <Trophy className="h-8 w-8 text-[#0A84FF]" />
+              <Trophy className="h-8 w-8 text-text-primary" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#0A0A0A] border-[#38383A]">
+        <Card className="bg-background border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#EBEBF599] text-sm">Completed</p>
-                <p className="text-2xl font-bold text-white">{completedModules}/{modules.length}</p>
+                <p className="text-text-tertiary text-sm">Completed</p>
+                <p className="text-2xl font-bold text-text-primary">{completedModules}/{modules.length}</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <CheckCircle className="h-8 w-8 text-success" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#0A0A0A] border-[#38383A]">
+        <Card className="bg-background border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#EBEBF599] text-sm">Active Credits</p>
-                <p className="text-2xl font-bold text-white">{activeCredits}</p>
+                <p className="text-text-tertiary text-sm">Active Credits</p>
+                <p className="text-2xl font-bold text-text-primary">{activeCredits}</p>
               </div>
-              <Clock className="h-8 w-8 text-[#FF9F0A]" />
+              <Clock className="h-8 w-8 text-warning" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Search and Filters */}
-      <Card className="bg-[#0A0A0A] border-[#38383A]">
+      <Card className="bg-background border-border">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#EBEBF599]" />
+                <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-tertiary" />
                 <Input
                   placeholder="Search modules..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-[#1C1C1C] border-[#38383A] text-white"
+                  className="pl-10 bg-surface border-border text-text-primary"
                   label=""
                 />
               </div>
@@ -206,7 +206,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
             <select
               value={filterYear}
               onChange={(e) => setFilterYear(e.target.value)}
-              className="px-3 py-2 bg-[#1C1C1C] border-[#38383A] rounded-lg text-white"
+              className="px-3 py-2 bg-surface border-border  text-text-primary"
             >
               <option value="all">All Years</option>
               {years.map(year => (
@@ -216,7 +216,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
             <select
               value={filterMajor}
               onChange={(e) => setFilterMajor(e.target.value)}
-              className="px-3 py-2 bg-[#1C1C1C] border-[#38383A] rounded-lg text-white"
+              className="px-3 py-2 bg-surface border-border  text-text-primary"
             >
               <option value="all">All Majors</option>
               {majors.map(major => (
@@ -226,7 +226,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
             <select
               value={filterSemester}
               onChange={(e) => setFilterSemester(e.target.value)}
-              className="px-3 py-2 bg-[#1C1C1C] border-[#38383A] rounded-lg text-white"
+              className="px-3 py-2 bg-surface border-border  text-text-primary"
             >
               <option value="all">All Semesters</option>
               {semesters.map(semester => (
@@ -237,8 +237,8 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
               onClick={() => setFilterYear('all')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
-                filterYear === 'all' ? 'bg-[#0A84FF]/20 text-[#0A84FF] border-[#0A84FF]/40' : 'bg-[#1C1C1C] text-[#EBEBF599] border-[#38383A]'
+              className={`px-3 py-1.5  text-xs font-medium border ${
+                filterYear === 'all' ? 'bg-text-primary/20 text-text-primary border-text-primary/40' : 'bg-surface text-text-tertiary border-border'
               }`}
             >
               All Years
@@ -247,8 +247,8 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
               <button
                 key={year}
                 onClick={() => setFilterYear(year)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
-                  filterYear === year ? 'bg-[#0A84FF]/20 text-[#0A84FF] border-[#0A84FF]/40' : 'bg-[#1C1C1C] text-[#EBEBF599] border-[#38383A]'
+                className={`px-3 py-1.5  text-xs font-medium border ${
+                  filterYear === year ? 'bg-text-primary/20 text-text-primary border-text-primary/40' : 'bg-surface text-text-tertiary border-border'
                 }`}
               >
                 Year {year}
@@ -258,8 +258,8 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
               <button
                 key={semester}
                 onClick={() => setFilterSemester(semester)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
-                  filterSemester === semester ? 'bg-[#30D158]/20 text-[#30D158] border-[#30D158]/40' : 'bg-[#1C1C1C] text-[#EBEBF599] border-[#38383A]'
+                className={`px-3 py-1.5  text-xs font-medium border ${
+                  filterSemester === semester ? 'bg-success/20 text-success border-success/40' : 'bg-surface text-text-tertiary border-border'
                 }`}
               >
                 {semester}
@@ -267,14 +267,14 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
             ))}
             <button
               onClick={() => setShowNeedsAttention(!showNeedsAttention)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
-                showNeedsAttention ? 'bg-[#FF9F0A]/20 text-[#FF9F0A] border-[#FF9F0A]/40' : 'bg-[#1C1C1C] text-[#EBEBF599] border-[#38383A]'
+              className={`px-3 py-1.5  text-xs font-medium border ${
+                showNeedsAttention ? 'bg-warning/20 text-warning border-warning/40' : 'bg-surface text-text-tertiary border-border'
               }`}
             >
               Needs attention
             </button>
           </div>
-          <Button onClick={onImportYearbook} className="bg-[#0A84FF] hover:bg-[#0066CC]">
+          <Button onClick={onImportYearbook} className="bg-text-primary text-background hover:bg-text-secondary">
             <UploadSimple className="h-4 w-4 mr-2" />
             Import Yearbook
           </Button>
@@ -283,10 +283,10 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
 
       {/* Upcoming Assessments */}
       {upcomingAssessments.length > 0 && (
-        <Card className="bg-[#0A0A0A] border-[#38383A]">
+        <Card className="bg-background border-border">
           <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <Clock className="h-5 w-5 mr-2 text-[#0A84FF]" />
+            <CardTitle className="text-text-primary flex items-center">
+              <Clock className="h-5 w-5 mr-2 text-text-primary" />
               Upcoming Assessments
             </CardTitle>
           </CardHeader>
@@ -297,17 +297,17 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                 const daysLeft = Math.ceil((new Date(assessment.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                 
                 return (
-                  <div key={index} className="flex items-center justify-between p-3 bg-[#1C1C1C] rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 bg-surface ">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${daysLeft <= 3 ? 'bg-red-500' : daysLeft <= 7 ? 'bg-yellow-500' : 'bg-blue-500'}`} />
+                      <div className={`w-2 h-2  ${daysLeft <= 3 ? 'bg-danger' : daysLeft <= 7 ? 'bg-warning' : 'bg-text-primary'}`} />
                       <div>
-                        <p className="text-white font-medium">{assessment.name}</p>
-                        <p className="text-[#EBEBF599] text-sm">{module?.code} - {module?.name}</p>
+                        <p className="text-text-primary font-medium">{assessment.name}</p>
+                        <p className="text-text-tertiary text-sm">{module?.code} - {module?.name}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-white text-sm">{daysLeft} days</p>
-                      <p className="text-[#EBEBF599] text-xs">{new Date(assessment.dueDate).toLocaleDateString()}</p>
+                      <p className="text-text-primary text-sm">{daysLeft} days</p>
+                      <p className="text-text-tertiary text-xs">{new Date(assessment.dueDate).toLocaleDateString()}</p>
                     </div>
                   </div>
                 );
@@ -318,12 +318,12 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
       )}
 
       {filteredModules.length === 0 && (
-        <Card className="bg-[#0A0A0A] border-[#38383A]">
+        <Card className="bg-background border-border">
           <CardContent className="p-6 text-center">
-            <p className="text-white text-sm mb-2">No active modules match your filters.</p>
-            <p className="text-[#EBEBF599] text-xs mb-4">Try adjusting filters or import your yearbook.</p>
+            <p className="text-text-primary text-sm mb-2">No active modules match your filters.</p>
+            <p className="text-text-tertiary text-xs mb-4">Try adjusting filters or import your yearbook.</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button onClick={onImportYearbook} className="bg-[#0A84FF] hover:bg-[#0066CC]">
+              <Button onClick={onImportYearbook} className="bg-text-primary text-background hover:bg-text-secondary">
                 <UploadSimple className="h-4 w-4 mr-2" />Import Yearbook
               </Button>
               <Button onClick={() => setShowAddModuleModal(true)} variant="secondary">
@@ -337,9 +337,9 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
       {/* Modules by Major */}
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-white">Modules</h2>
+          <h2 className="text-xl font-semibold text-text-primary">Modules</h2>
           <div className="flex gap-2">
-            <Button onClick={() => setShowAddModuleModal(true)} className="bg-[#0A84FF] hover:bg-[#0066CC]">
+            <Button onClick={() => setShowAddModuleModal(true)} className="bg-text-primary text-background hover:bg-text-secondary">
               <Plus className="h-4 w-4 mr-2" />
               Add Module
             </Button>
@@ -347,26 +347,26 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
         </div>
         
         {Object.entries(modulesByMajor).map(([major, majorModules]) => (
-          <Card key={major} className="bg-[#0A0A0A] border-[#38383A]">
+          <Card key={major} className="bg-background border-border">
             <CardHeader>
-              <CardTitle className="text-white flex items-center justify-between">
+              <CardTitle className="text-text-primary flex items-center justify-between">
                 <span>{major}</span>
-                <span className="text-sm text-[#EBEBF599]">{majorModules.length} modules</span>
+                <span className="text-sm text-text-tertiary">{majorModules.length} modules</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {majorModules.map((module) => (
-                  <div key={module.id} className="bg-[#1C1C1C] border border-[#38383A] rounded-lg p-4 hover:border-[#0A84FF] transition-colors">
+                  <div key={module.id} className="bg-surface border border-border  p-4 hover:border-text-primary transition-colors">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
-                        <h4 className="text-lg font-semibold text-white">{module.code}</h4>
-                        <p className="text-[#EBEBF599] text-sm">{module.name}</p>
-                        <p className="text-[#EBEBF599] text-xs">{module.credits} credits • {module.semester}</p>
+                        <h4 className="text-lg font-semibold text-text-primary">{module.code}</h4>
+                        <p className="text-text-tertiary text-sm">{module.name}</p>
+                        <p className="text-text-tertiary text-xs">{module.credits} credits • {module.semester}</p>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0A84FF]/20 text-[#0A84FF]">Active</span>
+                          <span className="text-[10px] px-2 py-0.5  bg-text-primary/20 text-text-primary">Active</span>
                           {module.currentGrade < module.targetGrade && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF9F0A]/20 text-[#FF9F0A]">Below target</span>
+                            <span className="text-[10px] px-2 py-0.5  bg-warning/20 text-warning">Below target</span>
                           )}
                         </div>
                       </div>
@@ -380,9 +380,9 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                             setEditingModule(module);
                             setShowAddModuleModal(true);
                           }}
-                          className="p-1 hover:bg-[#38383A] rounded"
+                          className="p-1 hover:bg-border"
                         >
-                          <PencilSimple className="h-4 w-4 text-[#EBEBF599]" />
+                          <PencilSimple className="h-4 w-4 text-text-tertiary" />
                         </button>
                         <button
                           onClick={(e) => {
@@ -392,25 +392,25 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                               // TODO: Implement delete functionality
                             }
                           }}
-                          className="p-1 hover:bg-[#38383A] rounded"
+                          className="p-1 hover:bg-border"
                         >
-                          <Trash className="h-4 w-4 text-red-500" />
+                          <Trash className="h-4 w-4 text-danger" />
                         </button>
                       </div>
                     </div>
                     
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#EBEBF599]">Target Grade</span>
-                        <span className="text-white font-medium">{module.targetGrade}%</span>
+                        <span className="text-text-tertiary">Target Grade</span>
+                        <span className="text-text-primary font-medium">{module.targetGrade}%</span>
                       </div>
-                      <div className="w-full bg-[#38383A] rounded-full h-2">
+                      <div className="w-full bg-border  h-2">
                         <div 
-                          className="bg-[#0A84FF] h-2 rounded-full transition-all duration-300"
+                          className="bg-text-primary h-2  transition-all duration-300"
                           style={{ width: `${module.progress}%` }}
                         />
                       </div>
-                      <div className="flex justify-between text-xs text-[#EBEBF599]">
+                      <div className="flex justify-between text-xs text-text-tertiary">
                         <span>Progress: {module.progress}%</span>
                         <span>{module.assessments?.length || 0} assessments</span>
                       </div>
@@ -418,7 +418,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                     
                     <button
                       onClick={() => setSelectedModule(module)}
-                      className="mt-3 w-full py-2 bg-[#0A84FF] hover:bg-[#0066CC] text-white rounded-lg text-sm transition-colors"
+                      className="mt-3 w-full py-2 bg-text-primary text-background hover:bg-text-secondary text-sm transition-colors"
                     >
                       View Details
                     </button>
@@ -440,41 +440,41 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[#EBEBF599] text-sm">Module Code</p>
-                <p className="text-white font-medium">{selectedModule.code}</p>
+                <p className="text-text-tertiary text-sm">Module Code</p>
+                <p className="text-text-primary font-medium">{selectedModule.code}</p>
               </div>
               <div>
-                <p className="text-[#EBEBF599] text-sm">Credits</p>
-                <p className="text-white font-medium">{selectedModule.credits}</p>
+                <p className="text-text-tertiary text-sm">Credits</p>
+                <p className="text-text-primary font-medium">{selectedModule.credits}</p>
               </div>
             </div>
             
             <div>
-              <p className="text-[#EBEBF599] text-sm">Module Name</p>
-              <p className="text-white font-medium">{selectedModule.name}</p>
+              <p className="text-text-tertiary text-sm">Module Name</p>
+              <p className="text-text-primary font-medium">{selectedModule.name}</p>
             </div>
             
             <div>
-              <p className="text-[#EBEBF599] text-sm">Description</p>
-              <p className="text-white">{selectedModule.description || 'No description available'}</p>
+              <p className="text-text-tertiary text-sm">Description</p>
+              <p className="text-text-primary">{selectedModule.description || 'No description available'}</p>
             </div>
             
             {selectedModule.prerequisites && selectedModule.prerequisites.length > 0 && (
               <div>
-                <p className="text-[#EBEBF599] text-sm">Prerequisites</p>
-                <p className="text-white">{selectedModule.prerequisites.join(', ')}</p>
+                <p className="text-text-tertiary text-sm">Prerequisites</p>
+                <p className="text-text-primary">{selectedModule.prerequisites.join(', ')}</p>
               </div>
             )}
             
             <div>
-              <p className="text-[#EBEBF599] text-sm">Assessments</p>
+              <p className="text-text-tertiary text-sm">Assessments</p>
               <div className="space-y-2">
                 {selectedModule.assessments?.map((assessment, index) => (
-                  <div key={index} className="flex justify-between items-center p-2 bg-[#1C1C1C] rounded">
-                    <span className="text-white">{assessment.name}</span>
-                    <span className="text-[#EBEBF599]">{assessment.weight}%</span>
+                  <div key={index} className="flex justify-between items-center p-2 bg-surface">
+                    <span className="text-text-primary">{assessment.name}</span>
+                    <span className="text-text-tertiary">{assessment.weight}%</span>
                   </div>
-                )) || <p className="text-[#EBEBF599]">No assessments found</p>}
+                )) || <p className="text-text-tertiary">No assessments found</p>}
               </div>
             </div>
           </div>

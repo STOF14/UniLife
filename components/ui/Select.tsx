@@ -12,9 +12,9 @@ export const Select = ({
   className,
   'data-testid': testId
 }: SelectProps) => (
-  <div className={cn('space-y-1', className)}>
-    <label className="block text-sm font-medium text-white">
-      {label} {required && <span className="text-[#FF453A]">*</span>}
+  <div className={cn('space-y-1.5', className)}>
+    <label className="block text-label uppercase tracking-[0.08em] text-text-secondary">
+      {label} {required && <span className="text-danger">*</span>}
     </label>
     <select
       value={value}
@@ -22,16 +22,16 @@ export const Select = ({
       required={required}
       data-testid={testId}
       className={cn(
-        'w-full bg-[#0A0A0A] border border-[#38383A] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#0A84FF]',
-        error && 'border-red-500 focus:border-red-500'
+        'w-full bg-transparent border-b border-border px-0 py-2 text-body text-text-primary focus:outline-none focus:border-text-primary transition-colors duration-200 cursor-pointer',
+        error && 'border-danger focus:border-danger'
       )}
     >
       {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
+        <option key={opt.value} value={opt.value} className="bg-background text-text-primary">{opt.label}</option>
       ))}
     </select>
     {error && (
-      <p className="text-sm text-red-500">{error}</p>
+      <p className="text-caption text-danger">{error}</p>
     )}
   </div>
 );

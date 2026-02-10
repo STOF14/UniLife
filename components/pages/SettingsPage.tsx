@@ -35,11 +35,11 @@ export const SettingsPage = () => {
 
   // Add index signature to departmentColors
   const departmentColors: { [key: string]: string } = {
-    'AIM': 'bg-blue-100 text-blue-800',
-    'COS': 'bg-green-100 text-green-800',
-    'LST': 'bg-purple-100 text-purple-800',
-    'PHY': 'bg-red-100 text-red-800',
-    'WTW': 'bg-yellow-100 text-yellow-800'
+    'AIM': 'bg-text-primary/10 text-text-primary',
+    'COS': 'bg-success/10 text-success',
+    'LST': 'bg-text-secondary/10 text-text-secondary',
+    'PHY': 'bg-danger/10 text-danger',
+    'WTW': 'bg-warning/10 text-warning'
   };
 
   // Define pastModules with Partial<Module> type
@@ -204,43 +204,43 @@ const handleImport = async () => {
   const demoTabs = ['Dashboard', 'Academic', 'Tasks', 'Timetable'];
 
   return (
-    <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
-      <h3 className="text-xl font-semibold text-white mb-4">Import Past Modules (2024-2025)</h3>
+    <div className="bg-surface border border-border  p-6">
+      <h3 className="text-xl font-semibold text-text-primary mb-4">Import Past Modules (2024-2025)</h3>
       
-      <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4 mb-4">
+      <div className="bg-background border border-border  p-4 mb-4">
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div>
-            <div className="text-sm text-[#EBEBF599] mb-1">Total Modules</div>
-            <div className="text-2xl font-bold text-white">{pastModules.length}</div>
+            <div className="text-sm text-text-tertiary mb-1">Total Modules</div>
+            <div className="text-2xl font-bold text-text-primary">{pastModules.length}</div>
           </div>
           <div>
-            <div className="text-sm text-[#EBEBF599] mb-1">Total Credits</div>
-            <div className="text-2xl font-bold text-white">{totalCredits}</div>
+            <div className="text-sm text-text-tertiary mb-1">Total Credits</div>
+            <div className="text-2xl font-bold text-text-primary">{totalCredits}</div>
           </div>
           <div>
-            <div className="text-sm text-[#EBEBF599] mb-1">Calculated CWA</div>
-            <div className="text-2xl font-bold text-[#0A84FF]">{cwa.toFixed(2)}%</div>
+            <div className="text-sm text-text-tertiary mb-1">Calculated CWA</div>
+            <div className="text-2xl font-bold text-text-primary">{cwa.toFixed(2)}%</div>
           </div>
         </div>
 
         <div className="space-y-2 max-h-60 overflow-y-auto">
-          <div className="text-xs font-semibold text-[#EBEBF599] mb-2">Modules to Import:</div>
+          <div className="text-xs font-semibold text-text-tertiary mb-2">Modules to Import:</div>
           {pastModules.map((mod, idx) => (
-            <div key={idx} className="flex items-center justify-between py-2 px-3 bg-[#141414] rounded">
+            <div key={idx} className="flex items-center justify-between py-2 px-3 bg-surface">
               <div className="flex items-center gap-3">
-                <span className="text-xs px-2 py-0.5 bg-[#38383A] rounded text-[#EBEBF599]">
+                <span className="text-xs px-2 py-0.5 bg-border text-text-tertiary">
                   {mod.semester}
                 </span>
-                <span className="text-sm text-white font-medium">{mod.code}</span>
-                <span className="text-xs text-[#EBEBF599] truncate max-w-xs">
+                <span className="text-sm text-text-primary font-medium">{mod.code}</span>
+                <span className="text-xs text-text-tertiary truncate max-w-xs">
                   {mod.name}
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-[#EBEBF599]">{mod.credits} cr</span>
+                <span className="text-xs text-text-tertiary">{mod.credits} cr</span>
                 <span className={`text-sm font-bold ${
-                  mod.grade >= 75 ? 'text-[#30D158]' : 
-                  mod.grade >= 50 ? 'text-[#0A84FF]' : 'text-[#FF453A]'
+                  mod.grade >= 75 ? 'text-success' : 
+                  mod.grade >= 50 ? 'text-text-primary' : 'text-danger'
                 }`}>
                   {mod.grade}%
                 </span>
@@ -254,12 +254,12 @@ const handleImport = async () => {
         <button
           onClick={handleImport}
           disabled={importing || imported}
-          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+          className={`flex items-center gap-2 px-6 py-3  font-medium transition-colors ${
             imported 
-              ? 'bg-[#30D158]/20 text-[#30D158] cursor-not-allowed' 
+              ? 'bg-success/20 text-success cursor-not-allowed' 
               : importing
-              ? 'bg-[#38383A] text-[#EBEBF599] cursor-wait'
-              : 'bg-[#0A84FF] text-white hover:bg-[#0A84FF]/80'
+              ? 'bg-border text-text-tertiary cursor-wait'
+              : 'bg-text-primary text-background hover:bg-text-primary/80'
           }`}
         >
           {imported ? (
@@ -269,7 +269,7 @@ const handleImport = async () => {
             </>
           ) : importing ? (
             <>
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+              <div className="animate-spin  h-5 w-5 border-t-2 border-b-2 border-white"></div>
               Importing...
             </>
           ) : (
@@ -281,32 +281,32 @@ const handleImport = async () => {
         </button>
 
         {imported && (
-          <span className="text-sm text-[#30D158] inline-flex items-center gap-2">
+          <span className="text-sm text-success inline-flex items-center gap-2">
             <CheckCircle size={16} />
             {pastModules.length} modules successfully imported!
           </span>
         )}
       </div>
 
-      <div className="mt-4 p-3 bg-[#FF9F0A]/10 border border-[#FF9F0A]/30 rounded-lg">
-        <p className="text-xs text-[#FF9F0A]">
+      <div className="mt-4 p-3 bg-warning/10 border border-warning/30 ">
+        <p className="text-xs text-warning">
           <strong>Note:</strong> This will import all your completed modules from 2024-2025 academic years. 
           These modules are marked as 100% complete and will automatically calculate your actual CWA.
         </p>
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
-          <h4 className="text-white font-semibold mb-3">Theme</h4>
+        <div className="bg-background border border-border  p-4">
+          <h4 className="text-text-primary font-semibold mb-3">Theme</h4>
           <div className="flex gap-2">
             {(['dark', 'auto'] as const).map(option => (
               <button
                 key={option}
                 onClick={() => setTheme(option)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium border ${
+                className={`px-4 py-2  text-sm font-medium border ${
                   theme === option
-                    ? 'bg-[#0A84FF]/20 text-[#0A84FF] border-[#0A84FF]/40'
-                    : 'bg-[#141414] text-[#EBEBF599] border-[#38383A]'
+                    ? 'bg-text-primary/20 text-text-primary border-text-primary/40'
+                    : 'bg-surface text-text-tertiary border-border'
                 }`}
               >
                 {option === 'dark' ? 'Dark' : 'Auto'}
@@ -315,10 +315,10 @@ const handleImport = async () => {
           </div>
         </div>
 
-        <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
-          <h4 className="text-white font-semibold mb-3">Notifications</h4>
+        <div className="bg-background border border-border  p-4">
+          <h4 className="text-text-primary font-semibold mb-3">Notifications</h4>
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm text-[#EBEBF599]">
+            <label className="flex items-center gap-2 text-sm text-text-tertiary">
               <input
                 type="checkbox"
                 checked={notifications.email}
@@ -326,7 +326,7 @@ const handleImport = async () => {
               />
               Email updates
             </label>
-            <label className="flex items-center gap-2 text-sm text-[#EBEBF599]">
+            <label className="flex items-center gap-2 text-sm text-text-tertiary">
               <input
                 type="checkbox"
                 checked={notifications.push}
@@ -337,16 +337,16 @@ const handleImport = async () => {
           </div>
         </div>
 
-        <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
-          <h4 className="text-white font-semibold mb-3">Backup & Restore</h4>
+        <div className="bg-background border border-border  p-4">
+          <h4 className="text-text-primary font-semibold mb-3">Backup & Restore</h4>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={handleBackup}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#141414] text-white border border-[#38383A] hover:border-[#0A84FF]"
+              className="px-4 py-2  text-sm font-medium bg-surface text-text-primary border border-border hover:border-text-primary"
             >
               Download Backup
             </button>
-            <label className="px-4 py-2 rounded-lg text-sm font-medium bg-[#141414] text-white border border-[#38383A] hover:border-[#0A84FF] cursor-pointer">
+            <label className="px-4 py-2  text-sm font-medium bg-surface text-text-primary border border-border hover:border-text-primary cursor-pointer">
               Restore
               <input
                 type="file"
@@ -361,63 +361,63 @@ const handleImport = async () => {
           </div>
         </div>
 
-        <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
-          <h4 className="text-white font-semibold mb-3">Quick Fixes</h4>
+        <div className="bg-background border border-border  p-4">
+          <h4 className="text-text-primary font-semibold mb-3">Quick Fixes</h4>
           <button
             onClick={handleClearCache}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-[#141414] text-white border border-[#38383A] hover:border-[#FF453A]"
+            className="px-4 py-2  text-sm font-medium bg-surface text-text-primary border border-border hover:border-danger"
           >
             Clear Cache
           </button>
         </div>
       </div>
 
-      <div className="mt-8 bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
-        <h4 className="text-white font-semibold mb-3">Profile</h4>
+      <div className="mt-8 bg-background border border-border  p-4">
+        <h4 className="text-text-primary font-semibold mb-3">Profile</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input
             value={profileName}
             onChange={(e) => setProfileName(e.target.value)}
             placeholder="Full name"
-            className="px-3 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm"
+            className="px-3 py-2 bg-surface border border-border  text-text-primary text-sm"
           />
           <input
             value={profileEmail}
             onChange={(e) => setProfileEmail(e.target.value)}
             placeholder="Email (optional)"
-            className="px-3 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm"
+            className="px-3 py-2 bg-surface border border-border  text-text-primary text-sm"
           />
         </div>
-        {profileError && <div className="text-xs text-[#FF453A] mt-2">{profileError}</div>}
+        {profileError && <div className="text-xs text-danger mt-2">{profileError}</div>}
         <button
           onClick={validateProfile}
-          className="mt-3 px-4 py-2 rounded-lg text-sm font-medium bg-[#0A84FF] text-white"
+          className="mt-3 px-4 py-2  text-sm font-medium bg-text-primary text-background"
         >
           Validate Profile
         </button>
       </div>
 
-      <div className="mt-8 bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
-        <h4 className="text-white font-semibold mb-3">Tab Morph Previews</h4>
-        <p className="text-xs text-[#EBEBF599] mb-4">
+      <div className="mt-8 bg-background border border-border  p-4">
+        <h4 className="text-text-primary font-semibold mb-3">Tab Morph Previews</h4>
+        <p className="text-xs text-text-tertiary mb-4">
           Tap each tab to see the morphing behavior. These are temporary previews for testing.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Take 1: Frosted Slide Indicator */}
-          <div className="bg-[#141414] border border-[#38383A] rounded-lg p-3">
-            <div className="text-xs text-[#EBEBF599] mb-2">Take 1 — Frosted Slide</div>
-            <div className="relative grid grid-cols-4 gap-1 p-1 bg-[#0A0A0A] border border-[#38383A] rounded-xl overflow-hidden">
+          <div className="bg-surface border border-border  p-3">
+            <div className="text-xs text-text-tertiary mb-2">Take 1 — Frosted Slide</div>
+            <div className="relative grid grid-cols-4 gap-1 p-1 bg-background border border-border  overflow-hidden">
               <div
-                className="absolute top-1 bottom-1 left-1 w-[calc(25%-4px)] rounded-lg bg-white/10 border border-white/20 backdrop-blur-md shadow-[0_0_16px_rgba(255,255,255,0.12)] transition-transform duration-300 ease-out"
+                className="absolute top-1 bottom-1 left-1 w-[calc(25%-4px)]  bg-white/10 border border-white/20 backdrop-blur-md shadow-[0_0_16px_rgba(255,255,255,0.12)] transition-transform duration-300 ease-out"
                 style={{ transform: `translateX(${tabDemoOne * 100}%)` }}
               />
               {demoTabs.map((tab, index) => (
                 <button
                   key={tab}
                   onClick={() => setTabDemoOne(index)}
-                  className={`relative z-10 py-2 text-[11px] font-medium rounded-lg transition-colors ${
-                    tabDemoOne === index ? 'text-white' : 'text-[#EBEBF599]'
+                  className={`relative z-10 py-2 text-[11px] font-medium  transition-colors ${
+                    tabDemoOne === index ? 'text-text-primary' : 'text-text-tertiary'
                   }`}
                 >
                   {tab}
@@ -427,17 +427,17 @@ const handleImport = async () => {
           </div>
 
           {/* Take 2: Glass Layer Morph */}
-          <div className="bg-[#141414] border border-[#38383A] rounded-lg p-3">
-            <div className="text-xs text-[#EBEBF599] mb-2">Take 2 — Glass Layer</div>
-            <div className="grid grid-cols-4 gap-1 p-1 bg-[#0A0A0A] border border-[#38383A] rounded-xl">
+          <div className="bg-surface border border-border  p-3">
+            <div className="text-xs text-text-tertiary mb-2">Take 2 — Glass Layer</div>
+            <div className="grid grid-cols-4 gap-1 p-1 bg-background border border-border ">
               {demoTabs.map((tab, index) => (
                 <button
                   key={tab}
                   onClick={() => setTabDemoTwo(index)}
-                  className={`py-2 text-[11px] font-medium rounded-lg transition-all duration-300 ${
+                  className={`py-2 text-[11px] font-medium  transition-all duration-300 ${
                     tabDemoTwo === index
-                      ? 'text-white bg-white/10 border border-white/20 backdrop-blur-md shadow-[0_6px_18px_rgba(0,0,0,0.4)]'
-                      : 'text-[#EBEBF599] border border-transparent hover:border-[#38383A]'
+                      ? 'text-text-primary bg-white/10 border border-white/20 backdrop-blur-md shadow-[0_6px_18px_rgba(0,0,0,0.4)]'
+                      : 'text-text-tertiary border border-transparent hover:border-border'
                   }`}
                 >
                   {tab}
@@ -447,19 +447,19 @@ const handleImport = async () => {
           </div>
 
           {/* Take 3: Liquid Halo */}
-          <div className="bg-[#141414] border border-[#38383A] rounded-lg p-3">
-            <div className="text-xs text-[#EBEBF599] mb-2">Take 3 — Liquid Halo</div>
-            <div className="relative grid grid-cols-4 gap-1 p-1 bg-[#0A0A0A] border border-[#38383A] rounded-xl overflow-hidden">
+          <div className="bg-surface border border-border  p-3">
+            <div className="text-xs text-text-tertiary mb-2">Take 3 — Liquid Halo</div>
+            <div className="relative grid grid-cols-4 gap-1 p-1 bg-background border border-border  overflow-hidden">
               <div
-                className="absolute top-1 bottom-1 left-1 w-[calc(25%-4px)] rounded-lg bg-gradient-to-r from-[#0A84FF]/35 via-[#5E5CE6]/30 to-[#30D158]/25 blur-[10px] opacity-80 transition-transform duration-300 ease-out"
+                className="absolute top-1 bottom-1 left-1 w-[calc(25%-4px)]  bg-gradient-to-r from-text-primary/35 via-text-secondary/30 to-success/25 blur-[10px] opacity-80 transition-transform duration-300 ease-out"
                 style={{ transform: `translateX(${tabDemoThree * 100}%)` }}
               />
               {demoTabs.map((tab, index) => (
                 <button
                   key={tab}
                   onClick={() => setTabDemoThree(index)}
-                  className={`relative z-10 py-2 text-[11px] font-medium rounded-lg transition-colors ${
-                    tabDemoThree === index ? 'text-white' : 'text-[#EBEBF599]'
+                  className={`relative z-10 py-2 text-[11px] font-medium  transition-colors ${
+                    tabDemoThree === index ? 'text-text-primary' : 'text-text-tertiary'
                   }`}
                 >
                   {tab}

@@ -1,3 +1,4 @@
+
 export type TimetableSession = {
   time: string;
   module: string;
@@ -105,9 +106,10 @@ export const getNextSession = (now: Date) => {
       })
       .sort((a, b) => a.startMinutes - b.startMinutes);
 
+    const nonFreeSessions = sessions.filter(s => !s.isFree);
     const candidate = offset === 0
-      ? sessions.find(s => s.startMinutes > nowMinutes)
-      : sessions[0];
+      ? nonFreeSessions.find(s => s.startMinutes > nowMinutes)
+      : nonFreeSessions[0];
 
     if (candidate) {
       return {

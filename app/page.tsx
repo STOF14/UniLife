@@ -131,6 +131,37 @@ const UniLife = () => {
     iPhoneInteractions.initialize();
   }, []);
 
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    return { daysInMonth, startingDayOfWeek, year, month };
+  };
+
+  const getEventsForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return (db.tasks || []).filter(task => task.dueDate === dateStr);
+  };
+
+  const exportData = () => {
+    const data = {
+      modules: db.modules,
+      tasks: db.tasks,
+      transactions: db.transactions,
+      exportDate: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `unilife-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+  };
+
   // Page Components - moved inside to access required variables
   const DashboardPage = () => {
     const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentCalendarDate);
@@ -140,14 +171,18 @@ const UniLife = () => {
 
     const getTasksThisWeek = () => {
       const startOfWeek = new Date(today);
-      startOfWeek.setHours(0, 0, 0, 0); // Start of today
+      startOfWeek.setHours(0, 0, 0, 0);
+      // Roll back to Monday (1 = Monday)
+      const dayOfWeek = startOfWeek.getDay();
+      const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startOfWeek.setDate(startOfWeek.getDate() - diffToMonday);
       const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 7);
-      endOfWeek.setHours(23, 59, 59, 999); // End of week
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
       
       return (db.tasks || []).filter(task => {
         if (!task.dueDate) return false;
-        const taskDate = new Date(task.dueDate);
+        const taskDate = new Date(task.dueDate + 'T00:00:00');
         return taskDate >= startOfWeek && taskDate <= endOfWeek && !task.completed;
       }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     };
@@ -160,27 +195,84 @@ const UniLife = () => {
       const isPastYear = yearMatch ? parseInt(yearMatch[0], 10) < currentYear : false;
       return !isCompleted && !isPastYear;
     });
-    const completedModulesCount = (modules || []).length - activeModules.length;
     const nextSession = getNextSession(new Date());
-    const todayDate = new Date();
-    const todayKey = todayDate.toISOString().split('T')[0];
+    const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayKey = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
     const todayTasks = (db.tasks || []).filter(task => task.dueDate === todayKey && !task.completed).slice(0, 3);
     const streakDays = (() => {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 6);
-      const uniqueDays = new Set(
-        (db.tasks || [])
-          .filter(t => t.completed && new Date(t.dueDate) >= cutoff)
-          .map(t => new Date(t.dueDate).toDateString())
-      );
-      return uniqueDays.size;
+      // Count consecutive days (backwards from today) with completed tasks
+      let streak = 0;
+      for (let i = 0; i < 30; i++) {
+        const checkDate = new Date(todayLocal);
+        checkDate.setDate(checkDate.getDate() - i);
+        const checkKey = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+        const hasCompleted = (db.tasks || []).some(t => t.completed && t.dueDate === checkKey);
+        if (hasCompleted) {
+          streak++;
+        } else if (i > 0) {
+          break; // streak broken (skip today if nothing yet)
+        }
+      }
+      return streak;
     })();
 
+    // Finance snapshot
+    const currentMonthTransactions = (db.transactions || []).filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+    });
+    const monthIncome = currentMonthTransactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const monthExpenses = currentMonthTransactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+    const monthBalance = monthIncome - monthExpenses;
+
+    // Academic snapshot
+    const cwaVal = modules.length > 0 ? calculateCWA(modules) : 0;
+    const cwa = typeof cwaVal === 'string' ? parseFloat(cwaVal) || 0 : cwaVal;
+    const completedCount = (modules || []).filter(m => m.completed || m.currentGrade >= 100).length;
+    const totalTasks = (db.tasks || []).length;
+    const completedTasks = (db.tasks || []).filter(t => t.completed).length;
+    const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    // Overdue tasks
+    const overdueTasks = (db.tasks || []).filter(task => {
+      if (task.completed || !task.dueDate) return false;
+      return new Date(task.dueDate + 'T00:00:00') < todayLocal;
+    });
+
+    if (db.loading || modulesLoading) {
+      return (
+        <div className="space-y-4 mx-2 pt-4">
+          <div className="h-8 w-48 bg-surface animate-pulse rounded" />
+          <div className="grid grid-cols-2 desktop:grid-cols-4 gap-[1px] bg-border">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-surface p-3">
+                <div className="h-3 w-16 bg-surface-hover animate-pulse rounded mb-2" />
+                <div className="h-6 w-10 bg-surface-hover animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 desktop:grid-cols-3 gap-[1px] bg-border">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-surface p-4">
+                <div className="h-3 w-20 bg-surface-hover animate-pulse rounded mb-2" />
+                <div className="h-5 w-24 bg-surface-hover animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="space-y-4">
-        {/* Mobile Header */}
-        <div className="flex items-center justify-between px-2 pt-2">
-          <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+      <div className="space-y-4 stagger-children">
+        {/* Header */}
+        <div className="flex items-baseline justify-between px-2 pt-2">
+          <div>
+            <h1 className="text-title-lg text-text-primary">Dashboard</h1>
+            <p className="text-caption text-text-secondary mt-0.5">
+              {today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
           <div className="flex gap-2">
             <Button
               variant="secondary"
@@ -189,140 +281,149 @@ const UniLife = () => {
                 store.setEditingTask(null);
                 store.setShowModal('task');
               }}
-              className="h-10 px-3"
+              className="h-8 px-2"
             >
-              <Plus size={16} />
+              <Plus size={14} />
             </Button>
-            <Button variant="secondary" size="sm" onClick={exportData} className="h-10 px-3">
-              <DownloadSimple size={16} />
+            <Button variant="secondary" size="sm" onClick={exportData} className="h-8 px-2">
+              <DownloadSimple size={14} />
             </Button>
           </div>
         </div>
 
-        {/* Stats Cards - Mobile First */}
-        <div className="grid grid-cols-2 gap-3 px-2">
-          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <BookOpen size={16} className="text-[#0A84FF]" />
-              <span className="text-xs text-[#EBEBF599]">Modules</span>
-            </div>
-            <div className="text-2xl font-bold text-white">{activeModules.length}</div>
-            <div className="text-xs text-[#EBEBF599] mt-1">{completedModulesCount} completed</div>
+        {/* Overview Stats — 4-column grid */}
+        <div className="grid grid-cols-2 desktop:grid-cols-4 gap-[1px] bg-border mx-2">
+          <div className="bg-surface p-3">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-tertiary block mb-1">Due this week</span>
+            <div className="text-title-sm font-mono text-text-primary">{thisWeekTasks.length}</div>
           </div>
-          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckSquare size={16} className="text-[#30D158]" />
-              <span className="text-xs text-[#EBEBF599]">Tasks</span>
+          <div className="bg-surface p-3">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-tertiary block mb-1">Overdue</span>
+            <div className={`text-title-sm font-mono ${overdueTasks.length > 0 ? 'text-danger' : 'text-text-primary'}`}>{overdueTasks.length}</div>
+          </div>
+          <div className="bg-surface p-3">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-tertiary block mb-1">CWA</span>
+            <div className="text-title-sm font-mono text-text-primary">{cwa > 0 ? cwa.toFixed(0) + '%' : '—'}</div>
+          </div>
+          <div className="bg-surface p-3">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-tertiary block mb-1">Balance</span>
+            <div className={`text-title-sm font-mono ${monthBalance >= 0 ? 'text-success' : 'text-danger'}`}>
+              {monthBalance >= 0 ? '+' : '-'}R{Math.abs(monthBalance).toFixed(0)}
             </div>
-            <div className="text-2xl font-bold text-white">{thisWeekTasks.length}</div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 px-2">
-          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-            <div className="text-xs text-[#EBEBF599] mb-1">Next class</div>
+        {/* Info Cards Row */}
+        <div className="grid grid-cols-1 desktop:grid-cols-3 gap-[1px] bg-border mx-2">
+          <div className="bg-surface p-4">
+            <div className="text-label uppercase tracking-[0.08em] text-text-secondary mb-1">Next class</div>
             {nextSession ? (
               <>
-                <div className="text-sm font-semibold text-white">{nextSession.module}</div>
-                <div className="text-xs text-[#EBEBF599]">
+                <div className="text-body font-medium text-text-primary">{nextSession.module}</div>
+                <div className="text-caption text-text-secondary">
                   {nextSession.day} · {nextSession.time}
                 </div>
-                <div className="text-xs text-[#EBEBF599]">{nextSession.venue}</div>
+                <div className="text-caption text-text-tertiary">{nextSession.venue}</div>
               </>
             ) : (
-              <div className="text-sm text-[#EBEBF599]">No upcoming class</div>
+              <div className="text-body text-text-tertiary">No upcoming class</div>
             )}
           </div>
-          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-            <div className="text-xs text-[#EBEBF599] mb-1">Today focus</div>
+          <div className="bg-surface p-4">
+            <div className="text-label uppercase tracking-[0.08em] text-text-secondary mb-1">Today focus</div>
             {todayTasks.length > 0 ? (
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {todayTasks.map(task => (
-                  <div key={task.id} className="text-xs text-white truncate">• {task.title}</div>
+                  <div key={task.id} className="text-body text-text-primary truncate">{task.title}</div>
                 ))}
               </div>
             ) : (
-              <div className="text-sm text-[#EBEBF599]">No tasks today</div>
+              <div className="text-body text-text-tertiary">No tasks today</div>
             )}
           </div>
-          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-            <div className="text-xs text-[#EBEBF599] mb-1">Weekly streak</div>
-            <div className="text-2xl font-bold text-white">{streakDays} days</div>
-            <div className="text-xs text-[#EBEBF599]">completed tasks</div>
+          <div className="bg-surface p-4">
+            <div className="text-label uppercase tracking-[0.08em] text-text-secondary mb-1">Completion rate</div>
+            <div className="text-title-lg font-mono text-text-primary">{taskCompletionRate}%</div>
+            <div className="text-caption text-text-tertiary">{completedTasks}/{totalTasks} tasks done</div>
           </div>
         </div>
 
-        {/* Calendar - Mobile Optimized */}
-        <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-4 mx-2">
+        {/* Calendar */}
+        <div className="bg-surface p-4 mx-2 border-t-2 border-t-text-primary">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-title-sm text-text-primary">
               {monthNames[month]} {year}
             </h2>
-            <div className="flex gap-1">
+            <div className="flex gap-0.5">
               <button 
                 onClick={() => setCurrentCalendarDate(new Date(year, month - 1, 1))}
-                className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
+                className="p-2 hover:bg-surface-hover transition-colors duration-200"
               >
-                <CaretLeft size={18} className="text-white" />
+                <CaretLeft size={16} className="text-text-primary" />
               </button>
               <button 
                 onClick={() => setCurrentCalendarDate(new Date())}
-                className="px-3 py-2 hover:bg-[#38383A] rounded-lg transition-colors text-sm text-white"
+                className="px-3 py-2 hover:bg-surface-hover transition-colors duration-200 text-caption uppercase tracking-[0.08em] text-text-secondary"
               >
                 Today
               </button>
               <button 
                 onClick={() => setCurrentCalendarDate(new Date(year, month + 1, 1))}
-                className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
+                className="p-2 hover:bg-surface-hover transition-colors duration-200"
               >
-                <CaretRight size={18} className="text-white" />
+                <CaretRight size={16} className="text-text-primary" />
               </button>
             </div>
           </div>
 
-          {/* Mobile Calendar Grid */}
-          <div className="grid grid-cols-7 gap-1 text-xs">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
-              <div key={day} className="text-center text-[#EBEBF599] py-1 font-medium">
+          <div className="grid grid-cols-7 gap-0">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+              <div key={`${day}-${i}`} className="text-center text-label uppercase tracking-[0.08em] text-text-tertiary py-2">
                 {day}
               </div>
             ))}
 
-            {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-              <div key={`empty-${i}`} className="aspect-square" />
-            ))}
+            {/* Previous month trailing days */}
+            {Array.from({ length: startingDayOfWeek }).map((_, i) => {
+              const prevMonthLastDay = new Date(year, month, 0).getDate();
+              const day = prevMonthLastDay - startingDayOfWeek + 1 + i;
+              return (
+                <div key={`prev-${i}`} className="aspect-square border border-border p-1 opacity-30">
+                  <div className="text-caption font-mono mb-0.5 text-text-tertiary">{day}</div>
+                </div>
+              );
+            })}
 
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const date = new Date(year, month, day);
-              const dateStr = date.toISOString().split('T')[0];
               const events = getEventsForDate(date);
               const isToday = isCurrentMonth && day === today.getDate();
 
               return (
                 <div 
                   key={day}
-                  className={`aspect-square border border-[#38383A] rounded-lg p-1 hover:border-[#0A84FF] transition-all cursor-pointer ${
-                    isToday ? 'bg-[#0A84FF]/20 border-[#0A84FF]' : 'bg-[#0A0A0A]'
+                  className={`aspect-square border border-border p-1 hover:bg-surface-hover transition-all duration-200 cursor-pointer ${
+                    isToday ? 'bg-surface-active border-text-primary' : ''
                   }`}
                 >
-                  <div className={`text-xs font-medium mb-1 ${isToday ? 'text-[#0A84FF]' : 'text-white'}`}>
+                  <div className={`text-caption font-mono mb-0.5 ${isToday ? 'text-text-primary font-semibold' : 'text-text-secondary'}`}>
                     {day}
                   </div>
-                  <div className="space-y-1">
-                    {events.slice(0, 1).map(event => (
+                  <div className="flex gap-0.5 flex-wrap">
+                    {events.slice(0, 3).map(event => (
                       <div 
                         key={event.id}
-                        className={`w-1 h-1 rounded-full mx-auto ${
-                          event.priority === 'high' ? 'bg-[#FF453A]' :
-                          event.priority === 'medium' ? 'bg-[#FF9F0A]' :
-                          'bg-[#30D158]'
+                        className={`w-1 h-1 rounded-full ${
+                          event.priority === 'high' ? 'bg-danger' :
+                          event.priority === 'medium' ? 'bg-warning' :
+                          'bg-success'
                         }`}
                         title={event.title}
                       />
                     ))}
-                    {events.length > 1 && (
-                      <div className="w-1 h-1 rounded-full mx-auto bg-[#38383A]" />
+                    {events.length > 3 && (
+                      <div className="text-[7px] font-mono text-text-tertiary leading-none">+{events.length - 3}</div>
                     )}
                   </div>
                 </div>
@@ -331,110 +432,76 @@ const UniLife = () => {
           </div>
         </div>
 
-        {/* This Week Tasks - Mobile */}
-        <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-4 mx-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">This Week</h3>
-            <span className="text-xs px-2 py-1 bg-[#FF453A]/20 text-[#FF453A] rounded-full">
+        {/* This Week Tasks */}
+        <div className="mx-2">
+          <div className="flex items-baseline justify-between mb-3">
+            <h3 className="text-title-sm text-text-primary">This Week</h3>
+            <span className="text-label uppercase tracking-[0.08em] text-text-secondary">
               {thisWeekTasks.length} tasks
             </span>
           </div>
-          <div className="space-y-2 max-h-[250px] overflow-y-auto scroll-container">
+          <div className="space-y-0 border-t border-border">
             {thisWeekTasks.length > 0 ? (
               thisWeekTasks.slice(0, MAX_VISIBLE_TASKS_DASHBOARD).map(task => (
-                <div key={task.id} className="flex items-start gap-3 p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors">
-                  <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
-                    task.priority === 'high' ? 'bg-[#FF453A]' : 
-                    task.priority === 'medium' ? 'bg-[#FF9F0A]' : 'bg-[#30D158]'
+                <div key={task.id} className="data-row px-0 py-3 gap-3">
+                  <div className={`w-1.5 h-1.5 shrink-0 ${
+                    task.priority === 'high' ? 'bg-danger' : 
+                    task.priority === 'medium' ? 'bg-warning' : 'bg-success'
                   }`} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-white font-medium truncate">{task.title}</div>
-                    <div className="text-xs text-[#EBEBF599] mt-1">
+                    <div className="text-body text-text-primary truncate">{task.title}</div>
+                    <div className="text-caption text-text-secondary mt-0.5">
                       {new Date(task.dueDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {task.moduleCode && <span className="ml-2 font-mono text-text-tertiary">{task.moduleCode}</span>}
                     </div>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-6">
-                <CheckSquare className="mx-auto h-8 w-8 text-[#38383A]" />
-                <p className="mt-2 text-sm text-[#EBEBF599]">No tasks this week</p>
+              <div className="text-center py-8">
+                <CheckSquare className="mx-auto h-6 w-6 text-text-tertiary" />
+                <p className="mt-2 text-body text-text-secondary">No tasks this week</p>
               </div>
             )}
           </div>
           {thisWeekTasks.length > MAX_VISIBLE_TASKS_DASHBOARD && (
             <button 
               onClick={() => store.setCurrentPage('tasks')}
-              className="w-full mt-3 py-2 text-sm text-[#0A84FF] hover:text-[#409CFF] transition-colors"
+              className="w-full mt-2 py-2 text-caption uppercase tracking-[0.08em] text-text-secondary hover:text-text-primary transition-colors duration-200 btn-underline"
             >
-              View all tasks →
+              View all tasks
             </button>
           )}
         </div>
 
-        {/* Modules Section - Mobile */}
-        <div className="px-2 pb-4">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold text-white">My Modules</h2>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => setIsModuleModalOpen(true)}
-              className="h-9 px-3"
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              Add
-            </Button>
-          </div>
-          <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-4">
-            {modulesLoading ? (
-              <div className="text-center py-6">
-                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#0A84FF] mx-auto"></div>
-                <p className="mt-2 text-[#EBEBF599] text-sm">Loading modules...</p>
-              </div>
-            ) : modulesError ? (
-              <div className="text-center py-6">
-                <div className="text-red-500 text-sm">Error loading modules: {modulesError}</div>
-              </div>
-            ) : activeModules.length > 0 ? (
-              <div className="space-y-2">
-                {activeModules.slice(0, MAX_VISIBLE_MODULES_DASHBOARD).map(module => (
-                  <div key={module.id} className="flex items-center gap-3 p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0A84FF] to-[#409CFF] flex items-center justify-center">
-                      <span className="text-xs font-bold text-white">{module.code.substring(0, 2)}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-white font-medium truncate">{module.code}</div>
-                      <div className="text-xs text-[#EBEBF599] truncate">{module.name}</div>
-                    </div>
-                    <div className="text-xs text-[#EBEBF599]">{module.credits}cr</div>
-                  </div>
-                ))}
-                {activeModules.length > MAX_VISIBLE_MODULES_DASHBOARD && (
-                  <button 
-                    onClick={() => store.setCurrentPage('academic')}
-                    className="w-full py-2 text-sm text-[#0A84FF] hover:text-[#409CFF] transition-colors"
-                  >
-                    View all modules →
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <BookOpen className="mx-auto h-10 w-10 text-[#38383A]" />
-                <h3 className="mt-2 text-sm font-medium text-white">No modules yet</h3>
-                <p className="mt-1 text-xs text-[#EBEBF599]">
-                  Get started by adding your first module.
-                </p>
-                <div className="mt-4">
-                  <Button size="sm" onClick={() => setIsModuleModalOpen(true)}>
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Module
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+        {/* Quick Links */}
+        <div className="grid grid-cols-3 gap-[1px] bg-border mx-2 mb-4">
+          <button
+            onClick={() => store.setCurrentPage('academic')}
+            className="bg-surface p-3 text-center hover:bg-surface-hover transition-colors duration-200"
+          >
+            <BookOpen size={16} className="mx-auto text-text-secondary mb-1" />
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-secondary">Academic</span>
+            <div className="text-caption font-mono text-text-primary mt-0.5">{activeModules.length} active</div>
+          </button>
+          <button
+            onClick={() => store.setCurrentPage('finances')}
+            className="bg-surface p-3 text-center hover:bg-surface-hover transition-colors duration-200"
+          >
+            <CurrencyDollar size={16} className="mx-auto text-text-secondary mb-1" />
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-secondary">Finances</span>
+            <div className="text-caption font-mono text-text-primary mt-0.5">
+              R{monthExpenses.toFixed(0)} spent
+            </div>
+          </button>
+          <button
+            onClick={() => store.setCurrentPage('timetable')}
+            className="bg-surface p-3 text-center hover:bg-surface-hover transition-colors duration-200"
+          >
+            <Calendar size={16} className="mx-auto text-text-secondary mb-1" />
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-secondary">Timetable</span>
+            <div className="text-caption font-mono text-text-primary mt-0.5">{streakDays}d streak</div>
+          </button>
         </div>
       </div>
     );
@@ -467,10 +534,10 @@ const UniLife = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0A84FF]"></div>
-          <p className="text-[#EBEBF599] text-sm">Verifying access...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
+          <div className="w-8 h-[2px] bg-text-primary animate-pulse-subtle"></div>
+          <p className="text-text-secondary text-label uppercase tracking-[0.12em]">Verifying access</p>
         </div>
       </div>
     );
@@ -570,37 +637,6 @@ const UniLife = () => {
       new Date(task.dueDate) <= nextWeek &&
       !task.completed
     );
-  };
-
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-    
-    return { daysInMonth, startingDayOfWeek, year, month };
-  };
-
-  const getEventsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return (db.tasks || []).filter(task => task.dueDate === dateStr);
-  };
-
-  const exportData = () => {
-    const data = {
-      modules: db.modules,
-      tasks: db.tasks,
-      transactions: db.transactions,
-      exportDate: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `unilife-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
   };
 
 const ModuleForm = () => {
@@ -784,11 +820,8 @@ const ModuleForm = () => {
           data-testid="module-submit-btn"
         >
           {isSubmitting ? (
-            <span className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <span className="flex items-center justify-center gap-2">
+              <div className="h-4 w-4 border-t border-background animate-spin"></div>
               Saving...
             </span>
           ) : (
@@ -894,9 +927,9 @@ const TaskForm = () => {
           id="completed"
           checked={formState.completed || false}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState({...formState, completed: e.target.checked})}
-          className="w-4 h-4 rounded border-[#38383A] bg-[#0A0A0A]"
+          className="w-4 h-4 border-border bg-background accent-text-primary"
         />
-        <label htmlFor="completed" className="text-sm text-white cursor-pointer">
+        <label htmlFor="completed" className="text-sm text-text-primary cursor-pointer">
           Mark as completed
         </label>
       </div>
@@ -918,11 +951,8 @@ const TaskForm = () => {
           className="min-w-[120px]"
         >
           {isSubmitting ? (
-            <span className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <span className="flex items-center justify-center gap-2">
+              <div className="h-4 w-4 border-t border-background animate-spin"></div>
               Saving...
             </span>
           ) : (
@@ -1013,11 +1043,11 @@ const TransactionForm = () => {
         required 
       />
       <div className="relative">
-        <label className="block text-sm font-medium text-white mb-2">
-          Amount <span className="text-[#FF453A]">*</span>
+        <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-2">
+          Amount <span className="text-danger">*</span>
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#EBEBF599]">R</span>
+          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-tertiary font-mono">R</span>
           <input
             type="text"
             value={formState.amount === 0 ? '' : formState.amount?.toString()}
@@ -1027,17 +1057,17 @@ const TransactionForm = () => {
             }}
             placeholder="-25.50"
             required
-            className="w-full bg-[#0A0A0A] border border-[#38383A] rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-[#0A84FF]"
+            className="w-full bg-transparent border-b border-border pl-10 pr-4 py-2 text-text-primary font-mono focus:outline-none focus:border-text-primary transition-colors"
           />
         </div>
         <div className="flex gap-2 mt-2">
-          <span className="text-xs text-[#EBEBF599]">Quick add:</span>
+          <span className="text-xs text-text-tertiary uppercase tracking-wider">Quick add:</span>
           {[10, 20, 50, 100, 200].map(amt => (
             <button
               key={amt}
               type="button"
               onClick={() => setFormState({...formState, amount: -amt})}
-              className="text-xs px-2 py-1 bg-[#38383A] hover:bg-[#444444] rounded transition-colors text-white"
+              className="text-xs px-2 py-1 bg-surface hover:bg-border transition-colors text-text-secondary font-mono"
             >
               -R{amt}
             </button>
@@ -1045,7 +1075,7 @@ const TransactionForm = () => {
           <button
             type="button"
             onClick={() => setFormState({...formState, amount: Math.abs(formState.amount || 0)})}
-            className="text-xs px-2 py-1 bg-[#30D158]/20 hover:bg-[#30D158]/30 rounded transition-colors text-[#30D158]"
+            className="text-xs px-2 py-1 bg-success/10 hover:bg-success/20 transition-colors text-success font-mono"
           >
             Make positive
           </button>
@@ -1069,11 +1099,8 @@ const TransactionForm = () => {
           className="min-w-[120px]"
         >
           {isSubmitting ? (
-            <span className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <span className="flex items-center justify-center gap-2">
+              <div className="h-4 w-4 border-t border-background animate-spin"></div>
               Saving...
             </span>
           ) : (
@@ -1205,8 +1232,8 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-white mb-2">
-          Upload Yearbook PDF <span className="text-[#FF453A]">*</span>
+        <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-2">
+          Upload Yearbook PDF <span className="text-danger">*</span>
         </label>
         <div className="relative">
           <input
@@ -1219,39 +1246,39 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
           />
           <label
             htmlFor="yearbook-upload"
-            className={`flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+            className={`flex items-center justify-center gap-2 px-4 py-3 border border-dashed cursor-pointer transition-all duration-300 ${
               isParsing || isImporting
-                ? 'border-[#38383A] bg-[#0A0A0A] cursor-not-allowed'
-                : 'border-[#38383A] bg-[#0A0A0A] hover:border-[#0A84FF] hover:bg-[#141414]'
+                ? 'border-border bg-background cursor-not-allowed'
+                : 'border-border bg-background hover:border-text-primary hover:bg-surface'
             }`}
           >
             {isParsing ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#0A84FF]"></div>
-                <span className="text-sm text-[#EBEBF599]">Parsing PDF...</span>
+                <div className="h-4 w-4 border-t border-text-primary animate-spin"></div>
+                <span className="text-xs uppercase tracking-wider text-text-tertiary">Parsing PDF...</span>
               </>
             ) : file ? (
               <>
-                <FileText size={20} className="text-[#0A84FF]" />
-                <span className="text-sm text-white">{file.name}</span>
+                <FileText size={16} className="text-text-primary" />
+                <span className="text-sm text-text-primary font-mono">{file.name}</span>
               </>
             ) : (
               <>
-                <UploadSimple size={20} className="text-[#EBEBF599]" />
-                <span className="text-sm text-[#EBEBF599]">Click to upload yearbook PDF</span>
+                <UploadSimple size={16} className="text-text-tertiary" />
+                <span className="text-xs uppercase tracking-wider text-text-tertiary">Click to upload yearbook PDF</span>
               </>
             )}
           </label>
         </div>
         {parseError && (
-          <p className="mt-2 text-sm text-[#FF453A]">{parseError}</p>
+          <p className="mt-2 text-xs text-danger">{parseError}</p>
         )}
       </div>
 
       {extractedModules.length > 0 && (
         <>
           <div>
-            <label className="block text-sm font-medium text-white mb-2">
+            <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-2">
               Starting Year
             </label>
             <Input
@@ -1267,16 +1294,16 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
               }}
               placeholder="2025"
             />
-            <p className="mt-1 text-xs text-[#EBEBF599]">
+            <p className="mt-1 text-xs text-text-tertiary">
               Year 1 modules will be assigned to {startingYear}, Year 2 to {startingYear + 1}, Year 3 to {startingYear + 2}
             </p>
           </div>
 
-          <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4 max-h-96 overflow-y-auto">
-            <div className="text-sm font-semibold text-white mb-3">
+          <div className="bg-background border-t border-border p-4 max-h-96 overflow-y-auto">
+            <div className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-3">
               Found {extractedModules.length} modules:
             </div>
-            <div className="space-y-2">
+            <div className="space-y-0">
               {extractedModules.map((mod, idx) => {
                 const alreadyExists = db.modules.some(
                   m => m.code === mod.code && m.semester === mod.semester
@@ -1284,21 +1311,21 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
                 return (
                   <div
                     key={idx}
-                    className={`flex items-center justify-between py-2 px-3 rounded ${
-                      alreadyExists ? 'bg-[#FF9F0A]/10 border border-[#FF9F0A]/30' : 'bg-[#141414]'
+                    className={`flex items-center justify-between py-2 px-3 border-b border-border transition-colors hover:bg-surface ${
+                      alreadyExists ? 'bg-warning/5 border-l-2 border-l-warning' : ''
                     }`}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <span className="text-xs px-2 py-0.5 bg-[#38383A] rounded text-[#EBEBF599] shrink-0">
+                      <span className="text-xs font-mono px-2 py-0.5 bg-surface text-text-tertiary shrink-0">
                         {mod.semester}
                       </span>
-                      <span className="text-sm text-white font-medium shrink-0">{mod.code}</span>
-                      <span className="text-xs text-[#EBEBF599] truncate">{mod.name}</span>
+                      <span className="text-sm text-text-primary font-medium shrink-0">{mod.code}</span>
+                      <span className="text-xs text-text-tertiary truncate">{mod.name}</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-xs text-[#EBEBF599]">{mod.credits} cr</span>
+                      <span className="text-xs font-mono text-text-tertiary">{mod.credits} cr</span>
                       {alreadyExists && (
-                        <span className="text-xs text-[#FF9F0A]">Already exists</span>
+                        <span className="text-xs text-warning uppercase tracking-wider">Exists</span>
                       )}
                     </div>
                   </div>
@@ -1330,7 +1357,7 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
         >
           {isImporting ? (
             <span className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+              <div className="h-4 w-4 border-t border-text-primary animate-spin mr-2"></div>
               Importing...
             </span>
           ) : (
@@ -1350,15 +1377,15 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
     const cwa = calculateCWA(db.modules || []);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-white pt-2">Academic Progress</h1>
+    <div className="space-y-6 page-enter">
+      <h1 className="text-display-sm font-semibold text-text-primary pt-2 tracking-tight">Academic Progress</h1>
 
-    <div className="grid grid-cols-1 gap-4">
-      <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
+    <div className="grid grid-cols-1 gap-[1px] bg-border">
+      <div className="bg-surface border-t-2 border-text-primary p-6">
         <div className="text-center mb-8">
-          <div className="text-sm text-[#EBEBF599] mb-2">Cumulative Weighted Average</div>
-          <div className="text-6xl font-mono font-bold text-[#0A84FF] mb-2">{cwa}%</div>
-          <div className="text-xs text-[#EBEBF599]">
+          <div className="text-xs uppercase tracking-wider text-text-tertiary mb-2">Cumulative Weighted Average</div>
+          <div className="text-6xl font-mono font-bold text-text-primary mb-2">{cwa}%</div>
+          <div className="text-xs text-text-tertiary font-mono">
             Based on {db.modules.reduce((sum: number, m: Module) => sum + m.credits, 0)} total credits
           </div>
         </div>
@@ -1370,34 +1397,34 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
             const yearCredits = yearModules.reduce((sum: number, m: Module) => sum + m.credits, 0);
 
             return (
-              <div key={year} className="space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-[#38383A]">
-                  <h3 className="text-lg font-semibold text-white">Term {year}</h3>
+              <div key={year} className="space-y-0">
+                <div className="flex items-center justify-between pb-2 border-b border-border">
+                  <h3 className="text-sm uppercase tracking-wider text-text-secondary">Term {year}</h3>
                   <div className="text-right">
-                    <div className="text-2xl font-mono font-bold text-[#0A84FF]">{yearAverage}%</div>
-                    <div className="text-xs text-[#EBEBF599]">{yearCredits} credits</div>
+                    <div className="text-2xl font-mono font-bold text-text-primary">{yearAverage}%</div>
+                    <div className="text-xs font-mono text-text-tertiary">{yearCredits} credits</div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="divide-y divide-border">
                   {yearModules.map((module: Module) => (
                     <div 
                       key={module.id} 
-                      className="flex items-center justify-between p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors"
+                      className="flex items-center justify-between py-3 px-2 hover:bg-surface/50 transition-colors data-row"
                     >
                       <div className="flex-1">
-                        <div className="text-sm text-white font-medium">{module.code}</div>
-                        <div className="text-xs text-[#EBEBF599]">{module.credits} credits</div>
+                        <div className="text-sm text-text-primary font-medium font-mono">{module.code}</div>
+                        <div className="text-xs text-text-tertiary">{module.credits} credits</div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <div className="text-lg font-mono font-semibold text-white">{module.currentGrade}%</div>
+                          <div className="text-lg font-mono font-semibold text-text-primary">{module.currentGrade}%</div>
                         </div>
                         <div className="w-16 text-right">
-                          <div className="text-sm font-mono text-[#0A84FF]">
+                          <div className="text-sm font-mono text-text-secondary">
                             {(module.currentGrade * module.credits).toFixed(0)}
                           </div>
-                          <div className="text-[10px] text-[#EBEBF599]">weighted</div>
+                          <div className="text-[10px] uppercase tracking-wider text-text-tertiary">weighted</div>
                         </div>
                       </div>
                     </div>
@@ -1408,25 +1435,25 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
           })}
         </div>
 
-        <div className="mt-6 p-4 bg-[#0A84FF]/10 border border-[#0A84FF]/30 rounded-lg">
-          <div className="text-xs text-[#EBEBF599] mb-2">Formula:</div>
-          <div className="text-xs font-mono text-[#0A84FF]">
+        <div className="mt-6 p-4 border-t border-border">
+          <div className="text-xs uppercase tracking-wider text-text-tertiary mb-2">Formula</div>
+          <div className="text-xs font-mono text-text-secondary">
             CWA = Σ(credits × grade) / Σ(total credits)
           </div>
         </div>
       </div>
 
-      <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
+      <div className="bg-surface border-t-2 border-success p-6">
         <div className="text-center mb-8">
-          <div className="text-sm text-[#EBEBF599] mb-2">Current Year Average</div>
-          <div className="text-6xl font-mono font-bold text-[#30D158] mb-2">{currentYearAverage}%</div>
-          <div className="text-xs text-[#EBEBF599]">
-            Term {currentYear} • {currentYearModules.reduce((sum: number, m: Module) => sum + m.credits, 0)} credits
+          <div className="text-xs uppercase tracking-wider text-text-tertiary mb-2">Current Year Average</div>
+          <div className="text-6xl font-mono font-bold text-success mb-2">{currentYearAverage}%</div>
+          <div className="text-xs text-text-tertiary font-mono">
+            Term {currentYear} · {currentYearModules.reduce((sum: number, m: Module) => sum + m.credits, 0)} credits
           </div>
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white mb-4">Module Performance</h3>
+          <h3 className="text-xs uppercase tracking-wider text-text-secondary mb-4">Module Performance</h3>
           
           {currentYearModules.map((module: Module) => {
             const targetDiff = module.currentGrade - module.targetGrade;
@@ -1435,31 +1462,31 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
             return (
               <div 
                 key={module.id} 
-                className="p-4 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors border border-[#38383A] hover:border-[#0A84FF]"
+                className="p-4 bg-background hover:bg-surface/50 transition-all duration-300 border-t border-border hover:border-text-primary"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <div className="text-sm font-semibold text-white">{module.code}</div>
-                    <div className="text-xs text-[#EBEBF599] line-clamp-1">{module.name}</div>
+                    <div className="text-sm font-semibold text-text-primary font-mono">{module.code}</div>
+                    <div className="text-xs text-text-tertiary line-clamp-1">{module.name}</div>
                   </div>
                   <div className="flex items-center gap-3">
                     <ProgressRing percentage={module.currentGrade ?? 0} size={45} strokeWidth={4} />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="text-center p-2 bg-[#141414] rounded">
-                    <div className="text-xs text-[#EBEBF599]">Current</div>
-                    <div className="text-sm font-mono font-semibold text-white">{module.currentGrade}%</div>
+                <div className="grid grid-cols-3 gap-[1px] bg-border mb-3">
+                  <div className="text-center p-2 bg-surface">
+                    <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Current</div>
+                    <div className="text-sm font-mono font-semibold text-text-primary">{module.currentGrade}%</div>
                   </div>
-                  <div className="text-center p-2 bg-[#141414] rounded">
-                    <div className="text-xs text-[#EBEBF599]">Target</div>
-                    <div className="text-sm font-mono font-semibold text-white">{module.targetGrade}%</div>
+                  <div className="text-center p-2 bg-surface">
+                    <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Target</div>
+                    <div className="text-sm font-mono font-semibold text-text-primary">{module.targetGrade}%</div>
                   </div>
-                  <div className="text-center p-2 bg-[#141414] rounded">
-                    <div className="text-xs text-[#EBEBF599]">Diff</div>
+                  <div className="text-center p-2 bg-surface">
+                    <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Diff</div>
                     <div className={`text-sm font-mono font-semibold ${
-                      targetDiff >= 0 ? 'text-[#30D158]' : 'text-[#FF453A]'
+                      targetDiff >= 0 ? 'text-success' : 'text-danger'
                     }`}>
                       {targetDiff >= 0 ? '+' : ''}{targetDiff}%
                     </div>
@@ -1467,13 +1494,13 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs text-[#EBEBF599] mb-1">
+                  <div className="flex justify-between text-[10px] uppercase tracking-wider text-text-tertiary mb-1">
                     <span>Progress to target</span>
-                    <span>{Math.round(progressToTarget)}%</span>
+                    <span className="font-mono">{Math.round(progressToTarget)}%</span>
                   </div>
                   <ProgressBar 
                     percentage={progressToTarget}
-                    color={targetDiff >= 0 ? '#30D158' : '#FF9F0A'}
+                    color={targetDiff >= 0 ? '#34C759' : '#FF9F0A'}
                     height={6}
                   />
                 </div>
@@ -1482,17 +1509,17 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
           })}
         </div>
 
-        <div className="mt-6 p-4 bg-[#30D158]/10 border border-[#30D158]/30 rounded-lg">
+        <div className="mt-6 p-4 border-t border-border">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-xs text-[#EBEBF599] mb-1">Modules Above Target</div>
-              <div className="text-2xl font-bold text-[#30D158]">
+              <div className="text-[10px] uppercase tracking-wider text-text-tertiary mb-1">Modules Above Target</div>
+              <div className="text-2xl font-mono font-bold text-success">
                 {currentYearModules.filter(m => m.currentGrade >= m.targetGrade).length}
               </div>
             </div>
             <div>
-              <div className="text-xs text-[#EBEBF599] mb-1">Average Progress</div>
-              <div className="text-2xl font-bold text-[#30D158]">
+              <div className="text-[10px] uppercase tracking-wider text-text-tertiary mb-1">Average Progress</div>
+              <div className="text-2xl font-mono font-bold text-success">
                 {Math.round(currentYearModules.reduce((sum, m) => sum + m.progress, 0) / currentYearModules.length)}%
               </div>
             </div>
@@ -1514,16 +1541,16 @@ const AcademicPage = () => {
   };
 
   return (
-  <div className="min-h-screen bg-black text-white font-sans safe-area-top">
-    {/* Desktop Sidebar - Hidden on iPhone */}
+  <div className="min-h-screen bg-background text-text-primary font-sans safe-area-top">
+    {/* Desktop Sidebar */}
     {!isMobile && (
       <div 
-        className={`fixed left-0 top-0 h-full bg-[#0A0A0A] border-r border-[#38383A] transition-all duration-300 z-50 ${
+        className={`fixed left-0 top-0 h-full bg-surface border-r border-border transition-all duration-300 ease-swiss z-50 ${
           store.sidebarExpanded ? 'w-60' : 'w-16'
         }`}
       >
-        <div className="p-4 border-b border-[#38383A]">
-          <div className="text-xl font-bold text-white">{store.sidebarExpanded ? 'UniLife' : 'UL'}</div>
+        <div className="p-4 border-b border-border">
+          <div className="text-title-sm font-semibold text-text-primary tracking-tight">{store.sidebarExpanded ? 'UniLife' : 'UL'}</div>
         </div>
         <nav className="p-2 flex-1 overflow-y-auto">
           {navigation.map(item => {
@@ -1534,56 +1561,59 @@ const AcademicPage = () => {
                 key={item.id}
                 onClick={() => store.setCurrentPage(item.id)}
                 data-testid={`nav-${item.id}`}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg mb-1 transition-all ${
+                className={`w-full flex items-center gap-3 px-3 py-3 mb-0.5 transition-all duration-200 ease-swiss nav-indicator ${
                   isActive 
-                    ? 'bg-[#0A84FF]/10 text-[#0A84FF] border-l-4 border-[#0A84FF]' 
-                    : 'text-[#EBEBF599] hover:bg-[#141414] hover:text-white'
+                    ? 'active text-text-primary bg-surface-hover border-l-2 border-text-primary' 
+                    : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
                 }`}
               >
-                <Icon size={20} className="shrink-0" />
-                {store.sidebarExpanded && <span className="text-sm font-medium truncate">{item.label}</span>}
+                <Icon size={18} className="shrink-0" />
+                {store.sidebarExpanded && <span className="text-body-sm font-medium truncate">{item.label}</span>}
               </button>
             );
           })}
         </nav>
-        <div className="p-4 border-t border-[#38383A]">
+        <div className="p-4 border-t border-border">
           <button
             onClick={() => store.setSidebarExpanded(!store.sidebarExpanded)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[#EBEBF599] hover:bg-[#141414] hover:text-white"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors duration-200"
           >
-            {store.sidebarExpanded ? <X size={20} /> : <List size={20} />}
+            {store.sidebarExpanded ? <X size={18} /> : <List size={18} />}
           </button>
         </div>
       </div>
     )}
 
-    {/* Desktop Menu Button - Hidden on iPhone */}
+    {/* Desktop Menu Button */}
     {!isMobile && !store.sidebarExpanded && (
       <button
         onClick={() => store.setSidebarExpanded(true)}
-        className="fixed top-4 left-4 z-50 p-3 bg-[#141414] border border-[#38383A] rounded-lg hover:bg-[#1C1C1C] hover:border-[#0A84FF] transition-colors shadow-lg"
+        className="fixed top-4 left-4 z-50 p-3 bg-surface border border-border hover:border-text-tertiary transition-colors duration-200"
       >
-        <List size={24} className="text-white" />
+        <List size={20} className="text-text-primary" />
       </button>
     )}
 
-    {/* iPhone Bottom Navigation */}
+    {/* Mobile Bottom Navigation */}
     {isMobile && (
       <>
         <div className="pb-20 safe-area-bottom">
-          <div className="p-4 scroll-container">
+          <div className="p-3 scroll-container page-enter">
             {renderPage()}
           </div>
         </div>
 
         {/* Bottom Tab Bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-[#38383A] bottom-nav-safe-area z-50">
-          <div className="max-w-[428px] mx-auto">
-            <div className="relative grid grid-cols-5 gap-1 p-1 safe-area-bottom">
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border bottom-nav-safe-area z-50">
+          <div className="max-w-mobile mx-auto">
+            <div className="relative grid grid-cols-5 gap-0 p-1 safe-area-bottom">
+              {/* Active indicator — minimal underline */}
               <div
-                className="absolute top-1 bottom-1 left-1 w-[calc(20%-4px)] rounded-lg bg-white/10 border border-white/20 backdrop-blur-md shadow-[0_0_16px_rgba(255,255,255,0.12)] transition-transform duration-300 ease-out"
+                className="absolute bottom-1 left-1 w-[calc(20%-4px)] flex justify-center transition-transform duration-300 ease-swiss pointer-events-none"
                 style={{ transform: `translateX(${activeBottomIndex * 100}%)` }}
-              />
+              >
+                <div className="w-4 h-[2px] bg-text-primary" />
+              </div>
               {bottomNavItems.map(item => {
                 const Icon = item.icon;
                 const isActive = store.currentPage === item.id;
@@ -1592,35 +1622,32 @@ const AcademicPage = () => {
                     key={item.id}
                     onClick={() => {
                       store.setCurrentPage(item.id);
-                      // Enhanced haptic feedback for iPhone
                       if (iPhoneInteractions.supportsHaptic()) {
                         iPhoneInteractions.haptic('selection');
                       }
                     }}
                     onTouchStart={(e) => {
-                      // Add touch feedback
                       const target = e.currentTarget as HTMLElement;
                       iPhoneInteractions.touchFeedback(target, 'light');
                     }}
                     data-testid={`nav-${item.id}`}
-                    className={`relative z-10 flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all no-select haptic-feedback ${
+                    className={`relative z-10 flex flex-col items-center justify-center py-2 px-2 transition-all duration-200 ease-swiss no-select haptic-feedback ${
                       isActive 
-                        ? 'text-[#0A84FF]' 
-                        : 'text-[#EBEBF599] hover:text-white'
+                        ? 'text-text-primary' 
+                        : 'text-text-tertiary hover:text-text-secondary'
                     }`}
                   >
-                    <Icon size={22} className="mb-1" />
-                    <span className="text-xs font-medium leading-tight">{item.label}</span>
+                    <Icon size={20} className="mb-0.5" />
+                    <span className="text-overline leading-tight">{item.label}</span>
                   </button>
                 );
               })}
             </div>
             
-            {/* More Options Button */}
-            <div className="flex justify-center pb-2">
+            {/* More Options */}
+            <div className="flex justify-center pb-1">
               <button
                 onClick={() => {
-                  // Show more options modal or navigate to settings
                   store.setCurrentPage('settings');
                   if (iPhoneInteractions.supportsHaptic()) {
                     iPhoneInteractions.haptic('medium');
@@ -1630,10 +1657,10 @@ const AcademicPage = () => {
                   const target = e.currentTarget as HTMLElement;
                   iPhoneInteractions.touchFeedback(target, 'light');
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#EBEBF599] hover:text-white transition-all no-select haptic-feedback"
+                className="flex items-center gap-2 px-3 py-1.5 text-text-tertiary hover:text-text-primary transition-all duration-200 no-select haptic-feedback"
               >
-                <GearSix size={20} />
-                <span className="text-sm">More</span>
+                <GearSix size={16} />
+                <span className="text-label uppercase tracking-[0.08em]">More</span>
               </button>
             </div>
           </div>
@@ -1643,8 +1670,8 @@ const AcademicPage = () => {
 
     {/* Desktop Content Area */}
     {!isMobile && (
-      <div className={`transition-all duration-300 ${store.sidebarExpanded ? 'ml-60' : 'ml-16'}`}>
-        <div className="max-w-[1440px] mx-auto p-6 md:p-12">{renderPage()}</div>
+      <div className={`transition-all duration-300 ease-swiss ${store.sidebarExpanded ? 'ml-60' : 'ml-16'}`}>
+        <div className="max-w-wide mx-auto p-6 desktop:p-12 page-enter">{renderPage()}</div>
       </div>
     )}
 

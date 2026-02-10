@@ -2,14 +2,14 @@
 import { useState } from 'react';
 
 const COLORS = [
-  '#3b82f6', // blue-500
-  '#ef4444', // red-500
-  '#10b981', // emerald-500
-  '#f59e0b', // amber-500
-  '#8b5cf6', // violet-500
-  '#ec4899', // pink-500
-  '#14b8a6', // teal-500
-  '#f97316', // orange-500
+  '#E8E8E8', // white
+  '#666666', // gray
+  '#FF3B30', // red
+  '#FF9F0A', // amber
+  '#34C759', // green
+  '#5856D6', // indigo
+  '#AF52DE', // purple
+  '#FF2D55', // pink
 ];
 
 interface ColorPickerProps {
@@ -18,7 +18,7 @@ interface ColorPickerProps {
   label?: string;
 }
 
-export function ColorPicker({ value = '#3b82f6', onChange, label }: ColorPickerProps) {
+export function ColorPicker({ value = '#E8E8E8', onChange, label }: ColorPickerProps) {
   const [selectedColor, setSelectedColor] = useState(value);
 
   const handleColorChange = (color: string) => {
@@ -29,17 +29,17 @@ export function ColorPicker({ value = '#3b82f6', onChange, label }: ColorPickerP
   return (
     <div className="space-y-2">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="block text-label uppercase tracking-[0.08em] text-text-secondary">
           {label}
         </label>
       )}
-      <div className="flex space-x-2">
+      <div className="flex gap-1.5">
         {COLORS.map((color) => (
           <button
             key={color}
             type="button"
-            className={`w-8 h-8 rounded-full ${
-              selectedColor === color ? 'ring-2 ring-offset-2 ring-blue-500' : ''
+            className={`w-6 h-6 transition-all duration-200 ${
+              selectedColor === color ? 'ring-1 ring-offset-2 ring-offset-background ring-text-primary scale-110' : 'hover:scale-105'
             }`}
             style={{ backgroundColor: color }}
             onClick={() => handleColorChange(color)}

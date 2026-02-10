@@ -114,7 +114,7 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
         {/* File Upload Section */}
         {!extractedData && (
           <div className="space-y-4">
-            <div className="border-2 border-dashed border-[#38383A] rounded-lg p-8 text-center">
+            <div className="border-2 border-dashed border-border  p-8 text-center">
               <input
                 type="file"
                 accept=".pdf"
@@ -123,24 +123,24 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
                 id="yearbook-upload"
               />
               <label htmlFor="yearbook-upload" className="cursor-pointer">
-                <FileText className="mx-auto h-12 w-12 text-[#EBEBF599] mb-4" />
-                <p className="text-white font-medium mb-2">Select Yearbook PDF</p>
-                <p className="text-[#EBEBF599] text-sm">
+                <FileText className="mx-auto h-12 w-12 text-text-tertiary mb-4" />
+                <p className="text-text-primary font-medium mb-2">Select Yearbook PDF</p>
+                <p className="text-text-tertiary text-sm">
                   Upload your university yearbook to extract module information
                 </p>
                 {file && (
-                  <div className="mt-4 inline-flex items-center px-3 py-1 bg-[#1C1C1C] rounded-full">
-                    <FileText className="h-4 w-4 mr-2 text-[#0A84FF]" />
-                    <span className="text-white text-sm">{file.name}</span>
+                  <div className="mt-4 inline-flex items-center px-3 py-1 bg-surface ">
+                    <FileText className="h-4 w-4 mr-2 text-text-primary" />
+                    <span className="text-text-primary text-sm">{file.name}</span>
                   </div>
                 )}
               </label>
             </div>
 
             {extractionError && (
-              <div className="flex items-center space-x-2 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-                <WarningCircle className="h-5 w-5 text-red-500" />
-                <p className="text-red-500 text-sm">{extractionError}</p>
+              <div className="flex items-center space-x-2 p-3 bg-danger/20 border border-danger/50 ">
+                <WarningCircle className="h-5 w-5 text-danger" />
+                <p className="text-danger text-sm">{extractionError}</p>
               </div>
             )}
 
@@ -148,7 +148,7 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
               <Button 
                 onClick={handleExtract} 
                 disabled={isExtracting}
-                className="w-full bg-[#0A84FF] hover:bg-[#0066CC]"
+                className="w-full bg-text-primary text-background hover:bg-text-secondary"
               >
                 {isExtracting ? (
                   <>
@@ -170,41 +170,41 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
         {extractedData && (
           <div className="space-y-6">
             {/* Academic Information Summary */}
-            <Card className="bg-[#0A0A0A] border-[#38383A]">
+            <Card className="bg-background border-border">
               <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <GraduationCap className="h-5 w-5 mr-2 text-[#0A84FF]" />
+                <CardTitle className="text-text-primary flex items-center">
+                  <GraduationCap className="h-5 w-5 mr-2 text-text-primary" />
                   Academic Information
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-[#EBEBF599] text-sm">Academic Year</p>
-                    <p className="text-white font-medium">{extractedData.academicYear}</p>
+                    <p className="text-text-tertiary text-sm">Academic Year</p>
+                    <p className="text-text-primary font-medium">{extractedData.academicYear}</p>
                   </div>
                   <div>
-                    <p className="text-[#EBEBF599] text-sm">Faculty</p>
-                    <p className="text-white font-medium">{extractedData.faculty}</p>
+                    <p className="text-text-tertiary text-sm">Faculty</p>
+                    <p className="text-text-primary font-medium">{extractedData.faculty}</p>
                   </div>
                   <div>
-                    <p className="text-[#EBEBF599] text-sm">Degree</p>
-                    <p className="text-white font-medium">{extractedData.degree}</p>
+                    <p className="text-text-tertiary text-sm">Degree</p>
+                    <p className="text-text-primary font-medium">{extractedData.degree}</p>
                   </div>
                   <div>
-                    <p className="text-[#EBEBF599] text-sm">Total Credits</p>
-                    <p className="text-white font-medium">{extractedData.totalCredits}</p>
+                    <p className="text-text-tertiary text-sm">Total Credits</p>
+                    <p className="text-text-primary font-medium">{extractedData.totalCredits}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Module Selection */}
-            <Card className="bg-[#0A0A0A] border-[#38383A]">
+            <Card className="bg-background border-border">
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle className="text-white flex items-center">
-                    <BookOpen className="h-5 w-5 mr-2 text-[#0A84FF]" />
+                  <CardTitle className="text-text-primary flex items-center">
+                    <BookOpen className="h-5 w-5 mr-2 text-text-primary" />
                     Modules Found ({extractedData.modules.length})
                   </CardTitle>
                   <div className="flex space-x-2">
@@ -231,31 +231,31 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
                   {extractedData.modules.map((module) => (
                     <div
                       key={module.id}
-                      className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                      className={`flex items-center justify-between p-3  cursor-pointer transition-colors ${
                         selectedModules.has(module.id) 
-                          ? 'bg-[#0A84FF]/20 border border-[#0A84FF]/50' 
-                          : 'bg-[#1C1C1C] hover:bg-[#2C2C2C]'
+                          ? 'bg-text-primary/20 border border-text-primary/50' 
+                          : 'bg-surface hover:bg-border'
                       }`}
                       onClick={() => toggleModuleSelection(module.id)}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`w-4 h-4 rounded border-2 ${
+                        <div className={`w-4 h-4 border-2 ${
                           selectedModules.has(module.id)
-                            ? 'bg-[#0A84FF] border-[#0A84FF]'
-                            : 'border-[#38383A]'
+                            ? 'bg-text-primary border-text-primary'
+                            : 'border-border'
                         }`}>
                           {selectedModules.has(module.id) && (
-                            <CheckCircle className="h-3 w-3 text-white" />
+                            <CheckCircle className="h-3 w-3 text-text-primary" />
                           )}
                         </div>
                         <div>
-                          <p className="text-white font-medium">{module.code}</p>
-                          <p className="text-[#EBEBF599] text-sm">{module.name}</p>
+                          <p className="text-text-primary font-medium">{module.code}</p>
+                          <p className="text-text-tertiary text-sm">{module.name}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-white text-sm">{module.credits} credits</p>
-                        <p className="text-[#EBEBF599] text-xs">{module.semester}</p>
+                        <p className="text-text-primary text-sm">{module.credits} credits</p>
+                        <p className="text-text-tertiary text-xs">{module.semester}</p>
                       </div>
                     </div>
                   ))}
@@ -265,10 +265,10 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
 
             {/* Preview Section */}
             {showPreview && (
-              <Card className="bg-[#0A0A0A] border-[#38383A]">
+              <Card className="bg-background border-border">
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Eye className="h-5 w-5 mr-2 text-[#0A84FF]" />
+                  <CardTitle className="text-text-primary flex items-center">
+                    <Eye className="h-5 w-5 mr-2 text-text-primary" />
                     Preview Selected Modules
                   </CardTitle>
                 </CardHeader>
@@ -277,37 +277,37 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
                     {extractedData.modules
                       .filter(module => selectedModules.has(module.id))
                       .map((module) => (
-                        <div key={module.id} className="bg-[#1C1C1C] p-4 rounded-lg">
+                        <div key={module.id} className="bg-surface p-4 ">
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <h4 className="text-white font-medium">{module.code}</h4>
-                              <p className="text-[#EBEBF599] text-sm">{module.name}</p>
+                              <h4 className="text-text-primary font-medium">{module.code}</h4>
+                              <p className="text-text-tertiary text-sm">{module.name}</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-white text-sm">{module.credits} credits</p>
-                              <p className="text-[#EBEBF599] text-xs">{module.semester}</p>
+                              <p className="text-text-primary text-sm">{module.credits} credits</p>
+                              <p className="text-text-tertiary text-xs">{module.semester}</p>
                             </div>
                           </div>
                           
                           {module.description && (
-                            <p className="text-[#EBEBF599] text-sm mb-2">{module.description}</p>
+                            <p className="text-text-tertiary text-sm mb-2">{module.description}</p>
                           )}
                           
                           {module.prerequisites && module.prerequisites.length > 0 && (
                             <div className="mb-2">
-                              <p className="text-[#EBEBF599] text-xs">Prerequisites:</p>
-                              <p className="text-white text-sm">{module.prerequisites.join(', ')}</p>
+                              <p className="text-text-tertiary text-xs">Prerequisites:</p>
+                              <p className="text-text-primary text-sm">{module.prerequisites.join(', ')}</p>
                             </div>
                           )}
                           
                           {module.assessments && module.assessments.length > 0 && (
                             <div>
-                              <p className="text-[#EBEBF599] text-xs">Assessments:</p>
+                              <p className="text-text-tertiary text-xs">Assessments:</p>
                               <div className="space-y-1">
                                 {module.assessments.map((assessment, index) => (
                                   <div key={index} className="flex justify-between text-sm">
-                                    <span className="text-white">{assessment.name}</span>
-                                    <span className="text-[#EBEBF599]">{assessment.weight}%</span>
+                                    <span className="text-text-primary">{assessment.name}</span>
+                                    <span className="text-text-tertiary">{assessment.weight}%</span>
                                   </div>
                                 ))}
                               </div>
@@ -325,7 +325,7 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
               <Button
                 onClick={handleImport}
                 disabled={selectedModules.size === 0}
-                className="flex-1 bg-[#0A84FF] hover:bg-[#0066CC]"
+                className="flex-1 bg-text-primary text-background hover:bg-text-secondary"
               >
                 <DownloadSimple className="h-4 w-4 mr-2" />
                 Import {selectedModules.size} Module{selectedModules.size !== 1 ? 's' : ''}

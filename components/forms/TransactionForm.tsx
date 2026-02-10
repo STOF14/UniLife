@@ -91,11 +91,11 @@ export const TransactionForm = ({ editingTransaction, onSave, onClose }: Transac
         required 
       />
       <div className="relative">
-        <label className="block text-sm font-medium text-white mb-2">
-          Amount <span className="text-[#FF453A]">*</span>
+        <label className="block text-sm font-medium text-text-primary mb-2">
+          Amount <span className="text-danger">*</span>
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#EBEBF599]">R</span>
+          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-tertiary">R</span>
           <input
             data-testid="transaction-amount-input" // ✅ Added ID
             type="text"
@@ -106,7 +106,7 @@ export const TransactionForm = ({ editingTransaction, onSave, onClose }: Transac
             }}
             placeholder="-25.50"
             required
-            className="w-full bg-[#0A0A0A] border border-[#38383A] rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-[#0A84FF]"
+            className="w-full bg-background border border-border  pl-10 pr-4 py-2 text-text-primary focus:outline-none focus:border-text-primary"
           />
         </div>
         {/* ... (buttons remain same) ... */}

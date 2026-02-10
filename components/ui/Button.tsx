@@ -14,16 +14,16 @@ export const Button = ({
   'data-testid': testId
 }: ButtonProps) => {
   const variants = {
-    primary: 'bg-[#0A84FF] hover:bg-[#409CFF] text-white',
-    secondary: 'bg-[#141414] border border-[#38383A] text-[#EBEBF599] hover:border-[#0A84FF] hover:text-white',
-    danger: 'bg-[#FF453A] hover:bg-[#FF6961] text-white',
-    outline: 'border border-[#38383A] text-white hover:bg-[#38383A]'
+    primary: 'bg-text-primary text-background hover:bg-accent-hover',
+    secondary: 'bg-transparent border border-border text-text-secondary hover:border-text-primary hover:text-text-primary',
+    danger: 'bg-danger text-white hover:bg-danger/90',
+    outline: 'border border-border text-text-primary hover:border-text-secondary'
   } as const;
   
   const sizes = {
-    sm: 'h-8 px-3 text-sm',
-    md: 'h-10 px-4 py-2',
-    lg: 'h-12 px-6 text-lg',
+    sm: 'h-8 px-3 text-caption uppercase tracking-[0.08em]',
+    md: 'h-10 px-4 py-2 text-body-sm uppercase tracking-[0.06em]',
+    lg: 'h-12 px-6 text-body uppercase tracking-[0.06em]',
   } as const;
   
   return (
@@ -33,14 +33,14 @@ export const Button = ({
       disabled={disabled || loading}
       data-testid={testId}
       className={cn(
-        'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center font-medium transition-all duration-200 ease-swiss focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-primary disabled:pointer-events-none disabled:opacity-40',
         variants[variant],
         sizes[size],
         className
       )}
     >
       {loading && (
-        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-current mr-2"></div>
+        <div className="animate-spin h-4 w-4 border-t border-b border-current mr-2"></div>
       )}
       {children}
     </button>

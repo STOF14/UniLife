@@ -177,7 +177,7 @@ export default function AcademicOnboarding() {
   const CurrentStepComponent = steps[currentStep].component;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-surface py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Progress Indicator */}
         <div className="mb-8">
@@ -185,10 +185,10 @@ export default function AcademicOnboarding() {
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
+                  className={`w-10 h-10  flex items-center justify-center text-sm font-medium ${
                     index <= currentStep
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-300 text-gray-600'
+                      ? 'bg-text-primary text-background'
+                      : 'bg-border text-gray-600'
                   }`}
                 >
                   {index + 1}
@@ -196,7 +196,7 @@ export default function AcademicOnboarding() {
                 {index < steps.length - 1 && (
                   <div
                     className={`w-24 h-1 mx-4 ${
-                      index < currentStep ? 'bg-blue-600' : 'bg-gray-300'
+                      index < currentStep ? 'bg-text-primary' : 'bg-border'
                     }`}
                   />
                 )}
@@ -210,7 +210,7 @@ export default function AcademicOnboarding() {
         </div>
 
         {/* Step Content */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white  shadow-lg p-8">
           <CurrentStepComponent
             data={onboardingData}
             onUpdate={setOnboardingData}
@@ -261,8 +261,8 @@ function WelcomeStep({ data }: any) {
   return (
     <div className="text-center py-8">
       <div className="mb-8">
-        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <GraduationCap size={32} className="text-blue-600" />
+        <div className="w-20 h-20 bg-text-primary/10  flex items-center justify-center mx-auto mb-4">
+          <GraduationCap size={32} className="text-text-primary" />
         </div>
         <h2 className="text-2xl font-bold mb-4">Welcome to UniLife</h2>
         <p className="text-gray-600 max-w-md mx-auto">
@@ -272,27 +272,27 @@ function WelcomeStep({ data }: any) {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        <div className="text-center p-6 bg-blue-50 rounded-lg">
+        <div className="text-center p-6 bg-text-primary/5 ">
           <div className="flex justify-center mb-2">
-            <BookOpen size={24} className="text-blue-600" />
+            <BookOpen size={24} className="text-text-primary" />
           </div>
           <h3 className="font-semibold mb-2">Authoritative Data</h3>
           <p className="text-sm text-gray-600">
             Real-time curriculum data directly from UP
           </p>
         </div>
-        <div className="text-center p-6 bg-green-50 rounded-lg">
+        <div className="text-center p-6 bg-success/5 ">
           <div className="flex justify-center mb-2">
-            <Target size={24} className="text-green-600" />
+            <Target size={24} className="text-success" />
           </div>
           <h3 className="font-semibold mb-2">Smart Planning</h3>
           <p className="text-sm text-gray-600">
             Automated prerequisite checking and academic path optimization
           </p>
         </div>
-        <div className="text-center p-6 bg-purple-50 rounded-lg">
+        <div className="text-center p-6 bg-text-secondary/5 ">
           <div className="flex justify-center mb-2">
-            <ChartLineUp size={24} className="text-purple-600" />
+            <ChartLineUp size={24} className="text-text-secondary" />
           </div>
           <h3 className="font-semibold mb-2">Progress Tracking</h3>
           <p className="text-sm text-gray-600">
@@ -321,9 +321,9 @@ function DegreeSelectionStep({
         {availableDegrees.map((degree) => (
           <div
             key={degree.id}
-            className={`border rounded-lg p-6 cursor-pointer transition-all hover:shadow-md ${
+            className={`border  p-6 cursor-pointer transition-all hover:shadow-md ${
               data.degreeId === degree.id
-                ? 'border-blue-500 bg-blue-50'
+                ? 'border-text-primary bg-text-primary/5'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
             onClick={() => onDegreeSelect(degree.id)}
@@ -350,10 +350,10 @@ function DegreeSelectionStep({
       </div>
       
       {data.degreeId && (
-        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-green-800 text-sm">
+        <div className="mt-6 p-4 bg-success/5 border border-success/20 ">
+          <p className="text-success text-sm">
             <span className="inline-flex items-center gap-2">
-              <CheckCircle size={14} className="text-green-600" />
+              <CheckCircle size={14} className="text-success" />
               Selected: {availableDegrees.find(d => d.id === data.degreeId)?.name}
             </span>
           </p>
@@ -380,9 +380,9 @@ function CurriculumSelectionStep({
         {availableCurricula.map((curriculum) => (
           <div
             key={curriculum.id}
-            className={`border rounded-lg p-6 cursor-pointer transition-all hover:shadow-md ${
+            className={`border  p-6 cursor-pointer transition-all hover:shadow-md ${
               data.curriculumVersionId === curriculum.id
-                ? 'border-blue-500 bg-blue-50'
+                ? 'border-text-primary bg-text-primary/5'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
             onClick={() => onCurriculumSelect(curriculum.id)}
@@ -396,7 +396,7 @@ function CurriculumSelectionStep({
               </div>
               <div className="text-right">
                 {curriculum.isActive && (
-                  <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                  <span className="inline-block px-3 py-1 bg-success/10 text-success text-sm font-medium ">
                     Active
                   </span>
                 )}
@@ -407,10 +407,10 @@ function CurriculumSelectionStep({
       </div>
       
       {data.curriculumVersionId && (
-        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-green-800 text-sm">
+        <div className="mt-6 p-4 bg-success/5 border border-success/20 ">
+          <p className="text-success text-sm">
             <span className="inline-flex items-center gap-2">
-              <CheckCircle size={14} className="text-green-600" />
+              <CheckCircle size={14} className="text-success" />
               Selected: Academic Year {availableCurricula.find(c => c.id === data.curriculumVersionId)?.academicYear}
             </span>
           </p>
@@ -428,10 +428,10 @@ function ConfirmationStep({ data, availableDegrees, availableCurricula }: any) {
     <div className="py-8">
       <h3 className="text-lg font-semibold mb-6">Confirm Your Academic Profile</h3>
       
-      <div className="bg-gray-50 rounded-lg p-6 space-y-6">
+      <div className="bg-surface  p-6 space-y-6">
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Degree Program</h4>
-          <div className="bg-white p-4 rounded border">
+          <div className="bg-white p-4 border">
             <p className="font-semibold">{selectedDegree?.name}</p>
             <p className="text-gray-600">{selectedDegree?.faculty}</p>
             <p className="text-sm text-gray-500">
@@ -442,7 +442,7 @@ function ConfirmationStep({ data, availableDegrees, availableCurricula }: any) {
         
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Curriculum Version</h4>
-          <div className="bg-white p-4 rounded border">
+          <div className="bg-white p-4 border">
             <p className="font-semibold">Academic Year {selectedCurriculum?.academicYear}</p>
             <p className="text-gray-600">{selectedCurriculum?.moduleCount} modules</p>
           </div>
@@ -450,14 +450,14 @@ function ConfirmationStep({ data, availableDegrees, availableCurricula }: any) {
         
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Start Year</h4>
-          <div className="bg-white p-4 rounded border">
+          <div className="bg-white p-4 border">
             <p className="font-semibold">{data.startYear}</p>
           </div>
         </div>
       </div>
       
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-blue-800 text-sm">
+      <div className="mt-6 p-4 bg-text-primary/5 border border-text-primary/20 ">
+        <p className="text-text-primary text-sm">
           <strong>Important:</strong> This profile will be permanently linked to this curriculum version. 
           You can view your progress but cannot change your degree requirements.
         </p>

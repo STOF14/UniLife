@@ -159,7 +159,7 @@ export const TimetablePage = () => {
     }));
   };
 
-  const modulePalette = ['bg-[#0A84FF]/15', 'bg-[#30D158]/15', 'bg-[#FF9F0A]/15', 'bg-[#FF453A]/15', 'bg-[#BF5AF2]/15'];
+  const modulePalette = ['bg-text-primary/15', 'bg-success/15', 'bg-warning/15', 'bg-danger/15', 'bg-text-secondary/15'];
   const getModuleColor = (label: string) => {
     const moduleKey = label.split('·')[0]?.trim() || '';
     if (!moduleKey) return 'bg-transparent';
@@ -170,19 +170,19 @@ export const TimetablePage = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold text-white">Timetable</h1>
-        <p className="text-sm text-[#EBEBF599]">Semester 1, 2026 · Last updated Feb 3, 2026</p>
+        <h1 className="text-3xl font-semibold text-text-primary">Timetable</h1>
+        <p className="text-sm text-text-tertiary">Semester 1, 2026 · Last updated Feb 3, 2026</p>
       </div>
 
-      <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
+      <div className="bg-surface border border-border  p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="px-3 py-1 rounded-full bg-[#0A84FF]/20 text-[#0A84FF] text-sm">
+          <div className="px-3 py-1  bg-text-primary/20 text-text-primary text-sm">
             23 contact hours / week
           </div>
-          <div className="px-3 py-1 rounded-full bg-[#30D158]/20 text-[#30D158] text-sm">
+          <div className="px-3 py-1  bg-success/20 text-success text-sm">
             18 classes / week
           </div>
-          <div className="px-3 py-1 rounded-full bg-[#FF9F0A]/20 text-[#FF9F0A] text-sm">
+          <div className="px-3 py-1  bg-warning/20 text-warning text-sm">
             Best study block: Tue 09:30-13:20
           </div>
         </div>
@@ -194,10 +194,10 @@ export const TimetablePage = () => {
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2  text-sm font-medium transition-colors ${
                 viewMode === mode
-                  ? 'bg-[#0A84FF] text-white'
-                  : 'bg-[#141414] text-[#EBEBF599] hover:bg-[#1C1C1C] border border-[#38383A]'
+                  ? 'bg-text-primary text-background'
+                  : 'bg-surface text-text-tertiary hover:bg-surface/50 border border-border'
               }`}
             >
               {mode === 'today' ? 'Today' : mode === 'week' ? 'Week' : 'All'}
@@ -208,7 +208,7 @@ export const TimetablePage = () => {
           <select
             value={copyFromDay}
             onChange={(e) => setCopyFromDay(e.target.value)}
-            className="px-3 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm"
+            className="px-3 py-2 bg-surface border border-border  text-text-primary text-sm"
           >
             {weeklySchedule.map(day => (
               <option key={day.day} value={day.day}>Copy {day.day}</option>
@@ -217,7 +217,7 @@ export const TimetablePage = () => {
           <select
             value={copyToDay}
             onChange={(e) => setCopyToDay(e.target.value)}
-            className="px-3 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm"
+            className="px-3 py-2 bg-surface border border-border  text-text-primary text-sm"
           >
             {weeklySchedule.map(day => (
               <option key={day.day} value={day.day}>to {day.day}</option>
@@ -225,34 +225,34 @@ export const TimetablePage = () => {
           </select>
           <button
             onClick={copyDay}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-[#141414] text-white border border-[#38383A] hover:border-[#0A84FF]"
+            className="px-4 py-2  text-sm font-medium bg-surface text-text-primary border border-border hover:border-text-primary"
           >
             Copy Day
           </button>
         </div>
       </div>
 
-      <div className="bg-[#141414] border border-[#38383A] rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-[#38383A]">
-          <h2 className="text-lg font-semibold text-white">Weekly Planner</h2>
-          <p className="text-xs text-[#EBEBF599]">Day-by-day · Hour-by-hour · Click any cell to edit</p>
+      <div className="bg-surface border border-border  overflow-hidden">
+        <div className="p-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-text-primary">Weekly Planner</h2>
+          <p className="text-xs text-text-tertiary">Day-by-day · Hour-by-hour · Click any cell to edit</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[1100px]">
-            <thead className="bg-[#0A0A0A] text-[#EBEBF599]">
+            <thead className="bg-background text-text-tertiary">
               <tr>
                 <th className="text-left px-4 py-3">Time</th>
                 {daysToShow.map(dayName => {
                   const day = weeklySchedule.find(d => d.day === dayName)!;
                   return (
                   <th key={day.day} className="text-left px-4 py-3">
-                    <div className="text-white text-sm font-semibold">{day.day}</div>
-                    <div className="text-[11px] text-[#EBEBF599]">
+                    <div className="text-text-primary text-sm font-semibold">{day.day}</div>
+                    <div className="text-[11px] text-text-tertiary">
                       {day.totalHours} · {day.highlightTone} {day.highlight}
                     </div>
                     <button
                       onClick={() => clearDay(day.day)}
-                      className="mt-2 text-[11px] text-[#EBEBF599] hover:text-white"
+                      className="mt-2 text-[11px] text-text-tertiary hover:text-text-primary"
                     >
                       Clear Day
                     </button>
@@ -263,8 +263,8 @@ export const TimetablePage = () => {
             </thead>
             <tbody>
               {timeSlots.map(slot => (
-                <tr key={slot.start} className="border-t border-[#38383A]">
-                  <td className="px-4 py-3 whitespace-nowrap text-[#EBEBF599]">
+                <tr key={slot.start} className="border-t border-border">
+                  <td className="px-4 py-3 whitespace-nowrap text-text-tertiary">
                     {slot.label}
                   </td>
                   {daysToShow.map(dayName => {
@@ -274,15 +274,15 @@ export const TimetablePage = () => {
                     return (
                       <td
                         key={`${dayName}-${slot.start}`}
-                        className={`px-3 py-2 align-top ${isFree ? 'bg-[#0A0A0A]' : getModuleColor(cellValue)}`}
+                        className={`px-3 py-2 align-top ${isFree ? 'bg-background' : getModuleColor(cellValue)}`}
                       >
                         <textarea
                           value={cellValue}
                           onChange={(e) => updateSlot(dayName, slot.start, e.target.value)}
                           placeholder="Free"
                           rows={3}
-                          className={`w-full resize-none rounded-md border border-transparent bg-transparent text-xs text-white placeholder:text-[#3A3A3C] focus:outline-none focus:border-[#0A84FF] focus:bg-[#0A0A0A] ${
-                            isFree ? 'text-[#30D158]' : 'text-white'
+                          className={`w-full resize-none border border-transparent bg-transparent text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-text-primary focus:bg-background ${
+                            isFree ? 'text-success' : 'text-text-primary'
                           }`}
                         />
                       </td>
@@ -296,11 +296,11 @@ export const TimetablePage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-          <h2 className="text-lg font-semibold text-white mb-3">Group Registrations</h2>
+        <div className="bg-surface border border-border  p-4">
+          <h2 className="text-lg font-semibold text-text-primary mb-3">Group Registrations</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-[#EBEBF599]">
+              <thead className="text-text-tertiary">
                 <tr>
                   <th className="text-left py-2">Module</th>
                   <th className="text-left py-2">Lectures</th>
@@ -310,13 +310,13 @@ export const TimetablePage = () => {
               </thead>
               <tbody>
                 {groupRegistrations.map(row => (
-                  <tr key={row.module} className="border-t border-[#38383A]">
-                    <td className="py-2 text-white">{row.module}</td>
-                    <td className="py-2 text-[#EBEBF599]">{row.lectures}</td>
-                    <td className={`py-2 ${row.practicals === 'SKIPPED' ? 'text-[#FF453A]' : 'text-[#EBEBF599]'}`}>
+                  <tr key={row.module} className="border-t border-border">
+                    <td className="py-2 text-text-primary">{row.module}</td>
+                    <td className="py-2 text-text-tertiary">{row.lectures}</td>
+                    <td className={`py-2 ${row.practicals === 'SKIPPED' ? 'text-danger' : 'text-text-tertiary'}`}>
                       {row.practicals}
                     </td>
-                    <td className="py-2 text-[#EBEBF599]">{row.tutorials}</td>
+                    <td className="py-2 text-text-tertiary">{row.tutorials}</td>
                   </tr>
                 ))}
               </tbody>
@@ -324,51 +324,51 @@ export const TimetablePage = () => {
           </div>
         </div>
 
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4 space-y-4">
-          <h2 className="text-lg font-semibold text-white">Important Notes</h2>
-          <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-3">
-            <p className="text-sm text-white font-medium">WTW 218 Cross-Group Attendance</p>
-            <p className="text-xs text-[#EBEBF599] mt-1">Attend G01 on Thursday @ HB 4-3, 08:30-09:20 (avoid Fri conflict with COS 212).</p>
+        <div className="bg-surface border border-border  p-4 space-y-4">
+          <h2 className="text-lg font-semibold text-text-primary">Important Notes</h2>
+          <div className="bg-background border border-border  p-3">
+            <p className="text-sm text-text-primary font-medium">WTW 218 Cross-Group Attendance</p>
+            <p className="text-xs text-text-tertiary mt-1">Attend G01 on Thursday @ HB 4-3, 08:30-09:20 (avoid Fri conflict with COS 212).</p>
           </div>
-          <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-3">
-            <p className="text-sm text-white font-medium">COS 212 Practical</p>
-            <p className="text-xs text-[#EBEBF599] mt-1">Status: Not attending (optional). Saves 2h 50m/week (~34h/semester).</p>
+          <div className="bg-background border border-border  p-3">
+            <p className="text-sm text-text-primary font-medium">COS 212 Practical</p>
+            <p className="text-xs text-text-tertiary mt-1">Status: Not attending (optional). Saves 2h 50m/week (~34h/semester).</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-          <h2 className="text-lg font-semibold text-white mb-3">Quick Stats</h2>
+        <div className="bg-surface border border-border  p-4">
+          <h2 className="text-lg font-semibold text-text-primary mb-3">Quick Stats</h2>
           <div className="space-y-2">
             {quickStats.map(stat => (
               <div key={stat.label} className="flex items-center justify-between text-sm">
-                <span className="text-[#EBEBF599]">{stat.label}</span>
-                <span className="text-white text-right">{stat.value}</span>
+                <span className="text-text-tertiary">{stat.label}</span>
+                <span className="text-text-primary text-right">{stat.value}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-          <h2 className="text-lg font-semibold text-white mb-3">Semester Tests</h2>
+        <div className="bg-surface border border-border  p-4">
+          <h2 className="text-lg font-semibold text-text-primary mb-3">Semester Tests</h2>
           <div className="space-y-2">
             {importantDates.tests.map(test => (
               <div key={`${test.module}-${test.label}`} className="flex items-center justify-between text-sm">
-                <span className="text-[#EBEBF599]">{test.module}</span>
-                <span className="text-white">{test.label} · {test.date}</span>
+                <span className="text-text-tertiary">{test.module}</span>
+                <span className="text-text-primary">{test.label} · {test.date}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-          <h2 className="text-lg font-semibold text-white mb-3">Final Exams</h2>
+        <div className="bg-surface border border-border  p-4">
+          <h2 className="text-lg font-semibold text-text-primary mb-3">Final Exams</h2>
           <div className="space-y-2">
             {importantDates.exams.map(exam => (
               <div key={exam.module} className="flex items-center justify-between text-sm">
-                <span className="text-[#EBEBF599]">{exam.module}</span>
-                <span className="text-white">{exam.date} · {exam.time}</span>
+                <span className="text-text-tertiary">{exam.module}</span>
+                <span className="text-text-primary">{exam.date} · {exam.time}</span>
               </div>
             ))}
           </div>
@@ -376,24 +376,24 @@ export const TimetablePage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-          <h2 className="text-lg font-semibold text-white mb-3">Daily Checklist</h2>
+        <div className="bg-surface border border-border  p-4">
+          <h2 className="text-lg font-semibold text-text-primary mb-3">Daily Checklist</h2>
           <ul className="space-y-2">
             {checklist.map(item => (
-              <li key={item} className="flex items-center gap-2 text-sm text-[#EBEBF599]">
-                <span className="w-2 h-2 rounded-full bg-[#30D158]" />
+              <li key={item} className="flex items-center gap-2 text-sm text-text-tertiary">
+                <span className="w-2 h-2  bg-success" />
                 {item}
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-          <h2 className="text-lg font-semibold text-white mb-3">Semester Goals</h2>
+        <div className="bg-surface border border-border  p-4">
+          <h2 className="text-lg font-semibold text-text-primary mb-3">Semester Goals</h2>
           <ul className="space-y-2">
             {goals.map(goal => (
-              <li key={goal} className="flex items-center gap-2 text-sm text-[#EBEBF599]">
-                <span className="w-2 h-2 rounded-full bg-[#0A84FF]" />
+              <li key={goal} className="flex items-center gap-2 text-sm text-text-tertiary">
+                <span className="w-2 h-2  bg-text-primary" />
                 {goal}
               </li>
             ))}
