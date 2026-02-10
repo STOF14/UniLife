@@ -1,21 +1,5 @@
-import React, { useState } from 'react';
-
-type TimetableSession = {
-  time: string;
-  module: string;
-  type: string;
-  venue: string;
-  notes?: string;
-  isFree?: boolean;
-};
-
-type DaySchedule = {
-  day: string;
-  highlight: string;
-  highlightTone: string;
-  totalHours: string;
-  sessions: TimetableSession[];
-};
+import React, { useEffect, useMemo, useState } from 'react';
+import { weeklySchedule, type DaySchedule, type TimetableSession } from '@/lib/timetableData';
 
 type TimeSlot = {
   label: string;
@@ -23,67 +7,6 @@ type TimeSlot = {
   end: string;
 };
 
-const weeklySchedule: DaySchedule[] = [
-  {
-    day: 'Monday',
-    highlight: 'Busiest day - 8.5 hours!',
-    highlightTone: '⚡',
-    totalHours: '8.5 hours',
-    sessions: [
-      { time: '08:30 - 09:20', module: 'PHY 255', type: 'Lecture', venue: 'NS1 5-42' },
-      { time: '11:30 - 12:20', module: 'COS 210', type: 'Lecture', venue: 'IT 2-26' },
-      { time: '12:30 - 13:20', module: 'WTW 211', type: 'Lecture', venue: 'HB 4-3' },
-      { time: '13:30 - 16:20', module: 'PHY 255', type: 'Practical', venue: 'NS1 5-42', notes: '3 hours' },
-      { time: '16:30 - 17:20', module: 'COS 212', type: 'Lecture', venue: 'Large Chemistry Hall' }
-    ]
-  },
-  {
-    day: 'Tuesday',
-    highlight: 'Best study day - Free morning!',
-    highlightTone: '📚',
-    totalHours: '4 hours',
-    sessions: [
-      { time: '08:30 - 09:20', module: 'WTW 218', type: 'Lecture', venue: 'HB 4-3', notes: 'G02' },
-      { time: '09:30 - 13:20', module: 'FREE TIME', type: 'Study', venue: 'Library?', notes: '4-hour block', isFree: true },
-      { time: '14:30 - 17:20', module: 'PHY 255', type: 'Tutorial', venue: 'NS1 5-42', notes: '3 hours' }
-    ]
-  },
-  {
-    day: 'Wednesday',
-    highlight: 'Balanced day - 4.5 hours',
-    highlightTone: '✅',
-    totalHours: '4.5 hours',
-    sessions: [
-      { time: '08:30 - 09:20', module: 'COS 210', type: 'Lecture', venue: 'IT 2-26' },
-      { time: '09:30 - 10:20', module: 'COS 212', type: 'Lecture', venue: 'Louw hall' },
-      { time: '11:30 - 12:50', module: 'WTW 218', type: 'Tutorial', venue: 'Botany 2-26', notes: 'T03' },
-      { time: '14:30 - 15:50', module: 'WTW 211', type: 'Tutorial', venue: 'Te Water hall', notes: 'T02' }
-    ]
-  },
-  {
-    day: 'Thursday',
-    highlight: 'Light day - 3.5 hours',
-    highlightTone: '😊',
-    totalHours: '3.5 hours',
-    sessions: [
-      { time: '08:30 - 09:20', module: 'WTW 218', type: 'Lecture', venue: 'HB 4-3', notes: '⭐ Attend G01 (cross-group)' },
-      { time: '12:30 - 14:20', module: 'PHY 255', type: 'Lecture', venue: 'NS1 5-42', notes: '2 hours' },
-      { time: '16:30 - 17:20', module: 'COS 212', type: 'Lecture', venue: 'Roos hall' }
-    ]
-  },
-  {
-    day: 'Friday',
-    highlight: 'Early start day',
-    highlightTone: '🌅',
-    totalHours: '6 hours',
-    sessions: [
-      { time: '07:30 - 08:20', module: 'WTW 211', type: 'Lecture', venue: 'AE Annex', notes: '⏰ Early start' },
-      { time: '08:30 - 09:20', module: 'PHY 255', type: 'Lecture', venue: 'NS1 5-42' },
-      { time: '09:30 - 10:20', module: 'COS 212', type: 'Lecture', venue: 'Louw hall' },
-      { time: '14:30 - 17:20', module: 'COS 210', type: 'Practical', venue: 'IT 2-26', notes: '3 hours' }
-    ]
-  }
-];
 
 const timeSlots: TimeSlot[] = Array.from({ length: 24 }, (_, hour) => {
   const start = `${String(hour).padStart(2, '0')}:00`;
@@ -185,7 +108,28 @@ const goals = [
 ];
 
 export const TimetablePage = () => {
-  const [planner, setPlanner] = useState<Record<string, Record<string, string>>>(() => buildInitialPlanner());
+  const [planner, setPlanner] = useState<Record<string, Record<string, string>>>(() => {
+    if (typeof window === 'undefined') return buildInitialPlanner();
+    const saved = localStorage.getItem('unilife_timetable_planner');
+    return saved ? JSON.parse(saved) : buildInitialPlanner();
+  });
+  const [viewMode, setViewMode] = useState<'today' | 'week' | 'all'>('week');
+  const [copyFromDay, setCopyFromDay] = useState('Monday');
+  const [copyToDay, setCopyToDay] = useState('Tuesday');
+
+  useEffect(() => {
+    localStorage.setItem('unilife_timetable_planner', JSON.stringify(planner));
+  }, [planner]);
+
+  const weekDays = weeklySchedule.map(day => day.day);
+  const todayName = useMemo(() => {
+    const name = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    return weekDays.includes(name) ? name : weekDays[0];
+  }, [weekDays]);
+
+  const daysToShow = viewMode === 'today'
+    ? [todayName]
+    : weekDays;
 
   const updateSlot = (day: string, slotStart: string, value: string) => {
     setPlanner(prev => ({
@@ -195,6 +139,32 @@ export const TimetablePage = () => {
         [slotStart]: value
       }
     }));
+  };
+
+  const clearDay = (day: string) => {
+    setPlanner(prev => {
+      const cleared = { ...prev[day] };
+      Object.keys(cleared).forEach(slot => {
+        cleared[slot] = '';
+      });
+      return { ...prev, [day]: cleared };
+    });
+  };
+
+  const copyDay = () => {
+    if (copyFromDay === copyToDay) return;
+    setPlanner(prev => ({
+      ...prev,
+      [copyToDay]: { ...prev[copyFromDay] }
+    }));
+  };
+
+  const modulePalette = ['bg-[#0A84FF]/15', 'bg-[#30D158]/15', 'bg-[#FF9F0A]/15', 'bg-[#FF453A]/15', 'bg-[#BF5AF2]/15'];
+  const getModuleColor = (label: string) => {
+    const moduleKey = label.split('·')[0]?.trim() || '';
+    if (!moduleKey) return 'bg-transparent';
+    const hash = moduleKey.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return modulePalette[hash % modulePalette.length];
   };
 
   return (
@@ -218,6 +188,50 @@ export const TimetablePage = () => {
         </div>
       </div>
 
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex gap-2">
+          {(['today', 'week', 'all'] as const).map(mode => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                viewMode === mode
+                  ? 'bg-[#0A84FF] text-white'
+                  : 'bg-[#141414] text-[#EBEBF599] hover:bg-[#1C1C1C] border border-[#38383A]'
+              }`}
+            >
+              {mode === 'today' ? 'Today' : mode === 'week' ? 'Week' : 'All'}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={copyFromDay}
+            onChange={(e) => setCopyFromDay(e.target.value)}
+            className="px-3 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm"
+          >
+            {weeklySchedule.map(day => (
+              <option key={day.day} value={day.day}>Copy {day.day}</option>
+            ))}
+          </select>
+          <select
+            value={copyToDay}
+            onChange={(e) => setCopyToDay(e.target.value)}
+            className="px-3 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm"
+          >
+            {weeklySchedule.map(day => (
+              <option key={day.day} value={day.day}>to {day.day}</option>
+            ))}
+          </select>
+          <button
+            onClick={copyDay}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-[#141414] text-white border border-[#38383A] hover:border-[#0A84FF]"
+          >
+            Copy Day
+          </button>
+        </div>
+      </div>
+
       <div className="bg-[#141414] border border-[#38383A] rounded-xl overflow-hidden">
         <div className="p-4 border-b border-[#38383A]">
           <h2 className="text-lg font-semibold text-white">Weekly Planner</h2>
@@ -228,14 +242,23 @@ export const TimetablePage = () => {
             <thead className="bg-[#0A0A0A] text-[#EBEBF599]">
               <tr>
                 <th className="text-left px-4 py-3">Time</th>
-                {weeklySchedule.map(day => (
+                {daysToShow.map(dayName => {
+                  const day = weeklySchedule.find(d => d.day === dayName)!;
+                  return (
                   <th key={day.day} className="text-left px-4 py-3">
                     <div className="text-white text-sm font-semibold">{day.day}</div>
                     <div className="text-[11px] text-[#EBEBF599]">
                       {day.totalHours} · {day.highlightTone} {day.highlight}
                     </div>
+                    <button
+                      onClick={() => clearDay(day.day)}
+                      className="mt-2 text-[11px] text-[#EBEBF599] hover:text-white"
+                    >
+                      Clear Day
+                    </button>
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -244,18 +267,18 @@ export const TimetablePage = () => {
                   <td className="px-4 py-3 whitespace-nowrap text-[#EBEBF599]">
                     {slot.label}
                   </td>
-                  {weeklySchedule.map(day => {
-                    const cellValue = planner[day.day]?.[slot.start] ?? '';
+                  {daysToShow.map(dayName => {
+                    const cellValue = planner[dayName]?.[slot.start] ?? '';
                     const isFree = cellValue.toLowerCase().includes('free');
 
                     return (
                       <td
-                        key={`${day.day}-${slot.start}`}
-                        className={`px-3 py-2 align-top ${isFree ? 'bg-[#0A0A0A]' : 'bg-transparent'}`}
+                        key={`${dayName}-${slot.start}`}
+                        className={`px-3 py-2 align-top ${isFree ? 'bg-[#0A0A0A]' : getModuleColor(cellValue)}`}
                       >
                         <textarea
                           value={cellValue}
-                          onChange={(e) => updateSlot(day.day, slot.start, e.target.value)}
+                          onChange={(e) => updateSlot(dayName, slot.start, e.target.value)}
                           placeholder="Free"
                           rows={3}
                           className={`w-full resize-none rounded-md border border-transparent bg-transparent text-xs text-white placeholder:text-[#3A3A3C] focus:outline-none focus:border-[#0A84FF] focus:bg-[#0A0A0A] ${

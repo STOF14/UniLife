@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X } from 'lucide-react';
+import { X } from 'phosphor-react';
 import type { ModalProps } from '@/lib/types';
 
 export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {

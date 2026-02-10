@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Plus, Edit, Trash2, TrendingUp, TrendingDown, DollarSign, Calendar, Filter, Download, PieChart as PieChartIcon, BarChart3, CreditCard, Wallet, ShoppingCart, Receipt, AlertCircle } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Plus, PencilSimple, Trash, TrendUp, TrendDown, CurrencyDollar, Calendar, Funnel, DownloadSimple, ChartPieSlice, ChartBar, CreditCard, Wallet, ShoppingCartSimple, Receipt, WarningCircle, BookOpen, GraduationCap, Car, GameController, Lightbulb, Package, ForkKnife, Star } from 'phosphor-react';
 import type { Transaction } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 
@@ -22,6 +22,22 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
+  const [monthFilter, setMonthFilter] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [showRecurringOnly, setShowRecurringOnly] = useState(false);
+  const [recurringIds, setRecurringIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    const saved = localStorage.getItem('finances_recurring_ids');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('finances_recurring_ids', JSON.stringify(recurringIds));
+    }
+  }, [recurringIds]);
 
   // Category budgets (you can make this editable later)
   const [budgets, setBudgets] = useState<Record<string, number>>({
@@ -66,8 +82,16 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
       filtered = filtered.filter(t => t.category === categoryFilter);
     }
 
+    if (monthFilter) {
+      filtered = filtered.filter(t => t.date.startsWith(monthFilter));
+    }
+
+    if (showRecurringOnly) {
+      filtered = filtered.filter(t => recurringIds.includes(t.id));
+    }
+
     return filtered;
-  }, [transactions, timeFilter, categoryFilter]);
+  }, [transactions, timeFilter, categoryFilter, monthFilter, showRecurringOnly, recurringIds]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -111,6 +135,15 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
     return Array.from(cats).sort();
   }, [transactions]);
 
+  const months = useMemo(() => {
+    const monthSet = new Set(transactions.map(t => t.date.slice(0, 7)));
+    return Array.from(monthSet).sort().reverse();
+  }, [transactions]);
+
+  const totalBudget = useMemo(() => Object.values(budgets).reduce((sum, value) => sum + value, 0), [budgets]);
+  const totalSpent = useMemo(() => Object.values(stats.categoryBreakdown).reduce((sum, value) => sum + value, 0), [stats.categoryBreakdown]);
+  const totalBudgetPercent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+
   // Budget tracking
   const budgetStatus = useMemo(() => {
     const status: Record<string, { spent: number; budget: number; percentage: number }> = {};
@@ -125,6 +158,12 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
 
     return status;
   }, [stats.categoryBreakdown, budgets]);
+
+  const toggleRecurring = (id: string) => {
+    setRecurringIds(prev => (
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    ));
+  };
 
   const exportToCSV = () => {
     const headers = ['Date', 'Description', 'Category', 'Amount'];
@@ -149,18 +188,18 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
   };
 
   const getCategoryIcon = (category: string) => {
-    const icons: Record<string, any> = {
-      Food: '🍔',
-      Books: '📚',
-      Tuition: '🎓',
-      Transport: '🚗',
-      Entertainment: '🎮',
-      Utilities: '💡',
-      Shopping: '🛍️',
-      Income: '💰',
-      Other: '📦',
+    const icons: Record<string, React.ReactNode> = {
+      Food: <ForkKnife size={20} />,
+      Books: <BookOpen size={20} />,
+      Tuition: <GraduationCap size={20} />,
+      Transport: <Car size={20} />,
+      Entertainment: <GameController size={20} />,
+      Utilities: <Lightbulb size={20} />,
+      Shopping: <ShoppingCartSimple size={20} />,
+      Income: <CurrencyDollar size={20} />,
+      Other: <Package size={20} />,
     };
-    return icons[category] || '📦';
+    return icons[category] || <Package size={20} />;
   };
 
   return (
@@ -170,7 +209,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
         <h1 className="text-3xl font-semibold text-white">Finances</h1>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={exportToCSV}>
-            <Download size={16} className="mr-1" />Export CSV
+            <DownloadSimple size={16} className="mr-1" />Export CSV
           </Button>
           <Button onClick={onAddTransaction}>
             <Plus size={16} className="mr-1" />Add Transaction
@@ -206,6 +245,41 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
+        <select
+          value={monthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+          className="px-4 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm focus:outline-none focus:border-[#0A84FF]"
+        >
+          {months.map(month => (
+            <option key={month} value={month}>{month}</option>
+          ))}
+        </select>
+        <button
+          onClick={() => setShowRecurringOnly(!showRecurringOnly)}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            showRecurringOnly ? 'bg-[#0A84FF] text-white' : 'bg-[#141414] text-[#EBEBF599] hover:bg-[#1C1C1C] border border-[#38383A]'
+          }`}
+        >
+          Recurring
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {categories.slice(0, 6).map(cat => (
+          <button
+            key={cat}
+            onClick={() => setCategoryFilter(cat)}
+            className="px-3 py-1.5 rounded-full text-xs border border-[#38383A] text-white hover:border-[#0A84FF]"
+          >
+            {cat}
+          </button>
+        ))}
+        <button
+          onClick={() => setCategoryFilter('all')}
+          className="px-3 py-1.5 rounded-full text-xs border border-[#38383A] text-[#EBEBF599] hover:text-white"
+        >
+          Clear
+        </button>
       </div>
 
       {/* Summary Cards */}
@@ -214,7 +288,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-[#EBEBF599]">Income</h3>
             <div className="p-2 bg-[#30D158]/10 rounded-lg">
-              <TrendingUp size={16} className="text-[#30D158]" />
+              <TrendUp size={16} className="text-[#30D158]" />
             </div>
           </div>
           <div className="text-3xl font-bold text-[#30D158]">R{stats.income.toFixed(2)}</div>
@@ -225,7 +299,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-[#EBEBF599]">Expenses</h3>
             <div className="p-2 bg-[#FF453A]/10 rounded-lg">
-              <TrendingDown size={16} className="text-[#FF453A]" />
+              <TrendDown size={16} className="text-[#FF453A]" />
             </div>
           </div>
           <div className="text-3xl font-bold text-[#FF453A]">R{stats.expenses.toFixed(2)}</div>
@@ -251,13 +325,27 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-[#EBEBF599]">Savings Rate</h3>
             <div className="p-2 bg-[#FF9F0A]/10 rounded-lg">
-              <PieChartIcon size={16} className="text-[#FF9F0A]" />
+              <ChartPieSlice size={16} className="text-[#FF9F0A]" />
             </div>
           </div>
           <div className="text-3xl font-bold text-[#FF9F0A]">
             {stats.income > 0 ? ((stats.balance / stats.income) * 100).toFixed(1) : '0.0'}%
           </div>
           <div className="text-xs text-[#EBEBF599] mt-1">Of income saved</div>
+        </div>
+
+        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-[#EBEBF599]">Budget Used</h3>
+            <div className="p-2 bg-[#0A84FF]/10 rounded-lg">
+              <ChartBar size={16} className="text-[#0A84FF]" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-white">{totalBudgetPercent.toFixed(1)}%</div>
+          <div className="text-xs text-[#EBEBF599] mt-1">R{totalSpent.toFixed(0)} / R{totalBudget.toFixed(0)}</div>
+          <div className="mt-3 h-2 bg-[#0A0A0A] rounded-full overflow-hidden">
+            <div className="h-full bg-[#0A84FF]" style={{ width: `${Math.min(totalBudgetPercent, 100)}%` }} />
+          </div>
         </div>
       </div>
 
@@ -286,7 +374,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                         <span className="text-sm text-[#EBEBF599]">
                           R{data.spent.toFixed(2)} / R{data.budget.toFixed(2)}
                         </span>
-                        {isOverBudget && <AlertCircle size={16} className="text-[#FF453A]" />}
+                        {isOverBudget && <WarningCircle size={16} className="text-[#FF453A]" />}
                       </div>
                     </div>
                     <div className="relative h-2 bg-[#0A0A0A] rounded-full overflow-hidden">
@@ -348,10 +436,17 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                         </div>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
+                            onClick={() => toggleRecurring(transaction.id)}
+                            className="p-2 hover:bg-[#38383A] rounded transition-colors"
+                            title="Toggle recurring"
+                          >
+                            <span className={recurringIds.includes(transaction.id) ? 'text-[#FF9F0A]' : 'text-[#EBEBF599]'}>★</span>
+                          </button>
+                          <button
                             onClick={() => onEditTransaction(transaction)}
                             className="p-2 hover:bg-[#38383A] rounded transition-colors"
                           >
-                            <Edit size={14} className="text-[#EBEBF599]" />
+                            <PencilSimple size={14} className="text-[#EBEBF599]" />
                           </button>
                           <button
                             onClick={() => {
@@ -361,7 +456,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                             }}
                             className="p-2 hover:bg-[#FF453A]/20 rounded transition-colors"
                           >
-                            <Trash2 size={14} className="text-[#FF453A]" />
+                            <Trash size={14} className="text-[#FF453A]" />
                           </button>
                         </div>
                       </div>
@@ -416,16 +511,19 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
 
           {/* Quick Insights */}
           <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">💡 Insights</h2>
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <Lightbulb size={20} className="text-[#FF9F0A]" />
+              Insights
+            </h2>
             <div className="space-y-3">
               {stats.balance < 0 && (
                 <div className="p-3 bg-[#FF453A]/10 border border-[#FF453A]/30 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <AlertCircle size={16} className="text-[#FF453A] mt-0.5" />
+                    <WarningCircle size={16} className="text-[#FF453A] mt-0.5" />
                     <div>
                       <div className="text-sm font-medium text-[#FF453A]">Budget Alert</div>
                       <div className="text-xs text-[#EBEBF599] mt-1">
-                        You're spending more than you earn this {timeFilter}
+                        You&apos;re spending more than you earn this {timeFilter}
                       </div>
                     </div>
                   </div>
@@ -435,7 +533,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
               {Object.entries(budgetStatus).some(([_, data]) => data.percentage > 100) && (
                 <div className="p-3 bg-[#FF9F0A]/10 border border-[#FF9F0A]/30 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <AlertCircle size={16} className="text-[#FF9F0A] mt-0.5" />
+                    <WarningCircle size={16} className="text-[#FF9F0A] mt-0.5" />
                     <div>
                       <div className="text-sm font-medium text-[#FF9F0A]">Over Budget</div>
                       <div className="text-xs text-[#EBEBF599] mt-1">
@@ -449,11 +547,14 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
               {stats.balance >= 0 && stats.income > 0 && (stats.balance / stats.income) * 100 > 30 && (
                 <div className="p-3 bg-[#30D158]/10 border border-[#30D158]/30 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <TrendingUp size={16} className="text-[#30D158] mt-0.5" />
+                    <TrendUp size={16} className="text-[#30D158] mt-0.5" />
                     <div>
                       <div className="text-sm font-medium text-[#30D158]">Great Saving!</div>
                       <div className="text-xs text-[#EBEBF599] mt-1">
-                        You're saving over 30% of your income 🎉
+                        <span className="inline-flex items-center gap-2">
+                          <Star size={16} className="text-[#0A84FF]" />
+                          You&apos;re saving over 30% of your income
+                        </span>
                       </div>
                     </div>
                   </div>

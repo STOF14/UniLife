@@ -7,21 +7,21 @@ import { extractYearbookData, ExtractedYearbookData } from '@/lib/utils/advanced
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { 
-  Upload, 
-  FileText, 
-  CheckCircle, 
-  AlertCircle, 
-  BookOpen, 
-  Award,
-  TrendingUp,
+import {
+  UploadSimple,
+  FileText,
+  CheckCircle,
+  WarningCircle,
+  BookOpen,
+  Trophy,
+  TrendUp,
   Calendar,
-  Building,
+  Buildings,
   GraduationCap,
-  Loader2,
+  CircleNotch,
   Eye,
-  Download
-} from 'lucide-react';
+  DownloadSimple
+} from 'phosphor-react';
 
 interface YearbookImportProps {
   onImport: (modules: Module[]) => void;
@@ -139,7 +139,7 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
 
             {extractionError && (
               <div className="flex items-center space-x-2 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-red-500" />
+                <WarningCircle className="h-5 w-5 text-red-500" />
                 <p className="text-red-500 text-sm">{extractionError}</p>
               </div>
             )}
@@ -152,12 +152,12 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
               >
                 {isExtracting ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <CircleNotch className="h-4 w-4 mr-2 animate-spin" />
                     Extracting Data...
                   </>
                 ) : (
                   <>
-                    <Upload className="h-4 w-4 mr-2" />
+                    <UploadSimple className="h-4 w-4 mr-2" />
                     Extract Module Information
                   </>
                 )}
@@ -327,7 +327,7 @@ export function YearbookImport({ onImport, isOpen, onClose }: YearbookImportProp
                 disabled={selectedModules.size === 0}
                 className="flex-1 bg-[#0A84FF] hover:bg-[#0066CC]"
               >
-                <Download className="h-4 w-4 mr-2" />
+                <DownloadSimple className="h-4 w-4 mr-2" />
                 Import {selectedModules.size} Module{selectedModules.size !== 1 ? 's' : ''}
               </Button>
               <Button

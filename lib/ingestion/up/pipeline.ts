@@ -160,8 +160,8 @@ export class UPIngestionPipeline {
     const degreeValidation = UPDataValidator.validateDegrees(data.degrees);
     const moduleValidation = UPDataValidator.validateModules(data.modules);
     
-    let allErrors = [...degreeValidation.errors, ...moduleValidation.errors];
-    let allWarnings = [...degreeValidation.warnings, ...moduleValidation.warnings];
+    const allErrors = [...degreeValidation.errors, ...moduleValidation.errors];
+    const allWarnings = [...degreeValidation.warnings, ...moduleValidation.warnings];
     
     // Validate curricula
     for (const curriculum of data.curricula) {

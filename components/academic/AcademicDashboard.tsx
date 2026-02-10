@@ -8,18 +8,18 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { ModuleForm } from '@/components/academic/ModuleForm';
-import { 
-  TrendingUp, 
+import {
+  TrendUp,
   Plus,
-  Edit,
-  Trash2,
-  Search,
-  BarChart3,
+  PencilSimple,
+  Trash,
+  MagnifyingGlass,
+  ChartBar,
   Clock,
   CheckCircle,
-  Award,
-  Upload
-} from 'lucide-react';
+  Trophy,
+  UploadSimple
+} from 'phosphor-react';
 import { calculateCWA, calculateTermAverage, getGradeLetter } from '@/lib/utils/calculations';
 
 interface AcademicDashboardProps {
@@ -32,6 +32,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
   const [filterSemester, setFilterSemester] = useState('all');
   const [filterYear, setFilterYear] = useState('all');
   const [filterMajor, setFilterMajor] = useState('all');
+  const [showNeedsAttention, setShowNeedsAttention] = useState(false);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [showModuleModal, setShowModuleModal] = useState(false);
   const [showAddModuleModal, setShowAddModuleModal] = useState(false);
@@ -44,6 +45,9 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
     ? modules.reduce((sum, m) => sum + (m.currentGrade || 0), 0) / modules.length 
     : 0;
   const totalCredits = modules.reduce((sum, m) => sum + m.credits, 0);
+  const activeCredits = modules
+    .filter(m => !(m.completed || m.currentGrade >= 100))
+    .reduce((sum, m) => sum + m.credits, 0);
   const completedModules = modules.filter(m => m.progress === 100).length;
   const upcomingAssessments = modules.flatMap(m => 
     m.assessments?.filter(a => !a.submitted && new Date(a.dueDate) > new Date()) || []
@@ -80,8 +84,9 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
     const isCompleted = module.completed || module.currentGrade >= 100;
     const yearMatch = module.semester?.match(/\b20\d{2}\b/);
     const isPastYear = yearMatch ? parseInt(yearMatch[0], 10) < currentYear : false;
+    const needsAttention = module.currentGrade < module.targetGrade;
     
-    return matchesSearch && matchesSemester && matchesYear && matchesMajor && !isCompleted && !isPastYear;
+    return matchesSearch && matchesSemester && matchesYear && matchesMajor && !isCompleted && !isPastYear && (!showNeedsAttention || needsAttention);
   });
 
   // Group modules by major
@@ -126,7 +131,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                 <p className="text-[#EBEBF599] text-sm">CWA</p>
                 <p className="text-2xl font-bold text-white">{parseFloat(cwa).toFixed(1)}</p>
               </div>
-              <BarChart3 className="h-8 w-8 text-[#0A84FF]" />
+              <ChartBar className="h-8 w-8 text-[#0A84FF]" />
             </div>
           </CardContent>
         </Card>
@@ -140,7 +145,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                   {averageGrade.toFixed(1)}%
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-[#0A84FF]" />
+              <TrendUp className="h-8 w-8 text-[#0A84FF]" />
             </div>
           </CardContent>
         </Card>
@@ -152,7 +157,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                 <p className="text-[#EBEBF599] text-sm">Total Credits</p>
                 <p className="text-2xl font-bold text-white">{totalCredits}</p>
               </div>
-              <Award className="h-8 w-8 text-[#0A84FF]" />
+              <Trophy className="h-8 w-8 text-[#0A84FF]" />
             </div>
           </CardContent>
         </Card>
@@ -168,6 +173,18 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
             </div>
           </CardContent>
         </Card>
+
+        <Card className="bg-[#0A0A0A] border-[#38383A]">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[#EBEBF599] text-sm">Active Credits</p>
+                <p className="text-2xl font-bold text-white">{activeCredits}</p>
+              </div>
+              <Clock className="h-8 w-8 text-[#FF9F0A]" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search and Filters */}
@@ -176,7 +193,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#EBEBF599]" />
+                <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#EBEBF599]" />
                 <Input
                   placeholder="Search modules..."
                   value={searchTerm}
@@ -217,8 +234,48 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
               ))}
             </select>
           </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setFilterYear('all')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
+                filterYear === 'all' ? 'bg-[#0A84FF]/20 text-[#0A84FF] border-[#0A84FF]/40' : 'bg-[#1C1C1C] text-[#EBEBF599] border-[#38383A]'
+              }`}
+            >
+              All Years
+            </button>
+            {years.map(year => (
+              <button
+                key={year}
+                onClick={() => setFilterYear(year)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
+                  filterYear === year ? 'bg-[#0A84FF]/20 text-[#0A84FF] border-[#0A84FF]/40' : 'bg-[#1C1C1C] text-[#EBEBF599] border-[#38383A]'
+                }`}
+              >
+                Year {year}
+              </button>
+            ))}
+            {semesters.slice(0, 4).map(semester => (
+              <button
+                key={semester}
+                onClick={() => setFilterSemester(semester)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
+                  filterSemester === semester ? 'bg-[#30D158]/20 text-[#30D158] border-[#30D158]/40' : 'bg-[#1C1C1C] text-[#EBEBF599] border-[#38383A]'
+                }`}
+              >
+                {semester}
+              </button>
+            ))}
+            <button
+              onClick={() => setShowNeedsAttention(!showNeedsAttention)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
+                showNeedsAttention ? 'bg-[#FF9F0A]/20 text-[#FF9F0A] border-[#FF9F0A]/40' : 'bg-[#1C1C1C] text-[#EBEBF599] border-[#38383A]'
+              }`}
+            >
+              Needs attention
+            </button>
+          </div>
           <Button onClick={onImportYearbook} className="bg-[#0A84FF] hover:bg-[#0066CC]">
-            <Upload className="h-4 w-4 mr-2" />
+            <UploadSimple className="h-4 w-4 mr-2" />
             Import Yearbook
           </Button>
         </CardContent>
@@ -260,6 +317,23 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
         </Card>
       )}
 
+      {filteredModules.length === 0 && (
+        <Card className="bg-[#0A0A0A] border-[#38383A]">
+          <CardContent className="p-6 text-center">
+            <p className="text-white text-sm mb-2">No active modules match your filters.</p>
+            <p className="text-[#EBEBF599] text-xs mb-4">Try adjusting filters or import your yearbook.</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button onClick={onImportYearbook} className="bg-[#0A84FF] hover:bg-[#0066CC]">
+                <UploadSimple className="h-4 w-4 mr-2" />Import Yearbook
+              </Button>
+              <Button onClick={() => setShowAddModuleModal(true)} variant="secondary">
+                <Plus className="h-4 w-4 mr-2" />Add Module
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Modules by Major */}
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -289,6 +363,12 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                         <h4 className="text-lg font-semibold text-white">{module.code}</h4>
                         <p className="text-[#EBEBF599] text-sm">{module.name}</p>
                         <p className="text-[#EBEBF599] text-xs">{module.credits} credits • {module.semester}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0A84FF]/20 text-[#0A84FF]">Active</span>
+                          {module.currentGrade < module.targetGrade && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF9F0A]/20 text-[#FF9F0A]">Below target</span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className={`text-lg font-bold ${getGradeColor(module.currentGrade || 0)}`}>
@@ -302,7 +382,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                           }}
                           className="p-1 hover:bg-[#38383A] rounded"
                         >
-                          <Edit className="h-4 w-4 text-[#EBEBF599]" />
+                          <PencilSimple className="h-4 w-4 text-[#EBEBF599]" />
                         </button>
                         <button
                           onClick={(e) => {
@@ -314,7 +394,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                           }}
                           className="p-1 hover:bg-[#38383A] rounded"
                         >
-                          <Trash2 className="h-4 w-4 text-red-500" />
+                          <Trash className="h-4 w-4 text-red-500" />
                         </button>
                       </div>
                     </div>

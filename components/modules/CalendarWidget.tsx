@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CaretLeft, CaretRight } from 'phosphor-react';
 import { useDatabase } from '@/hooks/useDatabase';
 
 export const CalendarWidget = () => {
@@ -31,8 +31,8 @@ export const CalendarWidget = () => {
           {monthNames[month]} {year}
         </h3>
         <div className="flex gap-2">
-          <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-[#38383A] rounded text-[#EBEBF599] hover:text-white"><ChevronLeft size={20} /></button>
-          <button onClick={() => changeMonth(1)} className="p-1 hover:bg-[#38383A] rounded text-[#EBEBF599] hover:text-white"><ChevronRight size={20} /></button>
+          <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-[#38383A] rounded text-[#EBEBF599] hover:text-white"><CaretLeft size={20} /></button>
+          <button onClick={() => changeMonth(1)} className="p-1 hover:bg-[#38383A] rounded text-[#EBEBF599] hover:text-white"><CaretRight size={20} /></button>
         </div>
       </div>
 

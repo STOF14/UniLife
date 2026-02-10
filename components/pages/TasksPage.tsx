@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { CheckCircle, Circle } from 'phosphor-react';
 import { Task, Module } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 
@@ -31,6 +32,7 @@ const TaskItem = ({
     modules, 
     updateTaskModule, 
     updateTaskPriority, 
+    updateTaskDueDate,
     onToggleComplete, 
     onDeleteTask, 
     priorities // <--- ADDED PROP
@@ -43,6 +45,7 @@ const TaskItem = ({
     modules: Module[];
     updateTaskModule: (taskId: string, newModuleCode: string) => Promise<void>;
     updateTaskPriority: (taskId: string, newPriority: PriorityValue) => Promise<void>;
+    updateTaskDueDate: (taskId: string, newDueDate: string) => Promise<void>;
     onToggleComplete: (id: string) => void;
     onDeleteTask: (id: string) => void;
     priorities: PriorityOption[]; // <--- TYPED PROP
@@ -60,9 +63,9 @@ const TaskItem = ({
                     className="mt-0.5 text-[#EBEBF599] hover:text-white transition-colors"
                 >
                     {task.completed ? (
-                        <span className="text-lg">✓</span>
+                        <CheckCircle size={20} className="text-[#30D158]" />
                     ) : (
-                        <span className="text-lg">○</span>
+                        <Circle size={20} className="text-[#EBEBF599]" />
                     )}
                 </button>
                 <div className="flex-1 min-w-0">
@@ -97,6 +100,21 @@ const TaskItem = ({
                                 </option>
                             ))}
                         </select>
+                        <div className="flex items-center gap-1">
+                            {(['low', 'medium', 'high'] as PriorityValue[]).map(level => (
+                                <button
+                                    key={level}
+                                    onClick={() => updateTaskPriority(task.id, level)}
+                                    className={`px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors ${
+                                        task.priority === level
+                                            ? 'border-[#0A84FF] text-[#0A84FF]'
+                                            : 'border-[#38383A] text-[#EBEBF599] hover:text-white'
+                                    }`}
+                                >
+                                    {level === 'low' ? 'L' : level === 'medium' ? 'M' : 'H'}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                     <p className={`text-white text-sm break-words ${task.completed ? 'line-through' : ''}`}>
                         {task.title}
@@ -106,6 +124,14 @@ const TaskItem = ({
                             {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                     )}
+                    <div className="mt-2">
+                        <input
+                            type="date"
+                            value={task.dueDate ? task.dueDate.split('T')[0] : ''}
+                            onChange={(e) => updateTaskDueDate(task.id, e.target.value)}
+                            className="px-2 py-1 rounded border border-[#38383A] bg-[#0A0A0A] text-white text-xs focus:outline-none focus:border-[#0A84FF]"
+                        />
+                    </div>
                 </div>
                 <button
                     onClick={() => onDeleteTask(task.id)}
@@ -128,10 +154,20 @@ export const TasksPage = ({
   onToggleComplete,
   onSaveTask
 }: TasksPageProps) => {
-  const [activeTab, setActiveTab] = useState<'tasks' | 'modules'>('tasks');
-  const [selectedModuleFilter, setSelectedModuleFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'priority' | 'dueDate' | 'created'>('priority');
+    const [activeTab, setActiveTab] = useState<'tasks' | 'modules'>('tasks');
+    const [selectedModuleFilter, setSelectedModuleFilter] = useState<string>(() => {
+        if (typeof window === 'undefined') return 'all';
+        return localStorage.getItem('tasks_module_filter') || 'all';
+    });
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortBy, setSortBy] = useState<'priority' | 'dueDate' | 'created'>(() => {
+        if (typeof window === 'undefined') return 'priority';
+        return (localStorage.getItem('tasks_sort_by') as 'priority' | 'dueDate' | 'created') || 'priority';
+    });
+    const [taskView, setTaskView] = useState<'today' | 'week'>(() => {
+        if (typeof window === 'undefined') return 'week';
+        return (localStorage.getItem('tasks_view') as 'today' | 'week') || 'week';
+    });
   const [currentPage, setCurrentPage] = useState(1);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   
@@ -176,6 +212,12 @@ export const TasksPage = ({
     setCurrentPage(1);
   }, [selectedModuleFilter, searchQuery, sortBy, activeTab]);
 
+    useEffect(() => {
+        localStorage.setItem('tasks_module_filter', selectedModuleFilter);
+        localStorage.setItem('tasks_sort_by', sortBy);
+        localStorage.setItem('tasks_view', taskView);
+    }, [selectedModuleFilter, sortBy, taskView]);
+
     // Stats calculation (active modules only)
     const activeTasks = tasks.filter((t) => activeModuleCodes.has(t.moduleCode));
     const stats = useMemo(() => ({
@@ -211,6 +253,19 @@ export const TasksPage = ({
             ? activeTasks
             : activeTasks.filter(task => task.moduleCode === selectedModuleFilter);
 
+        if (taskView === 'today') {
+            const todayKey = new Date().toISOString().split('T')[0];
+            filtered = filtered.filter(task => task.dueDate === todayKey);
+        } else if (taskView === 'week') {
+            const now = new Date();
+            const weekEnd = new Date();
+            weekEnd.setDate(now.getDate() + 7);
+            filtered = filtered.filter(task => {
+                const due = new Date(task.dueDate);
+                return due >= now && due <= weekEnd;
+            });
+        }
+
     if (searchQuery) {
       filtered = filtered.filter(task => 
         task.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -218,7 +273,7 @@ export const TasksPage = ({
     }
 
     return sortTasks(filtered);
-    }, [activeTasks, selectedModuleFilter, searchQuery, sortBy]);
+    }, [activeTasks, selectedModuleFilter, searchQuery, sortBy, taskView]);
 
 // --- TASK STATUS BREAKDOWN (FIX FOR TEST 7.1) ---
   const { upcomingTasks, completedTasks } = useMemo(() => {
@@ -277,11 +332,45 @@ export const TasksPage = ({
     }
   };
 
+    const updateTaskDueDate = async (taskId: string, newDueDate: string) => {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            await onSaveTask({ ...task, dueDate: newDueDate });
+        }
+    };
+
     const getModuleColor = (moduleCode: string) => {
         const module = modules.find(m => m.code === moduleCode);
         // Use a simple hash to consistently map module codes to colors
         const colorIndex = moduleCode.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colorOptions.length;
         return colorOptions[colorIndex];
+    };
+
+    const taskTemplates = [
+        { title: 'Review lecture notes', priority: 'low' as PriorityValue },
+        { title: 'Complete tutorial set', priority: 'medium' as PriorityValue },
+        { title: 'Start assignment draft', priority: 'high' as PriorityValue }
+    ];
+
+    const createQuickTask = async (title: string, priority: PriorityValue) => {
+        const moduleCode = selectedModuleFilter !== 'all'
+            ? selectedModuleFilter
+            : activeModules[0]?.code;
+
+        if (!moduleCode) return;
+
+        const tempId = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
+        const newTask: Task = {
+            id: tempId,
+            title,
+            moduleCode,
+            dueDate: new Date().toISOString().split('T')[0],
+            priority,
+            status: 'todo',
+            completed: false
+        };
+
+        await onSaveTask(newTask);
     };
 
   return (
@@ -297,7 +386,10 @@ export const TasksPage = ({
         {completedModulesCount > 0 && (
           <div className="mb-6 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
             <p className="text-sm text-white">
-              ✓ {completedModulesCount} completed module{completedModulesCount !== 1 ? 's' : ''} hidden from view
+                            <span className="inline-flex items-center gap-2">
+                                <CheckCircle size={16} className="text-[#30D158]" />
+                                {completedModulesCount} completed module{completedModulesCount !== 1 ? 's' : ''} hidden from view
+                            </span>
             </p>
           </div>
         )}
@@ -341,6 +433,42 @@ export const TasksPage = ({
                 <div className="text-[#EBEBF599] text-xs mt-1">Pending</div>
               </div>
             </div>
+
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setTaskView('today')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            taskView === 'today'
+                                ? 'bg-[#0A84FF] text-white'
+                                : 'bg-[#141414] text-[#EBEBF599] hover:bg-[#1C1C1C] border border-[#38383A]'
+                        }`}
+                    >
+                        Today
+                    </button>
+                    <button
+                        onClick={() => setTaskView('week')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            taskView === 'week'
+                                ? 'bg-[#0A84FF] text-white'
+                                : 'bg-[#141414] text-[#EBEBF599] hover:bg-[#1C1C1C] border border-[#38383A]'
+                        }`}
+                    >
+                        This Week
+                    </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {taskTemplates.map(template => (
+                        <button
+                            key={template.title}
+                            onClick={() => createQuickTask(template.title, template.priority)}
+                            className="px-3 py-2 rounded-lg text-xs font-medium border border-[#38383A] text-white hover:border-[#0A84FF]"
+                        >
+                            + {template.title}
+                        </button>
+                    ))}
+                </div>
+            </div>
 
             {/* Filters */}
             <div className="flex gap-3 mb-6 flex-wrap">
@@ -424,6 +552,7 @@ export const TasksPage = ({
                             modules={activeModules}
                             updateTaskModule={updateTaskModule}
                             updateTaskPriority={updateTaskPriority}
+                            updateTaskDueDate={updateTaskDueDate}
                             onToggleComplete={onToggleComplete}
                             onDeleteTask={onDeleteTask}
                             priorities={priorities} // <--- PASSING THE PROP HERE
@@ -484,6 +613,7 @@ export const TasksPage = ({
                                     modules={activeModules}
                                     updateTaskModule={updateTaskModule}
                                     updateTaskPriority={updateTaskPriority}
+                                    updateTaskDueDate={updateTaskDueDate}
                                     onToggleComplete={onToggleComplete}
                                     onDeleteTask={onDeleteTask}
                                     priorities={priorities} // <--- PASSING THE PROP HERE

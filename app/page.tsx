@@ -1,26 +1,27 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Calendar,
   BookOpen,
-  TrendingUp, 
-  Target as TargetIcon,
-  CheckSquare, 
-  DollarSign, 
-  Settings,
+  TrendUp,
+  Target,
+  CheckSquare,
+  CurrencyDollar,
+  GearSix,
   Plus,
-  Upload,
+  UploadSimple,
   X,
-  ChevronLeft,
-  ChevronRight,
+  CaretLeft,
+  CaretRight,
   FileText,
-  Download,
-  Menu
-} from 'lucide-react';
+  DownloadSimple,
+  List
+} from 'phosphor-react';
 import { useDatabase } from '@/hooks/useDatabase';
 import { AnalyticsPage } from '@/components/pages/AnalyticsPage';
 import { iPhoneInteractions } from '@/lib/utils/iphoneInteractions';
+import { getNextSession } from '@/lib/timetableData';
 
 // Types
 import type { Module, Task, Transaction, PageType } from '@/lib/types';
@@ -159,15 +160,43 @@ const UniLife = () => {
       const isPastYear = yearMatch ? parseInt(yearMatch[0], 10) < currentYear : false;
       return !isCompleted && !isPastYear;
     });
+    const completedModulesCount = (modules || []).length - activeModules.length;
+    const nextSession = getNextSession(new Date());
+    const todayDate = new Date();
+    const todayKey = todayDate.toISOString().split('T')[0];
+    const todayTasks = (db.tasks || []).filter(task => task.dueDate === todayKey && !task.completed).slice(0, 3);
+    const streakDays = (() => {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 6);
+      const uniqueDays = new Set(
+        (db.tasks || [])
+          .filter(t => t.completed && new Date(t.dueDate) >= cutoff)
+          .map(t => new Date(t.dueDate).toDateString())
+      );
+      return uniqueDays.size;
+    })();
 
     return (
       <div className="space-y-4">
         {/* Mobile Header */}
         <div className="flex items-center justify-between px-2 pt-2">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-          <Button variant="secondary" size="sm" onClick={exportData} className="h-10 px-3">
-            <Download size={16} />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                store.setEditingTask(null);
+                store.setShowModal('task');
+              }}
+              className="h-10 px-3"
+            >
+              <Plus size={16} />
+            </Button>
+            <Button variant="secondary" size="sm" onClick={exportData} className="h-10 px-3">
+              <DownloadSimple size={16} />
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards - Mobile First */}
@@ -178,6 +207,7 @@ const UniLife = () => {
               <span className="text-xs text-[#EBEBF599]">Modules</span>
             </div>
             <div className="text-2xl font-bold text-white">{activeModules.length}</div>
+            <div className="text-xs text-[#EBEBF599] mt-1">{completedModulesCount} completed</div>
           </div>
           <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -185,6 +215,40 @@ const UniLife = () => {
               <span className="text-xs text-[#EBEBF599]">Tasks</span>
             </div>
             <div className="text-2xl font-bold text-white">{thisWeekTasks.length}</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 px-2">
+          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
+            <div className="text-xs text-[#EBEBF599] mb-1">Next class</div>
+            {nextSession ? (
+              <>
+                <div className="text-sm font-semibold text-white">{nextSession.module}</div>
+                <div className="text-xs text-[#EBEBF599]">
+                  {nextSession.day} · {nextSession.time}
+                </div>
+                <div className="text-xs text-[#EBEBF599]">{nextSession.venue}</div>
+              </>
+            ) : (
+              <div className="text-sm text-[#EBEBF599]">No upcoming class</div>
+            )}
+          </div>
+          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
+            <div className="text-xs text-[#EBEBF599] mb-1">Today focus</div>
+            {todayTasks.length > 0 ? (
+              <div className="space-y-1">
+                {todayTasks.map(task => (
+                  <div key={task.id} className="text-xs text-white truncate">• {task.title}</div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-[#EBEBF599]">No tasks today</div>
+            )}
+          </div>
+          <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
+            <div className="text-xs text-[#EBEBF599] mb-1">Weekly streak</div>
+            <div className="text-2xl font-bold text-white">{streakDays} days</div>
+            <div className="text-xs text-[#EBEBF599]">completed tasks</div>
           </div>
         </div>
 
@@ -199,7 +263,7 @@ const UniLife = () => {
                 onClick={() => setCurrentCalendarDate(new Date(year, month - 1, 1))}
                 className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
               >
-                <ChevronLeft size={18} className="text-white" />
+                <CaretLeft size={18} className="text-white" />
               </button>
               <button 
                 onClick={() => setCurrentCalendarDate(new Date())}
@@ -211,7 +275,7 @@ const UniLife = () => {
                 onClick={() => setCurrentCalendarDate(new Date(year, month + 1, 1))}
                 className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
               >
-                <ChevronRight size={18} className="text-white" />
+                <CaretRight size={18} className="text-white" />
               </button>
             </div>
           </div>
@@ -415,14 +479,18 @@ const UniLife = () => {
   const navigation = [
   { id: 'dashboard' as PageType, icon: Calendar, label: 'Dashboard' },
   { id: 'academic' as PageType, icon: BookOpen, label: 'Academic' },
-  { id: 'academic-progress' as PageType, icon: TrendingUp, label: 'Progress' },
+  { id: 'academic-progress' as PageType, icon: TrendUp, label: 'Progress' },
   { id: 'timetable' as PageType, icon: FileText, label: 'Timetable' },
-  { id: 'analytics' as PageType, icon: TargetIcon, label: 'Analytics' },
-  { id: 'roadmap' as PageType, icon: TargetIcon, label: 'Roadmap' },
+  { id: 'analytics' as PageType, icon: Target, label: 'Analytics' },
+  { id: 'roadmap' as PageType, icon: Target, label: 'Roadmap' },
   { id: 'tasks' as PageType, icon: CheckSquare, label: 'Tasks' },
-  { id: 'finances' as PageType, icon: DollarSign, label: 'Finances' },
-  { id: 'settings' as PageType, icon: Settings, label: 'Settings' },
+  { id: 'finances' as PageType, icon: CurrencyDollar, label: 'Finances' },
+  { id: 'settings' as PageType, icon: GearSix, label: 'Settings' },
 ];
+
+  const bottomNavItems = navigation.slice(0, 5);
+  const activeBottomIndexRaw = bottomNavItems.findIndex(item => item.id === store.currentPage);
+  const activeBottomIndex = activeBottomIndexRaw === -1 ? 0 : activeBottomIndexRaw;
 
   const renderPage = () => {
     switch (store.currentPage) {
@@ -1169,7 +1237,7 @@ const handleImport = async (extractedModules: Array<ExtractedModule & { semester
               </>
             ) : (
               <>
-                <Upload size={20} className="text-[#EBEBF599]" />
+                <UploadSimple size={20} className="text-[#EBEBF599]" />
                 <span className="text-sm text-[#EBEBF599]">Click to upload yearbook PDF</span>
               </>
             )}
@@ -1483,7 +1551,7 @@ const AcademicPage = () => {
             onClick={() => store.setSidebarExpanded(!store.sidebarExpanded)}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[#EBEBF599] hover:bg-[#141414] hover:text-white"
           >
-            {store.sidebarExpanded ? <X size={20} /> : <Menu size={20} />}
+            {store.sidebarExpanded ? <X size={20} /> : <List size={20} />}
           </button>
         </div>
       </div>
@@ -1495,14 +1563,14 @@ const AcademicPage = () => {
         onClick={() => store.setSidebarExpanded(true)}
         className="fixed top-4 left-4 z-50 p-3 bg-[#141414] border border-[#38383A] rounded-lg hover:bg-[#1C1C1C] hover:border-[#0A84FF] transition-colors shadow-lg"
       >
-        <Menu size={24} className="text-white" />
+        <List size={24} className="text-white" />
       </button>
     )}
 
     {/* iPhone Bottom Navigation */}
     {isMobile && (
       <>
-        <div className={`pb-20 safe-area-bottom ${store.sidebarExpanded ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className="pb-20 safe-area-bottom">
           <div className="p-4 scroll-container">
             {renderPage()}
           </div>
@@ -1511,8 +1579,12 @@ const AcademicPage = () => {
         {/* Bottom Tab Bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-[#38383A] bottom-nav-safe-area z-50">
           <div className="max-w-[428px] mx-auto">
-            <div className="flex justify-around items-center py-2 safe-area-bottom">
-              {navigation.slice(0, 5).map(item => {
+            <div className="relative grid grid-cols-5 gap-1 p-1 safe-area-bottom">
+              <div
+                className="absolute top-1 bottom-1 left-1 w-[calc(20%-4px)] rounded-lg bg-white/10 border border-white/20 backdrop-blur-md shadow-[0_0_16px_rgba(255,255,255,0.12)] transition-transform duration-300 ease-out"
+                style={{ transform: `translateX(${activeBottomIndex * 100}%)` }}
+              />
+              {bottomNavItems.map(item => {
                 const Icon = item.icon;
                 const isActive = store.currentPage === item.id;
                 return (
@@ -1531,7 +1603,7 @@ const AcademicPage = () => {
                       iPhoneInteractions.touchFeedback(target, 'light');
                     }}
                     data-testid={`nav-${item.id}`}
-                    className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all no-select haptic-feedback ${
+                    className={`relative z-10 flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all no-select haptic-feedback ${
                       isActive 
                         ? 'text-[#0A84FF]' 
                         : 'text-[#EBEBF599] hover:text-white'
@@ -1560,7 +1632,7 @@ const AcademicPage = () => {
                 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#EBEBF599] hover:text-white transition-all no-select haptic-feedback"
               >
-                <Settings size={20} />
+                <GearSix size={20} />
                 <span className="text-sm">More</span>
               </button>
             </div>

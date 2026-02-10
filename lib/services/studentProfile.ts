@@ -1,13 +1,8 @@
 // Student Profile Service
 // Manages student profile creation and academic binding
 
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase/adminClient';
 import { AcademicValidator } from '../validation/academic';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export interface StudentProfileData {
   userId: string;

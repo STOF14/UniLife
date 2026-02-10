@@ -1,13 +1,8 @@
 // Progress Analytics Service
 // Advanced academic progress calculations and analytics
 
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase/adminClient';
 import { AcademicBusinessLogic, AcademicProgress } from './academicBusinessLogic';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export interface ProgressMetrics {
   currentGPA: number;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Edit, Trash2, Camera } from 'lucide-react';
+import { Plus, PencilSimple, Trash, Camera, CheckCircle, Star } from 'phosphor-react';
 import { Module, Task } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { ProgressRing } from '@/components/ui/ProgressRing';
@@ -29,7 +29,6 @@ export const AcademicPage = ({
     return tasks.filter(task => 
       task.moduleCode === moduleCode &&
       new Date(task.dueDate) >= today &&
-      new Date(task.dueDate) <= nextWeek &&
       !task.completed
     );
   };
@@ -62,7 +61,7 @@ export const AcademicPage = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                <span className="text-xl">✓</span>
+                <CheckCircle size={20} className="text-green-400" />
               </div>
               <div>
                 <p className="text-sm font-medium text-white">
@@ -73,14 +72,19 @@ export const AcademicPage = ({
                 </p>
               </div>
             </div>
-            <div className="text-2xl">🎉</div>
+            <div className="text-2xl">
+              <Star size={22} className="text-[#0A84FF]" />
+            </div>
           </div>
         </div>
       )}
 
       {activeModules.length === 0 && modules.length > 0 && (
         <div className="text-center py-12 bg-[#141414] border border-[#38383A] rounded-xl">
-          <p className="text-[#EBEBF599] text-sm">All modules completed! 🎉</p>
+          <p className="text-[#EBEBF599] text-sm inline-flex items-center gap-2">
+            <Star size={14} className="text-[#0A84FF]" />
+            All modules completed!
+          </p>
           <p className="text-[#EBEBF599] text-xs mt-2">View your achievements in Analytics</p>
         </div>
       )}
@@ -116,7 +120,7 @@ export const AcademicPage = ({
                     onClick={(e) => { e.stopPropagation(); onEditModule(module); }}
                     className="p-2 bg-black/50 hover:bg-black/70 rounded-lg backdrop-blur-sm transition-colors"
                   >
-                    <Edit size={16} className="text-white" />
+                    <PencilSimple size={16} className="text-white" />
                   </button>
                   <button 
                     onClick={(e) => { 
@@ -127,7 +131,7 @@ export const AcademicPage = ({
                     }}
                     className="p-2 bg-black/50 hover:bg-[#FF453A]/70 rounded-lg backdrop-blur-sm transition-colors"
                   >
-                    <Trash2 size={16} className="text-white" />
+                    <Trash size={16} className="text-white" />
                   </button>
                 </div>
               </div>

@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/lib/types';
+import { ChartLineUp, GraduationCap, BookOpen, TrendUp, CheckCircle, WarningCircle, Lightbulb, XCircle, CircleDashed, SpinnerGap } from 'phosphor-react';
 
 interface AcademicProgress {
   totalCredits: number;
@@ -269,7 +270,7 @@ function OverviewTab({
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
           <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
-            <span className="text-white text-2xl">📊</span>
+            <ChartLineUp size={24} className="text-white" />
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
@@ -286,7 +287,7 @@ function OverviewTab({
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
           <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
-            <span className="text-white text-2xl">🎓</span>
+            <GraduationCap size={24} className="text-white" />
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
@@ -305,7 +306,7 @@ function OverviewTab({
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
           <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
-            <span className="text-white text-2xl">📚</span>
+            <BookOpen size={24} className="text-white" />
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
@@ -325,7 +326,7 @@ function OverviewTab({
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center">
           <div className="flex-shrink-0 bg-orange-500 rounded-md p-3">
-            <span className="text-white text-2xl">📈</span>
+            <TrendUp size={24} className="text-white" />
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
@@ -480,12 +481,18 @@ function ProgressTab({
                     <div className="flex gap-2 text-xs">
                       {yearModules.inProgress.length > 0 && (
                         <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                          ⟳ {yearModules.inProgress.length} active
+                          <span className="inline-flex items-center gap-1">
+                            <SpinnerGap size={12} className="animate-spin" />
+                            {yearModules.inProgress.length} active
+                          </span>
                         </span>
                       )}
                       {yearModules.upcoming.length > 0 && (
                         <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                          ○ {yearModules.upcoming.length} upcoming
+                          <span className="inline-flex items-center gap-1">
+                            <CircleDashed size={12} />
+                            {yearModules.upcoming.length} upcoming
+                          </span>
                         </span>
                       )}
                     </div>
@@ -537,9 +544,12 @@ function ProgressTab({
                     {/* Note about completed modules */}
                     {yearModules.completed.length > 0 && (
                       <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm text-green-700">
-                          ✓ {yearModules.completed.length} module{yearModules.completed.length !== 1 ? 's' : ''} completed this year. 
-                          <span className="text-green-600">View in Analytics tab for details.</span>
+                        <p className="text-sm text-green-700 flex items-center gap-2">
+                          <CheckCircle size={16} className="text-green-600" />
+                          <span>
+                            {yearModules.completed.length} module{yearModules.completed.length !== 1 ? 's' : ''} completed this year. 
+                            <span className="text-green-600">View in Analytics tab for details.</span>
+                          </span>
                         </p>
                       </div>
                     )}
@@ -566,10 +576,15 @@ function ProgressTab({
             
             <div>
               <p className="text-sm text-gray-500">On Track</p>
-              <p className={`text-lg font-medium ${
+              <p className={`text-lg font-medium flex items-center gap-2 ${
                 creditMetrics.onTrackForGraduation ? 'text-green-600' : 'text-red-600'
               }`}>
-                {creditMetrics.onTrackForGraduation ? '✅ Yes' : '⚠️ No'}
+                {creditMetrics.onTrackForGraduation ? (
+                  <CheckCircle size={18} />
+                ) : (
+                  <WarningCircle size={18} />
+                )}
+                {creditMetrics.onTrackForGraduation ? 'Yes' : 'No'}
               </p>
             </div>
           </div>
@@ -689,7 +704,10 @@ function AnalyticsTab({
                         <div className="text-right">
                           <div className="text-lg font-bold text-green-600">{module.currentGrade}%</div>
                           {module.currentGrade >= module.targetGrade && (
-                            <div className="text-xs text-green-600">✓ Target met</div>
+                            <div className="text-xs text-green-600 inline-flex items-center gap-1">
+                              <CheckCircle size={12} />
+                              Target met
+                            </div>
                           )}
                         </div>
                       </div>
@@ -710,7 +728,7 @@ function AnalyticsTab({
           <div className="space-y-2">
             {projection.riskFactors.map((risk: string, index: number) => (
               <div key={index} className="flex items-center p-3 bg-red-50 border border-red-200 rounded">
-                <span className="text-red-600 mr-2">⚠️</span>
+                <WarningCircle size={16} className="text-red-600 mr-2" />
                 <span className="text-red-700 text-sm">{risk}</span>
               </div>
             ))}
@@ -726,7 +744,7 @@ function AnalyticsTab({
           <div className="space-y-2">
             {projection.recommendations.map((recommendation: string, index: number) => (
               <div key={index} className="flex items-center p-3 bg-blue-50 border border-blue-200 rounded">
-                <span className="text-blue-600 mr-2">💡</span>
+                <Lightbulb size={16} className="text-blue-600 mr-2" />
                 <span className="text-blue-700 text-sm">{recommendation}</span>
               </div>
             ))}
@@ -746,21 +764,21 @@ function ModuleCard({ module, status }: { module: ModuleWithStatus; status: 'com
           border: 'border-green-200 bg-green-50',
           badge: 'bg-green-600 text-white',
           badgeText: 'Completed',
-          icon: '✓'
+          icon: <CheckCircle size={12} />
         };
       case 'in-progress':
         return {
           border: 'border-blue-200 bg-blue-50',
           badge: 'bg-blue-600 text-white',
           badgeText: 'Active',
-          icon: '⟳'
+          icon: <SpinnerGap size={12} className="animate-spin" />
         };
       case 'upcoming':
         return {
           border: 'border-gray-200 bg-gray-50',
           badge: 'bg-gray-500 text-white',
           badgeText: 'Upcoming',
-          icon: '○'
+          icon: <CircleDashed size={12} />
         };
     }
   };
@@ -776,8 +794,9 @@ function ModuleCard({ module, status }: { module: ModuleWithStatus; status: 'com
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono font-semibold text-gray-600">{module.code}</span>
-            <span className={`px-2 py-0.5 text-xs font-semibold rounded ${style.badge}`}>
-              {style.icon} {style.badgeText}
+            <span className={`px-2 py-0.5 text-xs font-semibold rounded inline-flex items-center gap-1 ${style.badge}`}>
+              {style.icon}
+              {style.badgeText}
             </span>
           </div>
           <h5 className="font-medium text-gray-900">{module.name}</h5>
@@ -850,10 +869,11 @@ function ProjectionTab({ projection, creditMetrics, getStandingColor }: any) {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-500">On Track:</span>
-                <span className={`font-medium ${
+                <span className={`font-medium inline-flex items-center gap-2 ${
                   projection?.onTime ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {projection?.onTime ? '✅ Yes' : '❌ No'}
+                  {projection?.onTime ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                  {projection?.onTime ? 'Yes' : 'No'}
                 </span>
               </div>
               <div className="flex justify-between">

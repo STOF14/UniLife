@@ -7,7 +7,7 @@ import { ModuleList } from '@/components/academic/ModuleList';
 import { ModuleForm } from '@/components/academic/ModuleForm';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { Plus } from 'lucide-react';
+import { Plus } from 'phosphor-react';
 import { useDatabase } from '@/hooks/useDatabase';
 import { Module } from '@/lib/types';
 

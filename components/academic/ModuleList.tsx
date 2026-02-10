@@ -2,7 +2,7 @@
 'use client';
 
 import { Module } from '@/lib/types';
-import { ChevronRight } from 'lucide-react';
+import { CaretRight, CheckCircle, SpinnerGap, CircleDashed } from 'phosphor-react';
 import Link from 'next/link';
 
 interface ModuleListProps {
@@ -58,18 +58,21 @@ export function ModuleList({ modules, groupByYear = false }: ModuleListProps) {
                 <h3 className="text-lg font-semibold text-white">Year {year}</h3>
                 <div className="flex gap-2 text-xs">
                   {completed.length > 0 && (
-                    <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded">
-                      ✓ {completed.length} done
+                    <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded inline-flex items-center gap-1">
+                      <CheckCircle size={12} />
+                      {completed.length} done
                     </span>
                   )}
                   {inProgress.length > 0 && (
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded">
-                      ⟳ {inProgress.length} active
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded inline-flex items-center gap-1">
+                      <SpinnerGap size={12} className="animate-spin" />
+                      {inProgress.length} active
                     </span>
                   )}
                   {upcoming.length > 0 && (
-                    <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded">
-                      ○ {upcoming.length} upcoming
+                    <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded inline-flex items-center gap-1">
+                      <CircleDashed size={12} />
+                      {upcoming.length} upcoming
                     </span>
                   )}
                 </div>
@@ -118,11 +121,11 @@ function ModuleItem({
   const getStatusBadge = () => {
     switch (status) {
       case 'completed':
-        return { text: '✓ Done', color: 'bg-green-500/20 text-green-400', opacity: 'opacity-60' };
+        return { label: 'Done', icon: <CheckCircle size={12} />, color: 'bg-green-500/20 text-green-400', opacity: 'opacity-60' };
       case 'in-progress':
-        return { text: '⟳ Active', color: 'bg-blue-500/20 text-blue-400', opacity: 'opacity-100' };
+        return { label: 'Active', icon: <SpinnerGap size={12} className="animate-spin" />, color: 'bg-blue-500/20 text-blue-400', opacity: 'opacity-100' };
       case 'upcoming':
-        return { text: '○ Soon', color: 'bg-gray-500/20 text-gray-400', opacity: 'opacity-50' };
+        return { label: 'Soon', icon: <CircleDashed size={12} />, color: 'bg-gray-500/20 text-gray-400', opacity: 'opacity-50' };
     }
   };
 
@@ -142,8 +145,9 @@ function ModuleItem({
               </div>
               <div className="flex-1 min-w-0 flex items-center gap-2">
                 <p className="text-sm font-medium text-white truncate">{module.name}</p>
-                <span className={`px-2 py-0.5 text-xs rounded ${badge.color}`}>
-                  {badge.text}
+                <span className={`px-2 py-0.5 text-xs rounded inline-flex items-center gap-1 ${badge.color}`}>
+                  {badge.icon}
+                  {badge.label}
                 </span>
               </div>
             </div>
@@ -161,7 +165,7 @@ function ModuleItem({
                 {status === 'completed' ? module.currentGrade : module.targetGrade}%
               </p>
             </div>
-            <ChevronRight className="h-4 w-4 text-[#EBEBF599] group-hover:text-white transition-colors" />
+            <CaretRight className="h-4 w-4 text-[#EBEBF599] group-hover:text-white transition-colors" />
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import { AcademicBusinessLogic } from '@/lib/services/academicBusinessLogic';
 import { StudentProfileService } from '@/lib/services/studentProfile';
 import { Button } from '@/lib/types';
+import { GraduationCap, BookOpen, Target, ChartLineUp, CheckCircle } from 'phosphor-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -261,32 +262,38 @@ function WelcomeStep({ data }: any) {
     <div className="text-center py-8">
       <div className="mb-8">
         <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-3xl">🎓</span>
+          <GraduationCap size={32} className="text-blue-600" />
         </div>
         <h2 className="text-2xl font-bold mb-4">Welcome to UniLife</h2>
         <p className="text-gray-600 max-w-md mx-auto">
-          We\'ve integrated with University of Pretoria\'s official academic data to provide you with 
+          We&apos;ve integrated with University of Pretoria&apos;s official academic data to provide you with 
           accurate degree information, module requirements, and progress tracking.
         </p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         <div className="text-center p-6 bg-blue-50 rounded-lg">
-          <div className="text-2xl mb-2">📚</div>
+          <div className="flex justify-center mb-2">
+            <BookOpen size={24} className="text-blue-600" />
+          </div>
           <h3 className="font-semibold mb-2">Authoritative Data</h3>
           <p className="text-sm text-gray-600">
             Real-time curriculum data directly from UP
           </p>
         </div>
         <div className="text-center p-6 bg-green-50 rounded-lg">
-          <div className="text-2xl mb-2">🎯</div>
+          <div className="flex justify-center mb-2">
+            <Target size={24} className="text-green-600" />
+          </div>
           <h3 className="font-semibold mb-2">Smart Planning</h3>
           <p className="text-sm text-gray-600">
             Automated prerequisite checking and academic path optimization
           </p>
         </div>
         <div className="text-center p-6 bg-purple-50 rounded-lg">
-          <div className="text-2xl mb-2">📊</div>
+          <div className="flex justify-center mb-2">
+            <ChartLineUp size={24} className="text-purple-600" />
+          </div>
           <h3 className="font-semibold mb-2">Progress Tracking</h3>
           <p className="text-sm text-gray-600">
             Real-time GPA calculations and graduation projections
@@ -345,7 +352,10 @@ function DegreeSelectionStep({
       {data.degreeId && (
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-green-800 text-sm">
-            ✓ Selected: {availableDegrees.find(d => d.id === data.degreeId)?.name}
+            <span className="inline-flex items-center gap-2">
+              <CheckCircle size={14} className="text-green-600" />
+              Selected: {availableDegrees.find(d => d.id === data.degreeId)?.name}
+            </span>
           </p>
         </div>
       )}
@@ -399,7 +409,10 @@ function CurriculumSelectionStep({
       {data.curriculumVersionId && (
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-green-800 text-sm">
-            ✓ Selected: Academic Year {availableCurricula.find(c => c.id === data.curriculumVersionId)?.academicYear}
+            <span className="inline-flex items-center gap-2">
+              <CheckCircle size={14} className="text-green-600" />
+              Selected: Academic Year {availableCurricula.find(c => c.id === data.curriculumVersionId)?.academicYear}
+            </span>
           </p>
         </div>
       )}

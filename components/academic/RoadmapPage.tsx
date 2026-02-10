@@ -4,12 +4,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Module } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { 
-  Calendar, 
-  BookOpen, 
-  Award, 
-  TrendingUp, 
-  Users, 
+import {
+  Calendar,
+  BookOpen,
+  Trophy,
+  TrendUp,
+  UsersThree,
   Target,
   Clock,
   CheckCircle,
@@ -18,10 +18,10 @@ import {
   Star,
   GraduationCap,
   Lightbulb,
-  Rocket,
+  RocketLaunch,
   Brain,
-  Zap
-} from 'lucide-react';
+  Lightning
+} from 'phosphor-react';
 
 interface RoadmapPageProps {
   modules: Module[];
@@ -65,7 +65,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
         title: 'Academic Orientation',
         description: 'Complete university orientation and select modules',
         completed: year === 1,
-        icon: <Users className="h-5 w-5" />
+        icon: <UsersThree className="h-5 w-5" />
       },
       {
         id: 'midterms',
@@ -79,7 +79,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
         title: 'Final Examinations',
         description: 'Complete end-of-year examinations',
         completed: false,
-        icon: <Award className="h-5 w-5" />
+        icon: <Trophy className="h-5 w-5" />
       }
     ];
 
@@ -187,7 +187,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
               <p className="text-[#EBEBF599] text-sm">Total Journey</p>
               <p className="text-white text-2xl font-bold">3 Years</p>
             </div>
-            <Rocket className="h-8 w-8 text-[#0A84FF]" />
+            <RocketLaunch className="h-8 w-8 text-[#0A84FF]" />
           </div>
         </div>
 
@@ -397,7 +397,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
           <Card className="bg-[#0A0A0A] border-[#38383A]">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2 text-[#30D158]" />
+                <TrendUp className="h-5 w-5 mr-2 text-[#30D158]" />
                 Journey Statistics
               </CardTitle>
             </CardHeader>
@@ -439,7 +439,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
           <Card className="bg-[#0A0A0A] border-[#38383A]">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <Zap className="h-5 w-5 mr-2 text-[#0A84FF]" />
+                <Lightning className="h-5 w-5 mr-2 text-[#0A84FF]" />
                 Quick Actions
               </CardTitle>
             </CardHeader>
@@ -454,7 +454,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
                   Set Goals
                 </Button>
                 <Button className="w-full bg-[#1C1C1C] hover:bg-[#38383A] text-white">
-                  <Award className="h-4 w-4 mr-2" />
+                  <Trophy className="h-4 w-4 mr-2" />
                   Track Achievements
                 </Button>
               </div>

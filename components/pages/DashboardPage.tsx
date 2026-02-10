@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DownloadSimple, CaretLeft, CaretRight, Star } from 'phosphor-react';
 import { Module, Task } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -62,7 +62,7 @@ export const DashboardPage = ({ modules, tasks, cwa, onExport }: DashboardPagePr
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold text-white">Dashboard</h1>
         <Button variant="secondary" onClick={onExport}>
-          <Download size={16} className="mr-2" />Export
+            <DownloadSimple size={16} className="mr-2" />Export
         </Button>
       </div>
 
@@ -77,7 +77,7 @@ export const DashboardPage = ({ modules, tasks, cwa, onExport }: DashboardPagePr
                 onClick={() => setCurrentCalendarDate(new Date(year, month - 1, 1))}
                 className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
               >
-                <ChevronLeft size={20} className="text-white" />
+                 <CaretLeft size={20} className="text-white" />
               </button>
               <button 
                 onClick={() => setCurrentCalendarDate(new Date())}
@@ -89,7 +89,7 @@ export const DashboardPage = ({ modules, tasks, cwa, onExport }: DashboardPagePr
                 onClick={() => setCurrentCalendarDate(new Date(year, month + 1, 1))}
                 className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
               >
-                <ChevronRight size={20} className="text-white" />
+                 <CaretRight size={20} className="text-white" />
               </button>
             </div>
           </div>
@@ -173,7 +173,10 @@ export const DashboardPage = ({ modules, tasks, cwa, onExport }: DashboardPagePr
                 ))
               ) : (
                 <div className="text-center py-8 text-[#EBEBF599] text-sm">
-                  No tasks this week! 🎉
+                  <span className="inline-flex items-center gap-2">
+                    <Star size={16} className="text-[#0A84FF]" />
+                    No tasks this week!
+                  </span>
                 </div>
               )}
             </div>

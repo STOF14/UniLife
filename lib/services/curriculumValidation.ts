@@ -1,13 +1,8 @@
 // Curriculum Validation Service
 // Validates module choices against curriculum requirements
 
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase/adminClient';
 import { AcademicBusinessLogic } from './academicBusinessLogic';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export interface CurriculumRequirement {
   yearLevel: number;

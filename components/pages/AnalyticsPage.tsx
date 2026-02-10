@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Module } from '@/lib/types';
 import { useStore } from '@/hooks/useStore';
-import { CheckCircle, Circle } from 'lucide-react'; // or 'react-feather' or your icon library
-import { TrendingUp, Target, BookOpen, Calendar } from 'lucide-react';
+import { CheckCircle, Circle, TrendUp, Target, BookOpen, Calendar, ChartLineUp, WarningCircle } from 'phosphor-react';
 
 type AnalyticsPageProps = {
   modules: Module[];
@@ -109,9 +108,21 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
     };
   }, [modules, academicProfile, completedModules, futureModules, actualCWA]);
 
+  const attendanceRate = modules.length > 0 ? (completedModules.length / modules.length) * 100 : 0;
+  const goalProgress = academicProfile.targetCWA > 0
+    ? Math.min((analysis.actualCWA / academicProfile.targetCWA) * 100, 100)
+    : 0;
+
   const filteredModules = selectedYear === 'all' 
     ? modules 
     : modules.filter(m => m.semester === selectedYear);
+
+  const getHeatColor = (grade: number) => {
+    if (grade >= 75) return 'bg-[#30D158]/30';
+    if (grade >= 60) return 'bg-[#0A84FF]/30';
+    if (grade >= 50) return 'bg-[#FF9F0A]/30';
+    return 'bg-[#FF453A]/30';
+  };
 
   return (
     <div className="space-y-6">
@@ -119,6 +130,14 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
       <div>
         <h1 className="text-4xl font-light text-white mb-2">Analytics Dashboard</h1>
         <p className="text-[#EBEBF599] text-sm">BSc Physics with Computational Physics</p>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => window.print()}
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-[#141414] border border-[#38383A] text-white hover:border-[#0A84FF]"
+        >
+          Export PDF
+        </button>
       </div>
 
       {/* Historic Data Display (Auto-calculated from completed modules) */}
@@ -184,7 +203,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
 
         <div className="bg-[#141414] border border-[#38383A] rounded-xl p-5">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="text-[#30D158]" size={20} />
+            <TrendUp className="text-[#30D158]" size={20} />
             <span className="text-[#EBEBF599] text-sm">Projected Average</span>
           </div>
           <div className="text-3xl font-bold text-white">
@@ -216,12 +235,73 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[#EBEBF599] text-sm">Attendance Estimate</span>
+            <span className="text-white text-sm">{attendanceRate.toFixed(1)}%</span>
+          </div>
+          <div className="h-2 bg-[#0A0A0A] rounded-full overflow-hidden">
+            <div className="h-full bg-[#30D158]" style={{ width: `${attendanceRate}%` }} />
+          </div>
+        </div>
+        <div className="bg-[#141414] border border-[#38383A] rounded-xl p-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[#EBEBF599] text-sm">Goal Progress</span>
+            <span className="text-white text-sm">{goalProgress.toFixed(1)}%</span>
+          </div>
+          <div className="h-2 bg-[#0A0A0A] rounded-full overflow-hidden">
+            <div className="h-full bg-[#0A84FF]" style={{ width: `${goalProgress}%` }} />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Year Comparison</h2>
+        <div className="space-y-3">
+          {yearBreakdown.map(year => (
+            <div key={year.year}>
+              <div className="flex items-center justify-between text-sm mb-1">
+                <span className="text-[#EBEBF599]">{year.year}</span>
+                <span className="text-white">{year.average.toFixed(1)}%</span>
+              </div>
+              <div className="h-2 bg-[#0A0A0A] rounded-full overflow-hidden">
+                <div className="h-full bg-[#30D158]" style={{ width: `${Math.min(year.average, 100)}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Module Performance Heatmap</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {modules.map(mod => (
+            <div key={mod.id} className={`p-3 rounded-lg border border-[#38383A] ${getHeatColor(mod.currentGrade || 0)}`}>
+              <div className="text-xs text-white font-semibold">{mod.code}</div>
+              <div className="text-[10px] text-[#EBEBF599] truncate">{mod.name}</div>
+              <div className="text-xs text-white mt-1">{mod.currentGrade || 0}%</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Status Banner */}
       <div className={`rounded-xl p-6 ${analysis.isOnTrack ? 'bg-[#30D158]/10 border border-[#30D158]/30' : 'bg-[#FF453A]/10 border border-[#FF453A]/30'}`}>
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-semibold text-white mb-1">
-              {analysis.isOnTrack ? '✓ On Track to Target' : '⚠ Below Target Pace'}
+              {analysis.isOnTrack ? (
+                <span className="inline-flex items-center gap-2">
+                  <CheckCircle size={16} className="text-[#30D158]" />
+                  On Track to Target
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2">
+                  <WarningCircle size={16} className="text-[#FF9F0A]" />
+                  Below Target Pace
+                </span>
+              )}
             </h3>
             <p className="text-[#EBEBF599]">
               {analysis.isOnTrack 
@@ -406,8 +486,9 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
 
       {/* Computational Physics Track Info */}
       <div className="bg-gradient-to-r from-[#0A84FF]/10 to-[#BF5AF2]/10 border border-[#0A84FF]/30 rounded-xl p-6">
-        <h3 className="text-xl font-semibold text-white mb-3">
-          📊 BSc Physics with Computational Physics Track
+        <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
+          <ChartLineUp size={20} className="text-[#0A84FF]" />
+          BSc Physics with Computational Physics Track
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>

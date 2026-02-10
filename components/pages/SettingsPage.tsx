@@ -1,5 +1,5 @@
-import { Upload, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { UploadSimple, CheckCircle } from 'phosphor-react';
+import { useEffect, useState } from 'react';
 import { useDatabase } from '@/hooks/useDatabase';
 import { Module } from '@/lib/types';
 //import { currentGrade } from '@/lib/types';
@@ -8,6 +8,30 @@ export const SettingsPage = () => {
   const db = useDatabase();
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(false);
+  const [tabDemoOne, setTabDemoOne] = useState(0);
+  const [tabDemoTwo, setTabDemoTwo] = useState(0);
+  const [tabDemoThree, setTabDemoThree] = useState(0);
+  const [theme, setTheme] = useState<'dark' | 'auto'>(() => {
+    if (typeof window === 'undefined') return 'dark';
+    return (localStorage.getItem('unilife_theme') as 'dark' | 'auto') || 'dark';
+  });
+  const [notifications, setNotifications] = useState(() => ({
+    email: localStorage.getItem('unilife_notify_email') !== 'false',
+    push: localStorage.getItem('unilife_notify_push') === 'true'
+  }));
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profileError, setProfileError] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('unilife_theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('unilife_notify_email', String(notifications.email));
+    localStorage.setItem('unilife_notify_push', String(notifications.push));
+  }, [notifications]);
 
   // Add index signature to departmentColors
   const departmentColors: { [key: string]: string } = {
@@ -122,9 +146,62 @@ const handleImport = async () => {
   }
 };
 
+  const handleBackup = () => {
+    const data = {
+      modules: db.modules,
+      tasks: db.tasks,
+      transactions: db.transactions
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `unilife-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+  };
+
+  const handleRestore = async (file: File) => {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    const modules = parsed.modules || [];
+    const tasks = parsed.tasks || [];
+    const transactions = parsed.transactions || [];
+
+    for (const module of modules) {
+      await db.saveModule({ ...module, id: `${Date.now()}${Math.random()}` });
+    }
+    for (const task of tasks) {
+      await db.saveTask({ ...task, id: `${Date.now()}${Math.random()}` });
+    }
+    for (const transaction of transactions) {
+      await db.saveTransaction({ ...transaction, id: `${Date.now()}${Math.random()}` });
+    }
+  };
+
+  const handleClearCache = () => {
+    localStorage.removeItem('tasks_module_filter');
+    localStorage.removeItem('tasks_sort_by');
+    localStorage.removeItem('tasks_view');
+    localStorage.removeItem('unilife_timetable_planner');
+    localStorage.removeItem('finances_recurring_ids');
+  };
+
+  const validateProfile = () => {
+    if (profileName.trim().length < 2) {
+      setProfileError('Name must be at least 2 characters.');
+      return;
+    }
+    if (profileEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileEmail)) {
+      setProfileError('Enter a valid email address.');
+      return;
+    }
+    setProfileError('');
+  };
+
   const totalCredits = pastModules.reduce((sum, m) => sum + (m.credits || 0), 0);
   const totalGP = pastModules.reduce((sum, m) => sum + ((m.credits || 0) * (m.grade || 0)), 0);
   const cwa = totalGP / totalCredits;
+  const demoTabs = ['Dashboard', 'Academic', 'Tasks', 'Timetable'];
 
   return (
     <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
@@ -197,15 +274,16 @@ const handleImport = async () => {
             </>
           ) : (
             <>
-              <Upload size={20} />
+              <UploadSimple size={20} />
               Import All Past Modules
             </>
           )}
         </button>
 
         {imported && (
-          <span className="text-sm text-[#30D158]">
-            ✓ {pastModules.length} modules successfully imported!
+          <span className="text-sm text-[#30D158] inline-flex items-center gap-2">
+            <CheckCircle size={16} />
+            {pastModules.length} modules successfully imported!
           </span>
         )}
       </div>
@@ -215,6 +293,181 @@ const handleImport = async () => {
           <strong>Note:</strong> This will import all your completed modules from 2024-2025 academic years. 
           These modules are marked as 100% complete and will automatically calculate your actual CWA.
         </p>
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
+          <h4 className="text-white font-semibold mb-3">Theme</h4>
+          <div className="flex gap-2">
+            {(['dark', 'auto'] as const).map(option => (
+              <button
+                key={option}
+                onClick={() => setTheme(option)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium border ${
+                  theme === option
+                    ? 'bg-[#0A84FF]/20 text-[#0A84FF] border-[#0A84FF]/40'
+                    : 'bg-[#141414] text-[#EBEBF599] border-[#38383A]'
+                }`}
+              >
+                {option === 'dark' ? 'Dark' : 'Auto'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
+          <h4 className="text-white font-semibold mb-3">Notifications</h4>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm text-[#EBEBF599]">
+              <input
+                type="checkbox"
+                checked={notifications.email}
+                onChange={(e) => setNotifications(prev => ({ ...prev, email: e.target.checked }))}
+              />
+              Email updates
+            </label>
+            <label className="flex items-center gap-2 text-sm text-[#EBEBF599]">
+              <input
+                type="checkbox"
+                checked={notifications.push}
+                onChange={(e) => setNotifications(prev => ({ ...prev, push: e.target.checked }))}
+              />
+              Push reminders
+            </label>
+          </div>
+        </div>
+
+        <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
+          <h4 className="text-white font-semibold mb-3">Backup & Restore</h4>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleBackup}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#141414] text-white border border-[#38383A] hover:border-[#0A84FF]"
+            >
+              Download Backup
+            </button>
+            <label className="px-4 py-2 rounded-lg text-sm font-medium bg-[#141414] text-white border border-[#38383A] hover:border-[#0A84FF] cursor-pointer">
+              Restore
+              <input
+                type="file"
+                accept="application/json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleRestore(file);
+                }}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
+          <h4 className="text-white font-semibold mb-3">Quick Fixes</h4>
+          <button
+            onClick={handleClearCache}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-[#141414] text-white border border-[#38383A] hover:border-[#FF453A]"
+          >
+            Clear Cache
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-8 bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
+        <h4 className="text-white font-semibold mb-3">Profile</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input
+            value={profileName}
+            onChange={(e) => setProfileName(e.target.value)}
+            placeholder="Full name"
+            className="px-3 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm"
+          />
+          <input
+            value={profileEmail}
+            onChange={(e) => setProfileEmail(e.target.value)}
+            placeholder="Email (optional)"
+            className="px-3 py-2 bg-[#141414] border border-[#38383A] rounded-lg text-white text-sm"
+          />
+        </div>
+        {profileError && <div className="text-xs text-[#FF453A] mt-2">{profileError}</div>}
+        <button
+          onClick={validateProfile}
+          className="mt-3 px-4 py-2 rounded-lg text-sm font-medium bg-[#0A84FF] text-white"
+        >
+          Validate Profile
+        </button>
+      </div>
+
+      <div className="mt-8 bg-[#0A0A0A] border border-[#38383A] rounded-lg p-4">
+        <h4 className="text-white font-semibold mb-3">Tab Morph Previews</h4>
+        <p className="text-xs text-[#EBEBF599] mb-4">
+          Tap each tab to see the morphing behavior. These are temporary previews for testing.
+        </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Take 1: Frosted Slide Indicator */}
+          <div className="bg-[#141414] border border-[#38383A] rounded-lg p-3">
+            <div className="text-xs text-[#EBEBF599] mb-2">Take 1 — Frosted Slide</div>
+            <div className="relative grid grid-cols-4 gap-1 p-1 bg-[#0A0A0A] border border-[#38383A] rounded-xl overflow-hidden">
+              <div
+                className="absolute top-1 bottom-1 left-1 w-[calc(25%-4px)] rounded-lg bg-white/10 border border-white/20 backdrop-blur-md shadow-[0_0_16px_rgba(255,255,255,0.12)] transition-transform duration-300 ease-out"
+                style={{ transform: `translateX(${tabDemoOne * 100}%)` }}
+              />
+              {demoTabs.map((tab, index) => (
+                <button
+                  key={tab}
+                  onClick={() => setTabDemoOne(index)}
+                  className={`relative z-10 py-2 text-[11px] font-medium rounded-lg transition-colors ${
+                    tabDemoOne === index ? 'text-white' : 'text-[#EBEBF599]'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Take 2: Glass Layer Morph */}
+          <div className="bg-[#141414] border border-[#38383A] rounded-lg p-3">
+            <div className="text-xs text-[#EBEBF599] mb-2">Take 2 — Glass Layer</div>
+            <div className="grid grid-cols-4 gap-1 p-1 bg-[#0A0A0A] border border-[#38383A] rounded-xl">
+              {demoTabs.map((tab, index) => (
+                <button
+                  key={tab}
+                  onClick={() => setTabDemoTwo(index)}
+                  className={`py-2 text-[11px] font-medium rounded-lg transition-all duration-300 ${
+                    tabDemoTwo === index
+                      ? 'text-white bg-white/10 border border-white/20 backdrop-blur-md shadow-[0_6px_18px_rgba(0,0,0,0.4)]'
+                      : 'text-[#EBEBF599] border border-transparent hover:border-[#38383A]'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Take 3: Liquid Halo */}
+          <div className="bg-[#141414] border border-[#38383A] rounded-lg p-3">
+            <div className="text-xs text-[#EBEBF599] mb-2">Take 3 — Liquid Halo</div>
+            <div className="relative grid grid-cols-4 gap-1 p-1 bg-[#0A0A0A] border border-[#38383A] rounded-xl overflow-hidden">
+              <div
+                className="absolute top-1 bottom-1 left-1 w-[calc(25%-4px)] rounded-lg bg-gradient-to-r from-[#0A84FF]/35 via-[#5E5CE6]/30 to-[#30D158]/25 blur-[10px] opacity-80 transition-transform duration-300 ease-out"
+                style={{ transform: `translateX(${tabDemoThree * 100}%)` }}
+              />
+              {demoTabs.map((tab, index) => (
+                <button
+                  key={tab}
+                  onClick={() => setTabDemoThree(index)}
+                  className={`relative z-10 py-2 text-[11px] font-medium rounded-lg transition-colors ${
+                    tabDemoThree === index ? 'text-white' : 'text-[#EBEBF599]'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
