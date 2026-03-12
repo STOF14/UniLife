@@ -63,6 +63,14 @@ const MOBILE_HEIGHT_THRESHOLD = 800;
 const MAX_VISIBLE_TASKS_DASHBOARD = 5;
 const MAX_VISIBLE_MODULES_DASHBOARD = 3;
 
+type NavItem = {
+  id: PageType;
+  icon: React.ElementType;
+  label: string;
+  chapter: string;
+  index: string;
+};
+
 const UniLife = () => {
   // ---  AUTH PROTECTION START ---
   const router = useRouter();
@@ -277,6 +285,9 @@ const UniLife = () => {
         {/* Header */}
         <div className="flex items-baseline justify-between px-2 pt-2">
           <div>
+            <p className="text-overline uppercase tracking-[0.1em] text-text-muted mb-0.5">
+              {(() => { const h = today.getHours(); return h < 5 ? 'Late night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night'; })()}
+            </p>
             <h1 className="text-title-lg text-text-primary">Dashboard</h1>
             <p className="text-caption text-text-secondary mt-0.5">
               {today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -552,17 +563,19 @@ const UniLife = () => {
     );
   }
 
-  const navigation = [
-  { id: 'dashboard' as PageType, icon: Calendar, label: 'Dashboard' },
-  { id: 'academic' as PageType, icon: BookOpen, label: 'Academic' },
-  { id: 'academic-progress' as PageType, icon: TrendUp, label: 'Progress' },
-  { id: 'timetable' as PageType, icon: FileText, label: 'Timetable' },
-  { id: 'analytics' as PageType, icon: Target, label: 'Analytics' },
-  { id: 'roadmap' as PageType, icon: Target, label: 'Roadmap' },
-  { id: 'tasks' as PageType, icon: CheckSquare, label: 'Tasks' },
-  { id: 'finances' as PageType, icon: CurrencyDollar, label: 'Finances' },
-  { id: 'settings' as PageType, icon: GearSix, label: 'Settings' },
-];
+  const navigation: NavItem[] = [
+    { id: 'dashboard', icon: Calendar, label: 'Dashboard', chapter: '(ima) Today', index: '01' },
+    { id: 'academic', icon: BookOpen, label: 'Academic', chapter: '(keisei) Formation', index: '02' },
+    { id: 'academic-progress', icon: TrendUp, label: 'Progress', chapter: '(kiseki) Trajectory', index: '03' },
+    { id: 'timetable', icon: FileText, label: 'Timetable', chapter: '(rizumu) Rhythm', index: '04' },
+    { id: 'analytics', icon: Target, label: 'Analytics', chapter: '(bunseki) Analysis', index: '05' },
+    { id: 'roadmap', icon: Target, label: 'Roadmap', chapter: '(keikaku) Path', index: '06' },
+    { id: 'tasks', icon: CheckSquare, label: 'Tasks', chapter: '(yakusoku) Commitments', index: '07' },
+    { id: 'finances', icon: CurrencyDollar, label: 'Finances', chapter: '(junkan) Sustainability', index: '08' },
+    { id: 'settings', icon: GearSix, label: 'Settings', chapter: '(chosei) System', index: '09' },
+  ];
+
+  const activeNavigation = navigation.find(item => item.id === store.currentPage) || navigation[0];
 
   const bottomNavItems = navigation.slice(0, 5);
   const activeBottomIndexRaw = bottomNavItems.findIndex(item => item.id === store.currentPage);
@@ -1129,158 +1142,163 @@ const TransactionForm = () => {
     const cwa = calculateCWA(db.modules || []);
 
   return (
-    <div className="space-y-6 page-enter">
-      <h1 className="text-display-sm font-semibold text-text-primary pt-2 tracking-tight">Academic Progress</h1>
-
-    <div className="grid grid-cols-1 gap-[1px] bg-border">
-      <div className="bg-surface border-t-2 border-text-primary p-6">
-        <div className="text-center mb-8">
-          <div className="text-xs uppercase tracking-wider text-text-tertiary mb-2">Cumulative Weighted Average</div>
-          <div className="text-6xl font-mono font-bold text-text-primary mb-2">{cwa}%</div>
-          <div className="text-xs text-text-tertiary font-mono">
-            Based on {db.modules.reduce((sum: number, m: Module) => sum + m.credits, 0)} total credits
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          {years.map((year: string) => {
-            const yearModules = db.modules.filter((m: Module) => m.semester === year);
-            const yearAverage = calculateTermAverage(db.modules, year);
-            const yearCredits = yearModules.reduce((sum: number, m: Module) => sum + m.credits, 0);
-
-            return (
-              <div key={year} className="space-y-0">
-                <div className="flex items-center justify-between pb-2 border-b border-border">
-                  <h3 className="text-sm uppercase tracking-wider text-text-secondary">Term {year}</h3>
-                  <div className="text-right">
-                    <div className="text-2xl font-mono font-bold text-text-primary">{yearAverage}%</div>
-                    <div className="text-xs font-mono text-text-tertiary">{yearCredits} credits</div>
-                  </div>
-                </div>
-
-                <div className="divide-y divide-border">
-                  {yearModules.map((module: Module) => (
-                    <div 
-                      key={module.id} 
-                      className="flex items-center justify-between py-3 px-2 hover:bg-surface/50 transition-colors data-row"
-                    >
-                      <div className="flex-1">
-                        <div className="text-sm text-text-primary font-medium font-mono">{module.code}</div>
-                        <div className="text-xs text-text-tertiary">{module.credits} credits</div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-lg font-mono font-semibold text-text-primary">{module.currentGrade}%</div>
-                        </div>
-                        <div className="w-16 text-right">
-                          <div className="text-sm font-mono text-text-secondary">
-                            {(module.currentGrade * module.credits).toFixed(0)}
-                          </div>
-                          <div className="text-[10px] uppercase tracking-wider text-text-tertiary">weighted</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 p-4 border-t border-border">
-          <div className="text-xs uppercase tracking-wider text-text-tertiary mb-2">Formula</div>
-          <div className="text-xs font-mono text-text-secondary">
-            CWA = Σ(credits × grade) / Σ(total credits)
-          </div>
-        </div>
+    <div className="space-y-4 page-enter">
+      <div className="px-1 pb-3 border-b border-border/60">
+        <p className="chapter-label">(kiseki) Trajectory</p>
+        <h1 className="chapter-title">Academic Progress</h1>
       </div>
 
-      <div className="bg-surface border-t-2 border-success p-6">
-        <div className="text-center mb-8">
-          <div className="text-xs uppercase tracking-wider text-text-tertiary mb-2">Current Year Average</div>
-          <div className="text-6xl font-mono font-bold text-success mb-2">{currentYearAverage}%</div>
-          <div className="text-xs text-text-tertiary font-mono">
-            Term {currentYear} · {currentYearModules.reduce((sum: number, m: Module) => sum + m.credits, 0)} credits
+      <div className="space-y-4">
+        {/* CWA Panel */}
+        <div className="surface-card p-6">
+          <div className="text-center mb-8">
+            <div className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-2">Cumulative Weighted Average</div>
+            <div className="text-6xl font-mono font-bold text-text-primary mb-2">{cwa}%</div>
+            <div className="text-xs text-text-tertiary font-mono">
+              Based on {db.modules.reduce((sum: number, m: Module) => sum + m.credits, 0)} total credits
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {years.map((year: string) => {
+              const yearModules = db.modules.filter((m: Module) => m.semester === year);
+              const yearAverage = calculateTermAverage(db.modules, year);
+              const yearCredits = yearModules.reduce((sum: number, m: Module) => sum + m.credits, 0);
+
+              return (
+                <div key={year} className="space-y-0">
+                  <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                    <h3 className="text-[10px] uppercase tracking-[0.12em] text-text-muted">Term {year}</h3>
+                    <div className="text-right">
+                      <div className="text-xl font-mono font-semibold text-text-primary">{yearAverage}%</div>
+                      <div className="text-xs font-mono text-text-tertiary">{yearCredits} credits</div>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-border/40">
+                    {yearModules.map((module: Module) => (
+                      <div
+                        key={module.id}
+                        className="flex items-center justify-between py-3 px-2 rounded-sm hover:bg-surface-hover/50 transition-all duration-300 ease-contemplative"
+                      >
+                        <div className="flex-1">
+                          <div className="text-sm text-text-primary font-medium font-mono">{module.code}</div>
+                          <div className="text-xs text-text-tertiary">{module.credits} credits</div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-lg font-mono font-semibold text-text-primary">{module.currentGrade}%</div>
+                          </div>
+                          <div className="w-16 text-right">
+                            <div className="text-sm font-mono text-text-secondary">
+                              {(module.currentGrade * module.credits).toFixed(0)}
+                            </div>
+                            <div className="text-[10px] uppercase tracking-wider text-text-tertiary">weighted</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-border/60">
+            <div className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-2">Formula</div>
+            <div className="text-xs font-mono text-text-secondary">
+              CWA = Σ(credits × grade) / Σ(total credits)
+            </div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <h3 className="text-xs uppercase tracking-wider text-text-secondary mb-4">Module Performance</h3>
-          
-          {currentYearModules.map((module: Module) => {
-            const targetDiff = module.currentGrade - module.targetGrade;
-            const progressToTarget = Math.min((module.currentGrade / module.targetGrade) * 100, 100);
+        {/* Current Year Panel */}
+        <div className="surface-card p-6">
+          <div className="text-center mb-8">
+            <div className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-2">Current Year Average</div>
+            <div className="text-6xl font-mono font-bold text-success mb-2">{currentYearAverage}%</div>
+            <div className="text-xs text-text-tertiary font-mono">
+              Term {currentYear} · {currentYearModules.reduce((sum: number, m: Module) => sum + m.credits, 0)} credits
+            </div>
+          </div>
 
-            return (
-              <div 
-                key={module.id} 
-                className="p-4 bg-background hover:bg-surface/50 transition-all duration-300 border-t border-border hover:border-text-primary"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-text-primary font-mono">{module.code}</div>
-                    <div className="text-xs text-text-tertiary line-clamp-1">{module.name}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <ProgressRing percentage={module.currentGrade ?? 0} size={45} strokeWidth={4} />
-                  </div>
-                </div>
+          <div className="space-y-3">
+            <h3 className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-3">Module Performance</h3>
 
-                <div className="grid grid-cols-3 gap-[1px] bg-border mb-3">
-                  <div className="text-center p-2 bg-surface">
-                    <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Current</div>
-                    <div className="text-sm font-mono font-semibold text-text-primary">{module.currentGrade}%</div>
-                  </div>
-                  <div className="text-center p-2 bg-surface">
-                    <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Target</div>
-                    <div className="text-sm font-mono font-semibold text-text-primary">{module.targetGrade}%</div>
-                  </div>
-                  <div className="text-center p-2 bg-surface">
-                    <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Diff</div>
-                    <div className={`text-sm font-mono font-semibold ${
-                      targetDiff >= 0 ? 'text-success' : 'text-danger'
-                    }`}>
-                      {targetDiff >= 0 ? '+' : ''}{targetDiff}%
+            {currentYearModules.map((module: Module) => {
+              const targetDiff = module.currentGrade - module.targetGrade;
+              const progressToTarget = Math.min((module.currentGrade / module.targetGrade) * 100, 100);
+
+              return (
+                <div
+                  key={module.id}
+                  className="surface-card p-4 transition-all duration-300 ease-contemplative hover:-translate-y-0.5"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-text-primary font-mono">{module.code}</div>
+                      <div className="text-xs text-text-tertiary line-clamp-1">{module.name}</div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <ProgressRing percentage={module.currentGrade ?? 0} size={45} strokeWidth={4} />
                     </div>
                   </div>
-                </div>
 
-                <div>
-                  <div className="flex justify-between text-[10px] uppercase tracking-wider text-text-tertiary mb-1">
-                    <span>Progress to target</span>
-                    <span className="font-mono">{Math.round(progressToTarget)}%</span>
+                  <div className="grid grid-cols-3 gap-[1px] bg-border/60 mb-3">
+                    <div className="text-center p-2 bg-surface">
+                      <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Current</div>
+                      <div className="text-sm font-mono font-semibold text-text-primary">{module.currentGrade}%</div>
+                    </div>
+                    <div className="text-center p-2 bg-surface">
+                      <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Target</div>
+                      <div className="text-sm font-mono font-semibold text-text-primary">{module.targetGrade}%</div>
+                    </div>
+                    <div className="text-center p-2 bg-surface">
+                      <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Diff</div>
+                      <div className={`text-sm font-mono font-semibold ${
+                        targetDiff >= 0 ? 'text-success' : 'text-danger'
+                      }`}>
+                        {targetDiff >= 0 ? '+' : ''}{targetDiff}%
+                      </div>
+                    </div>
                   </div>
-                  <ProgressBar 
-                    percentage={progressToTarget}
-                    color={targetDiff >= 0 ? '#34C759' : '#FF9F0A'}
-                    height={6}
-                  />
+
+                  <div>
+                    <div className="flex justify-between text-[10px] uppercase tracking-[0.1em] text-text-muted mb-1">
+                      <span>Progress to target</span>
+                      <span className="font-mono">{Math.round(progressToTarget)}%</span>
+                    </div>
+                    <ProgressBar
+                      percentage={progressToTarget}
+                      color={targetDiff >= 0 ? '#567045' : '#9B7A3C'}
+                      height={6}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-border/60">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-1">Modules Above Target</div>
+                <div className="text-2xl font-mono font-semibold text-success">
+                  {currentYearModules.filter(m => m.currentGrade >= m.targetGrade).length}
                 </div>
               </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 p-4 border-t border-border">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-text-tertiary mb-1">Modules Above Target</div>
-              <div className="text-2xl font-mono font-bold text-success">
-                {currentYearModules.filter(m => m.currentGrade >= m.targetGrade).length}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-text-tertiary mb-1">Average Progress</div>
-              <div className="text-2xl font-mono font-bold text-success">
-                {Math.round(currentYearModules.reduce((sum, m) => sum + m.progress, 0) / currentYearModules.length)}%
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-1">Average Progress</div>
+                <div className="text-2xl font-mono font-semibold text-success">
+                  {Math.round(currentYearModules.reduce((sum, m) => sum + m.progress, 0) / currentYearModules.length)}%
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
 
 const AcademicPage = () => {
@@ -1297,14 +1315,22 @@ const AcademicPage = () => {
     {/* Desktop Sidebar */}
     {!isMobile && (
       <div 
-        className={`fixed left-0 top-0 h-full bg-surface border-r border-border transition-all duration-300 ease-swiss z-50 ${
+        className={`fixed left-0 top-0 z-50 h-full border-r border-border/80 bg-surface/80 backdrop-blur-md transition-all duration-420 ease-contemplative ${
           store.sidebarExpanded ? 'w-60' : 'w-16'
         }`}
       >
-        <div className="p-4 border-b border-border">
-          <div className="text-title-sm font-semibold text-text-primary tracking-tight">{store.sidebarExpanded ? 'UniLife' : 'UL'}</div>
+        <div className="border-b border-border/80 px-4 py-4">
+          {store.sidebarExpanded ? (
+            <div className="space-y-1">
+              <p className="chapter-label">EST 2026</p>
+              <div className="font-display text-title-sm text-text-primary tracking-tight">UniLife</div>
+              <p className="text-caption text-text-tertiary">Student Academic Manager</p>
+            </div>
+          ) : (
+            <div className="font-display text-title-sm text-text-primary tracking-tight">UL</div>
+          )}
         </div>
-        <nav className="p-2 flex-1 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto p-2">
           {navigation.map(item => {
             const Icon = item.icon;
             const isActive = store.currentPage === item.id;
@@ -1313,22 +1339,29 @@ const AcademicPage = () => {
                 key={item.id}
                 onClick={() => store.setCurrentPage(item.id)}
                 data-testid={`nav-${item.id}`}
-                className={`w-full flex items-center gap-3 px-3 py-3 mb-0.5 transition-all duration-200 ease-swiss nav-indicator ${
+                className={`nav-indicator mb-1 w-full rounded-sm px-3 py-2.5 transition-all duration-300 ease-contemplative ${
                   isActive 
-                    ? 'active text-text-primary bg-surface-hover border-l-2 border-text-primary' 
-                    : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
+                    ? 'active border border-border-hover bg-surface-hover/70 text-text-primary shadow-surface-soft' 
+                    : 'border border-transparent text-text-secondary hover:border-border/70 hover:bg-surface-hover/50 hover:text-text-primary'
                 }`}
               >
-                <Icon size={18} className="shrink-0" />
-                {store.sidebarExpanded && <span className="text-body-sm font-medium truncate">{item.label}</span>}
+                <div className="flex items-center gap-3">
+                  <Icon size={17} className="shrink-0" />
+                  {store.sidebarExpanded && (
+                    <div className="min-w-0 text-left">
+                      <div className="truncate text-body-sm font-medium">({item.index}) {item.label}</div>
+                      <div className="truncate text-[10px] uppercase tracking-[0.12em] text-text-muted">{item.chapter}</div>
+                    </div>
+                  )}
+                </div>
               </button>
             );
           })}
         </nav>
-        <div className="p-4 border-t border-border">
+        <div className="border-t border-border/80 p-4">
           <button
             onClick={() => store.setSidebarExpanded(!store.sidebarExpanded)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors duration-200"
+            className="flex w-full items-center justify-center gap-2 rounded-sm border border-border/80 px-3 py-2 text-text-secondary transition-all duration-300 ease-contemplative hover:border-border-hover hover:bg-surface-hover/60 hover:text-text-primary"
           >
             {store.sidebarExpanded ? <X size={18} /> : <List size={18} />}
           </button>
@@ -1340,7 +1373,7 @@ const AcademicPage = () => {
     {!isMobile && !store.sidebarExpanded && (
       <button
         onClick={() => store.setSidebarExpanded(true)}
-        className="fixed top-4 left-4 z-50 p-3 bg-surface border border-border hover:border-text-tertiary transition-colors duration-200"
+        className="fixed left-4 top-4 z-50 rounded-sm border border-border/80 bg-surface/90 p-3 shadow-surface-soft transition-all duration-300 ease-contemplative hover:border-border-hover"
       >
         <List size={20} className="text-text-primary" />
       </button>
@@ -1349,72 +1382,61 @@ const AcademicPage = () => {
     {/* Mobile Bottom Navigation */}
     {isMobile && (
       <>
-        <div className="pb-20 safe-area-bottom">
-          <div className="p-3 scroll-container page-enter">
-            {renderPage()}
+        <div className="pb-24 safe-area-bottom">
+          <div className="scroll-container page-enter">
+            {/* Mobile chapter context strip */}
+            <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/40">
+              <p className="text-overline uppercase tracking-[0.14em] text-text-muted">{activeNavigation.chapter}</p>
+              <p className="text-overline font-mono text-text-muted">
+                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}
+              </p>
+            </div>
+            <div className="px-3 pt-2">
+              {renderPage()}
+            </div>
           </div>
         </div>
 
         {/* Bottom Tab Bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border bottom-nav-safe-area z-50">
-          <div className="max-w-mobile mx-auto">
-            <div className="relative grid grid-cols-5 gap-0 p-1 safe-area-bottom">
-              {/* Active indicator — minimal underline */}
-              <div
-                className="absolute bottom-1 left-1 w-[calc(20%-4px)] flex justify-center transition-transform duration-300 ease-swiss pointer-events-none"
-                style={{ transform: `translateX(${activeBottomIndex * 100}%)` }}
-              >
-                <div className="w-4 h-[2px] bg-text-primary" />
-              </div>
-              {bottomNavItems.map(item => {
-                const Icon = item.icon;
-                const isActive = store.currentPage === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      store.setCurrentPage(item.id);
-                      if (iPhoneInteractions.supportsHaptic()) {
-                        iPhoneInteractions.haptic('selection');
-                      }
-                    }}
-                    onTouchStart={(e) => {
-                      const target = e.currentTarget as HTMLElement;
-                      iPhoneInteractions.touchFeedback(target, 'light');
-                    }}
-                    data-testid={`nav-${item.id}`}
-                    className={`relative z-10 flex flex-col items-center justify-center py-2 px-2 transition-all duration-200 ease-swiss no-select haptic-feedback ${
-                      isActive 
-                        ? 'text-text-primary' 
-                        : 'text-text-tertiary hover:text-text-secondary'
-                    }`}
-                  >
-                    <Icon size={20} className="mb-0.5" />
-                    <span className="text-overline leading-tight">{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            
-            {/* More Options */}
-            <div className="flex justify-center pb-1">
-              <button
-                onClick={() => {
-                  store.setCurrentPage('settings');
-                  if (iPhoneInteractions.supportsHaptic()) {
-                    iPhoneInteractions.haptic('medium');
-                  }
-                }}
-                onTouchStart={(e) => {
-                  const target = e.currentTarget as HTMLElement;
-                  iPhoneInteractions.touchFeedback(target, 'light');
-                }}
-                className="flex items-center gap-2 px-3 py-1.5 text-text-tertiary hover:text-text-primary transition-all duration-200 no-select haptic-feedback"
-              >
-                <GearSix size={16} />
-                <span className="text-label uppercase tracking-[0.08em]">More</span>
-              </button>
-            </div>
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/70 bg-background/97 backdrop-blur-xl">
+          <div className="max-w-mobile mx-auto flex items-stretch">
+            {([...bottomNavItems, { id: 'settings' as PageType, icon: GearSix, label: 'System', chapter: '(chosei) System', index: '09' }] as NavItem[]).map((item) => {
+              const Icon = item.icon;
+              const isActive = store.currentPage === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    store.setCurrentPage(item.id);
+                    if (iPhoneInteractions.supportsHaptic()) {
+                      iPhoneInteractions.haptic('selection');
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    iPhoneInteractions.touchFeedback(target, 'light');
+                  }}
+                  data-testid={`nav-${item.id}`}
+                  className={`relative flex flex-1 flex-col items-center justify-center pt-2 bottom-nav-safe-area no-select haptic-feedback transition-all duration-300 ease-contemplative ${
+                    isActive ? 'text-text-primary' : 'text-text-muted'
+                  }`}
+                >
+                  {isActive && (
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-[2px] bg-text-primary" />
+                  )}
+                  <div className={`flex items-center gap-1 transition-all duration-300 ease-contemplative rounded-full ${
+                    isActive ? 'bg-text-primary/[0.08] px-2.5 py-1' : 'px-2.5 py-1'
+                  }`}>
+                    <Icon size={isActive ? 15 : 18} />
+                    {isActive && (
+                      <span className="text-[11px] font-semibold tracking-tight leading-none whitespace-nowrap">{item.label}</span>
+                    )}
+                  </div>
+                  {/* Spacer keeps height consistent whether active label is shown or not */}
+                  <span className="mt-0.5 text-[9px] leading-none select-none" style={{ opacity: 0 }}>·</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </>
@@ -1422,8 +1444,14 @@ const AcademicPage = () => {
 
     {/* Desktop Content Area */}
     {!isMobile && (
-      <div className={`transition-all duration-300 ease-swiss ${store.sidebarExpanded ? 'ml-60' : 'ml-16'}`}>
-        <div className="max-w-wide mx-auto p-6 desktop:p-12 page-enter">{renderPage()}</div>
+      <div className={`transition-all duration-420 ease-contemplative ${store.sidebarExpanded ? 'ml-60' : 'ml-16'}`}>
+        <div className="mx-auto max-w-wide p-6 desktop:p-12 page-enter">
+          <div className="mb-6 border-b border-border/80 pb-3">
+            <p className="chapter-label">({activeNavigation.index}) {activeNavigation.chapter}</p>
+            <p className="text-body-sm text-text-tertiary">Academic continuity through deliberate progress.</p>
+          </div>
+          {renderPage()}
+        </div>
       </div>
     )}
 
@@ -1434,6 +1462,7 @@ const AcademicPage = () => {
         store.setEditingModule(null); 
       }}
       title={store.editingModule ? 'Edit Module' : 'Add New Module'}
+      chapterLabel="(keisei) Formation"
     >
       <ModuleForm />
     </Modal>
@@ -1445,6 +1474,7 @@ const AcademicPage = () => {
         store.setEditingTask(null); 
       }}
       title={store.editingTask ? 'Edit Task' : 'Add New Task'}
+      chapterLabel="(yakusoku) Commitments"
     >
       <TaskForm />
     </Modal>
@@ -1456,6 +1486,7 @@ const AcademicPage = () => {
         store.setEditingTransaction(null); 
       }}
       title={store.editingTransaction ? 'Edit Transaction' : 'Add New Transaction'}
+      chapterLabel="(junkan) Sustainability"
     >
       <TransactionForm />
     </Modal>
@@ -1472,6 +1503,7 @@ const AcademicPage = () => {
       isOpen={isModuleModalOpen}
       onClose={() => setIsModuleModalOpen(false)}
       title="Add New Module"
+      chapterLabel="(keisei) Formation"
     >
       <AcademicModuleForm 
         onSubmit={handleAddModule}

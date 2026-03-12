@@ -1,11 +1,17 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Newsreader, Manrope, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { StoreProvider } from '@/hooks/useStore'
 
-const inter = Inter({
+const newsreader = Newsreader({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-display',
+  display: 'swap',
+})
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-sans',
   display: 'swap',
 })
 
@@ -25,7 +31,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#0A0A0A',
+  themeColor: '#F0EDE6',
   viewportFit: 'cover',
 }
 
@@ -35,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${newsreader.variable} ${manrope.variable} ${jetbrainsMono.variable}`}>
       <body>
         <StoreProvider>
           {children}

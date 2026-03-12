@@ -9,18 +9,18 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ label, error, className = '', ...props }, ref) => {
     return (
-      <div className={`space-y-1.5 ${className}`}>
+      <div className={`space-y-2 ${className}`}>
         {label && (
-          <label className="block text-label uppercase tracking-[0.08em] text-text-secondary">
+          <label className="block text-label uppercase tracking-[0.1em] text-text-muted">
             {label}
           </label>
         )}
         <textarea
           ref={ref}
-          className={`block w-full bg-transparent border-b px-0 py-2 text-body text-text-primary placeholder:text-text-tertiary focus:outline-none transition-colors duration-200 ${
+          className={`block w-full border-b bg-transparent px-0 py-2.5 text-body text-text-primary placeholder:text-text-muted focus:outline-none transition-colors duration-300 ease-contemplative ${
             error
               ? 'border-danger focus:border-danger'
-              : 'border-border focus:border-text-primary'
+              : 'border-border focus:border-text-secondary'
           }`}
           {...props}
         />

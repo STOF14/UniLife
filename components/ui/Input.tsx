@@ -18,8 +18,8 @@ export const Input = ({
   'data-testid': testId,
   disabled
 }: InputProps) => (
-  <div className={cn('space-y-1.5', className)}>
-    <label className="block text-label uppercase tracking-[0.08em] text-text-secondary">
+  <div className={cn('space-y-2', className)}>
+    <label className="block text-label uppercase tracking-[0.1em] text-text-muted">
       {label} {required && <span className="text-danger">*</span>}
     </label>
     <input
@@ -35,7 +35,7 @@ export const Input = ({
       data-testid={testId}
       disabled={disabled}
       className={cn(
-        'w-full bg-transparent border-b border-border px-0 py-2 text-body text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-text-primary transition-colors duration-200',
+        'w-full border-b border-border bg-transparent px-0 py-2.5 text-body text-text-primary placeholder:text-text-muted focus:border-text-secondary focus:outline-none transition-colors duration-300 ease-contemplative',
         error && 'border-danger focus:border-danger',
         disabled && 'opacity-40 cursor-not-allowed'
       )}

@@ -18,6 +18,7 @@ export type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   title: string;
+  chapterLabel?: string;
   children: React.ReactNode;
 };
 

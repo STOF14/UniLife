@@ -124,7 +124,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
     <div className="space-y-6">
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-background border-border">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -136,7 +136,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
           </CardContent>
         </Card>
 
-        <Card className="bg-background border-border">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -150,7 +150,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
           </CardContent>
         </Card>
 
-        <Card className="bg-background border-border">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -162,7 +162,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
           </CardContent>
         </Card>
 
-        <Card className="bg-background border-border">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -174,7 +174,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
           </CardContent>
         </Card>
 
-        <Card className="bg-background border-border">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -188,7 +188,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
       </div>
 
       {/* Search and Filters */}
-      <Card className="bg-background border-border">
+      <Card>
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
@@ -237,7 +237,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
               onClick={() => setFilterYear('all')}
-              className={`px-3 py-1.5  text-xs font-medium border ${
+              className={`px-3 py-1.5 rounded-sm text-xs font-medium border transition-colors duration-300 ease-contemplative ${
                 filterYear === 'all' ? 'bg-text-primary/20 text-text-primary border-text-primary/40' : 'bg-surface text-text-tertiary border-border'
               }`}
             >
@@ -247,7 +247,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
               <button
                 key={year}
                 onClick={() => setFilterYear(year)}
-                className={`px-3 py-1.5  text-xs font-medium border ${
+                className={`px-3 py-1.5 rounded-sm text-xs font-medium border transition-colors duration-300 ease-contemplative ${
                   filterYear === year ? 'bg-text-primary/20 text-text-primary border-text-primary/40' : 'bg-surface text-text-tertiary border-border'
                 }`}
               >
@@ -258,7 +258,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
               <button
                 key={semester}
                 onClick={() => setFilterSemester(semester)}
-                className={`px-3 py-1.5  text-xs font-medium border ${
+                className={`px-3 py-1.5 rounded-sm text-xs font-medium border transition-colors duration-300 ease-contemplative ${
                   filterSemester === semester ? 'bg-success/20 text-success border-success/40' : 'bg-surface text-text-tertiary border-border'
                 }`}
               >
@@ -267,7 +267,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
             ))}
             <button
               onClick={() => setShowNeedsAttention(!showNeedsAttention)}
-              className={`px-3 py-1.5  text-xs font-medium border ${
+              className={`px-3 py-1.5 rounded-sm text-xs font-medium border transition-colors duration-300 ease-contemplative ${
                 showNeedsAttention ? 'bg-warning/20 text-warning border-warning/40' : 'bg-surface text-text-tertiary border-border'
               }`}
             >
@@ -283,7 +283,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
 
       {/* Upcoming Assessments */}
       {upcomingAssessments.length > 0 && (
-        <Card className="bg-background border-border">
+        <Card>
           <CardHeader>
             <CardTitle className="text-text-primary flex items-center">
               <Clock className="h-5 w-5 mr-2 text-text-primary" />
@@ -297,7 +297,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                 const daysLeft = Math.ceil((new Date(assessment.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                 
                 return (
-                  <div key={index} className="flex items-center justify-between p-3 bg-surface ">
+                  <div key={index} className="flex items-center justify-between p-3 rounded-sm bg-surface/70">
                     <div className="flex items-center space-x-3">
                       <div className={`w-2 h-2  ${daysLeft <= 3 ? 'bg-danger' : daysLeft <= 7 ? 'bg-warning' : 'bg-text-primary'}`} />
                       <div>
@@ -318,7 +318,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
       )}
 
       {filteredModules.length === 0 && (
-        <Card className="bg-background border-border">
+        <Card>
           <CardContent className="p-6 text-center">
             <p className="text-text-primary text-sm mb-2">No active modules match your filters.</p>
             <p className="text-text-tertiary text-xs mb-4">Try adjusting filters or import your yearbook.</p>
@@ -347,7 +347,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
         </div>
         
         {Object.entries(modulesByMajor).map(([major, majorModules]) => (
-          <Card key={major} className="bg-background border-border">
+          <Card key={major}>
             <CardHeader>
               <CardTitle className="text-text-primary flex items-center justify-between">
                 <span>{major}</span>
@@ -357,7 +357,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {majorModules.map((module) => (
-                  <div key={module.id} className="bg-surface border border-border  p-4 hover:border-text-primary transition-colors">
+                  <div key={module.id} className="surface-card p-4 transition-colors duration-300 ease-contemplative hover:border-border-hover">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
                         <h4 className="text-lg font-semibold text-text-primary">{module.code}</h4>
@@ -418,7 +418,7 @@ export function AcademicDashboard({ modules, onImportYearbook }: AcademicDashboa
                     
                     <button
                       onClick={() => setSelectedModule(module)}
-                      className="mt-3 w-full py-2 bg-text-primary text-background hover:bg-text-secondary text-sm transition-colors"
+                      className="mt-3 w-full py-2 rounded-sm bg-text-primary text-background hover:bg-text-secondary text-sm transition-colors duration-300 ease-contemplative"
                     >
                       View Details
                     </button>

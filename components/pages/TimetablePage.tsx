@@ -169,12 +169,13 @@ export const TimetablePage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold text-text-primary">Timetable</h1>
-        <p className="text-sm text-text-tertiary">Semester 1, 2026 · Last updated Feb 3, 2026</p>
+      <div className="pb-6 border-b border-border mb-2">
+        <p className="chapter-label mb-2">(rizumu) Rhythm</p>
+        <h1 className="chapter-title">Timetable</h1>
+        <p className="chapter-subtitle">Semester 1, 2026 · Last updated Feb 3, 2026</p>
       </div>
 
-      <div className="bg-surface border border-border  p-4">
+      <div className="surface-card p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="px-3 py-1  bg-text-primary/20 text-text-primary text-sm">
             23 contact hours / week
@@ -194,7 +195,7 @@ export const TimetablePage = () => {
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
-              className={`px-4 py-2  text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-sm text-sm font-medium transition-colors duration-300 ease-contemplative ${
                 viewMode === mode
                   ? 'bg-text-primary text-background'
                   : 'bg-surface text-text-tertiary hover:bg-surface/50 border border-border'
@@ -225,14 +226,14 @@ export const TimetablePage = () => {
           </select>
           <button
             onClick={copyDay}
-            className="px-4 py-2  text-sm font-medium bg-surface text-text-primary border border-border hover:border-text-primary"
+            className="px-4 py-2 rounded-sm text-sm font-medium bg-surface text-text-primary border border-border hover:border-text-primary transition-colors duration-300 ease-contemplative"
           >
             Copy Day
           </button>
         </div>
       </div>
 
-      <div className="bg-surface border border-border  overflow-hidden">
+      <div className="surface-card overflow-hidden">
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-text-primary">Weekly Planner</h2>
           <p className="text-xs text-text-tertiary">Day-by-day · Hour-by-hour · Click any cell to edit</p>
@@ -296,7 +297,7 @@ export const TimetablePage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-surface border border-border  p-4">
+        <div className="surface-card p-4">
           <h2 className="text-lg font-semibold text-text-primary mb-3">Group Registrations</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -324,7 +325,7 @@ export const TimetablePage = () => {
           </div>
         </div>
 
-        <div className="bg-surface border border-border  p-4 space-y-4">
+        <div className="surface-card p-4 space-y-4">
           <h2 className="text-lg font-semibold text-text-primary">Important Notes</h2>
           <div className="bg-background border border-border  p-3">
             <p className="text-sm text-text-primary font-medium">WTW 218 Cross-Group Attendance</p>
@@ -338,7 +339,7 @@ export const TimetablePage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-surface border border-border  p-4">
+        <div className="surface-card p-4">
           <h2 className="text-lg font-semibold text-text-primary mb-3">Quick Stats</h2>
           <div className="space-y-2">
             {quickStats.map(stat => (
@@ -350,7 +351,7 @@ export const TimetablePage = () => {
           </div>
         </div>
 
-        <div className="bg-surface border border-border  p-4">
+        <div className="surface-card p-4">
           <h2 className="text-lg font-semibold text-text-primary mb-3">Semester Tests</h2>
           <div className="space-y-2">
             {importantDates.tests.map(test => (
@@ -362,7 +363,7 @@ export const TimetablePage = () => {
           </div>
         </div>
 
-        <div className="bg-surface border border-border  p-4">
+        <div className="surface-card p-4">
           <h2 className="text-lg font-semibold text-text-primary mb-3">Final Exams</h2>
           <div className="space-y-2">
             {importantDates.exams.map(exam => (
@@ -376,7 +377,7 @@ export const TimetablePage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-surface border border-border  p-4">
+        <div className="surface-card p-4">
           <h2 className="text-lg font-semibold text-text-primary mb-3">Daily Checklist</h2>
           <ul className="space-y-2">
             {checklist.map(item => (
@@ -388,7 +389,7 @@ export const TimetablePage = () => {
           </ul>
         </div>
 
-        <div className="bg-surface border border-border  p-4">
+        <div className="surface-card p-4">
           <h2 className="text-lg font-semibold text-text-primary mb-3">Semester Goals</h2>
           <ul className="space-y-2">
             {goals.map(goal => (

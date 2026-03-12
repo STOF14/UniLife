@@ -1,0 +1,391 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); color: var(--color-text-primary); }
+  .doc { padding: 2rem 0; max-width: 680px; }
+  .section { margin-bottom: 2.5rem; }
+  .section-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 0.75rem; font-weight: 500; }
+  .section-title { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; border-bottom: 0.5px solid var(--color-border-tertiary); padding-bottom: 0.5rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; border: 0.5px solid var(--color-border-tertiary); }
+  .card-label { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 6px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .card-value { font-size: 14px; font-weight: 500; }
+  .card-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+  .swatch-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+  .swatch { width: 40px; height: 40px; border-radius: 8px; border: 0.5px solid var(--color-border-tertiary); flex-shrink: 0; }
+  .swatch-info { font-size: 12px; color: var(--color-text-secondary); }
+  .swatch-name { font-size: 13px; font-weight: 500; }
+  .font-preview { padding: 10px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .font-preview:last-child { border-bottom: none; }
+  .font-name { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-bottom: 6px; }
+  .tag { display: inline-block; font-size: 11px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-secondary); border-radius: 4px; padding: 3px 8px; margin: 3px; color: var(--color-text-secondary); }
+  .anim-row { display: flex; flex-direction: column; gap: 8px; }
+  .anim-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); }
+  .anim-bullet { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-secondary); margin-top: 5px; flex-shrink: 0; }
+  .anim-text { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+  .anim-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 500; margin-left: 6px; vertical-align: middle; }
+  .badge-green { background: #EAF3DE; color: #3B6D11; }
+  .badge-blue { background: #E6F1FB; color: #185FA5; }
+  .badge-amber { background: #FAEEDA; color: #854F0B; }
+  .row-pair { display: grid; grid-template-columns: 130px 1fr; gap: 8px; align-items: start; margin-bottom: 6px; font-size: 13px; }
+  .row-key { color: var(--color-text-tertiary); font-size: 12px; padding-top: 1px; }
+  .row-val { color: var(--color-text-primary); font-size: 13px; line-height: 1.5; }
+  .hierarchy { padding: 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); }
+  .h-row { display: flex; align-items: baseline; gap: 12px; padding: 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .h-row:last-child { border-bottom: none; }
+  .h-label { min-width: 100px; font-size: 11px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; }
+  .h-sample { flex: 1; }
+  .sep { height: 1px; background: var(--color-border-tertiary); margin: 2rem 0; }
+</style>
+<div class="doc">
+
+  <div style="margin-bottom: 2rem;">
+    <div class="section-label">Full Design System Breakdown</div>
+    <div style="font-size: 22px; font-weight: 500;">Saisei — Studio•Bamo.J</div>
+    <div style="font-size: 13px; color: var(--color-text-secondary); margin-top: 4px;">Japanese sustainable architecture studio · Awwwards nominated · Built in Webflow</div>
+  </div>
+
+  <!-- COLOUR -->
+  <div class="section">
+    <div class="section-label">01</div>
+    <div class="section-title">Colour Palette</div>
+
+    <div style="margin-bottom: 16px;">
+      <div class="swatch-row">
+        <div class="swatch" style="background: #1A1916;"></div>
+        <div>
+          <div class="swatch-name">Near Black</div>
+          <div class="swatch-info">#1A1916 · Background, typography, CTAs</div>
+        </div>
+      </div>
+      <div class="swatch-row">
+        <div class="swatch" style="background: #F0EDE6; border: 0.5px solid #ddd;"></div>
+        <div>
+          <div class="swatch-name">Warm Off-White / Cream</div>
+          <div class="swatch-info">#F0EDE6 · Page background, body text on dark</div>
+        </div>
+      </div>
+      <div class="swatch-row">
+        <div class="swatch" style="background: #E8E4DA; border: 0.5px solid #ddd;"></div>
+        <div>
+          <div class="swatch-name">Light Sand</div>
+          <div class="swatch-info">#E8E4DA · Secondary surface, section dividers</div>
+        </div>
+      </div>
+      <div class="swatch-row">
+        <div class="swatch" style="background: #8C8A82;"></div>
+        <div>
+          <div class="swatch-name">Mid Grey-Taupe</div>
+          <div class="swatch-info">#8C8A82 · Captions, metadata, kanji labels</div>
+        </div>
+      </div>
+      <div class="swatch-row">
+        <div class="swatch" style="background: #2E2D29;"></div>
+        <div>
+          <div class="swatch-name">Deep Charcoal</div>
+          <div class="swatch-info">#2E2D29 · Card backgrounds, section alternates</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 8px;">
+      <div class="card-label">Palette philosophy</div>
+      <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.6;">Zero chromatic hues used for brand identity. The entire palette is warm neutrals — pulled from natural materials (stone, sand, timber, ash). This is a deliberate Wabi-sabi reference: imperfection and simplicity over colour saturation. No accent colours, no call-to-action reds or greens. The only contrast comes from light vs dark tonality.</div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- TYPOGRAPHY -->
+  <div class="section">
+    <div class="section-label">02</div>
+    <div class="section-title">Typography</div>
+
+    <div class="card" style="margin-bottom: 12px;">
+      <div class="card-label">Typefaces in use</div>
+      <div class="font-preview">
+        <div class="font-name">Primary Display — Fragment (Pangram Pangram)</div>
+        <div style="font-size: 28px; letter-spacing: -0.02em; font-weight: 500; line-height: 1.1;">SAISEI · Every Line</div>
+        <div style="font-size: 12px; color: var(--color-text-tertiary); margin-top: 4px;">Used for hero headlines, section titles, project names. High contrast editorial weight. Ligature-forward.</div>
+      </div>
+      <div class="font-preview">
+        <div class="font-name">Secondary / Body — Aeonik (Klim Type Foundry)</div>
+        <div style="font-size: 16px; font-weight: 400; line-height: 1.6; color: var(--color-text-secondary);">Saisei is committed to revolutionizing architecture through sustainability.</div>
+        <div style="font-size: 12px; color: var(--color-text-tertiary); margin-top: 4px;">Used for body copy, navigation, UI labels, captions. Geometric grotesque. Neutral and highly legible.</div>
+      </div>
+    </div>
+
+    <div class="hierarchy">
+      <div class="h-row">
+        <div class="h-label">Hero / H1</div>
+        <div class="h-sample" style="font-size: 20px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1;">SAISEI</div>
+      </div>
+      <div class="h-row">
+        <div class="h-label">Section H2</div>
+        <div class="h-sample" style="font-size: 17px; font-weight: 500; line-height: 1.2;">Every Line Tells a Story</div>
+      </div>
+      <div class="h-row">
+        <div class="h-label">Kanji Label</div>
+        <div class="h-sample" style="font-size: 11px; letter-spacing: 0.1em; color: var(--color-text-tertiary); text-transform: uppercase;">(den tou) · Tradition</div>
+      </div>
+      <div class="h-row">
+        <div class="h-label">Nav Links</div>
+        <div class="h-sample" style="font-size: 13px; color: var(--color-text-secondary);">(1) Home · (2) About · (3) Project</div>
+      </div>
+      <div class="h-row">
+        <div class="h-label">Body</div>
+        <div class="h-sample" style="font-size: 13px; line-height: 1.6; color: var(--color-text-secondary);">Integrating disciplined aesthetics and thoughtful methodologies of our ancestors.</div>
+      </div>
+      <div class="h-row">
+        <div class="h-label">CTA / Button</div>
+        <div class="h-sample" style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;">About Us · See Project</div>
+      </div>
+      <div class="h-row">
+        <div class="h-label">Marquee Text</div>
+        <div class="h-sample" style="font-size: 15px; font-weight: 500;">the art of innovation · Designs That Sustain Life</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 12px;">
+      <div class="card-label">Typography rules</div>
+      <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.6;">Mixed-case on headlines — neither all-caps nor sentence case consistently. Large display text is tracked tightly (negative letter-spacing). Navigation uses numbered prefixes "(1) Home" — a Swiss typographic device. Kanji appears as small-cap metadata above section titles, always in parentheses with romanized translation below. CTA links use italic or underline animation on hover rather than colour change.</div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- LAYOUT -->
+  <div class="section">
+    <div class="section-label">03</div>
+    <div class="section-title">Layout & Spacing</div>
+
+    <div class="grid2" style="margin-bottom: 12px;">
+      <div class="card">
+        <div class="card-label">Grid system</div>
+        <div class="card-value">Full-bleed with generous margins</div>
+        <div class="card-sub">Content sits in a centered column with wide gutters. Sections use asymmetric two-column splits — image left, text right or vice versa at a roughly 55/45 ratio.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Vertical rhythm</div>
+        <div class="card-value">Long-scroll, section-per-concept</div>
+        <div class="card-sub">Each page section occupies near full-viewport height. Sections are separated by large whitespace rather than dividers or rules.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Hero layout</div>
+        <div class="card-value">Full-bleed image + overlaid type</div>
+        <div class="card-sub">Hero imagery fills the viewport. Brand name sits center or bottom-left in large display type. "Scroll" indicator bottom center with animated caret.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Navigation</div>
+        <div class="card-value">Minimal fixed top bar</div>
+        <div class="card-sub">Left: EST 2022 marker. Center: numbered nav links. Right: hamburger or contact shortcut. Nav expands to full-screen overlay with contact details and legal links.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Section anatomy — consistent across all pages</div>
+      <div class="anim-row" style="margin-top: 8px;">
+        <div class="anim-item">
+          <div class="anim-bullet"></div>
+          <div class="anim-text"><span class="anim-title">Kanji superscript</span> — small parenthetical label "(den tou) · Tradition" above every major section. Left-aligned. Acts as a chapter marker.</div>
+        </div>
+        <div class="anim-item">
+          <div class="anim-bullet"></div>
+          <div class="anim-text"><span class="anim-title">Large section heading</span> — H2 level, Fragment typeface, sometimes stacked with the kanji reading.</div>
+        </div>
+        <div class="anim-item">
+          <div class="anim-bullet"></div>
+          <div class="anim-text"><span class="anim-title">Body paragraph</span> — Aeonik, 16-17px, long-measure, muted grey on off-white or off-white on dark.</div>
+        </div>
+        <div class="anim-item">
+          <div class="anim-bullet"></div>
+          <div class="anim-text"><span class="anim-title">CTA link</span> — repeated twice (animated marquee style: "About Us · About Us" duplicated), underline or arrow suffix, no button borders.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- IMAGERY -->
+  <div class="section">
+    <div class="section-label">04</div>
+    <div class="section-title">Imagery & Visual Direction</div>
+
+    <div class="grid2" style="margin-bottom: 12px;">
+      <div class="card">
+        <div class="card-label">Source</div>
+        <div class="card-value">Midjourney V6.1</div>
+        <div class="card-sub">All imagery is AI-generated. Extremely high fidelity — looks indistinguishable from real architectural photography.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Mood / colour grade</div>
+        <div class="card-value">Muted, warm, desaturated</div>
+        <div class="card-sub">Low saturation. Warm light sources (golden hour, overcast diffused). Deep shadows. Film-like tonal contrast.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Subject matter</div>
+        <div class="card-value">Japanese minimalist interiors & exteriors</div>
+        <div class="card-sub">Shoji screens, stone courtyards, round windows, cherry blossom, timber details, zen gardens, clean concrete.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Crop & framing</div>
+        <div class="card-value">Architectural editorial</div>
+        <div class="card-sub">Wide establishing shots for heroes. Detail crops for section imagery. Symmetrical or near-symmetrical compositions. Frequent use of negative space in-frame.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Horizontal scroll image strips</div>
+      <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin-top: 4px;">Several sections use a horizontal auto-scroll strip of 5–6 images that moves left continuously on a loop. Images are equal-sized, close-cropped portraits or detail shots. This is used on Home, Service, and Sustainability pages to break up text-image alternation and add kinetic energy.</div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ANIMATIONS -->
+  <div class="section">
+    <div class="section-label">05</div>
+    <div class="section-title">Animations & Interactions</div>
+
+    <div class="anim-row">
+      <div class="anim-item">
+        <div class="anim-bullet"></div>
+        <div class="anim-text"><span class="anim-title">Page enter / scroll-triggered reveals</span> <span class="badge badge-green">Core</span><br>Text and images fade + translate-up on scroll into view. Staggered delay between heading, body, and CTA. Clean easing, ~600–800ms.</div>
+      </div>
+      <div class="anim-item">
+        <div class="anim-bullet"></div>
+        <div class="anim-text"><span class="anim-title">Horizontal marquee / ticker CTA</span> <span class="badge badge-blue">Signature</span><br>"About Us · About Us" links run as duplicated horizontal scrolling text on a loop. Seen on multiple pages. No pause on hover on some instances. Subtle speed — not frenetic.</div>
+      </div>
+      <div class="anim-item">
+        <div class="anim-bullet"></div>
+        <div class="anim-text"><span class="anim-title">Auto-scrolling image strip</span> <span class="badge badge-blue">Signature</span><br>A row of images scrolls left infinitely at a slow, meditative pace. Multiple strips used — some scroll left, some may reverse. Speed is unhurried, matching the zen brand tone.</div>
+      </div>
+      <div class="anim-item">
+        <div class="anim-bullet"></div>
+        <div class="anim-text"><span class="anim-title">Scroll-driven hero parallax</span> <span class="badge badge-green">Core</span><br>Hero image moves at a different rate from the page content on scroll, creating depth. Combined with a "scroll" indicator that animates (bouncing caret or progress bar).</div>
+      </div>
+      <div class="anim-item">
+        <div class="anim-bullet"></div>
+        <div class="anim-text"><span class="anim-title">Project carousel / slider</span> <span class="badge badge-amber">Section-specific</span><br>Home page project section cycles through 3 featured projects with prev/next controls. Current project's image crossfades or slides. Counter (1/3) updates accordingly.</div>
+      </div>
+      <div class="anim-item">
+        <div class="anim-bullet"></div>
+        <div class="anim-text"><span class="anim-title">Navigation overlay expand</span> <span class="badge badge-green">Core</span><br>Clicking the menu icon transitions to a full-screen dark overlay containing contact info, nav links (numbered), social links, legal, office hours. Likely a clip-path or opacity + transform reveal.</div>
+      </div>
+      <div class="anim-item">
+        <div class="anim-bullet"></div>
+        <div class="anim-text"><span class="anim-title">CTA hover — link underline draw</span> <span class="badge badge-green">Core</span><br>Text links animate an underline from left to right on hover. Used on "About Us", "See Project", "Get in touch" links throughout. No colour change — motion only.</div>
+      </div>
+      <div class="anim-item">
+        <div class="anim-bullet"></div>
+        <div class="anim-text"><span class="anim-title">Accordion (Service process steps)</span> <span class="badge badge-amber">Section-specific</span><br>On the Service page, the 5-step process section uses a click-to-expand accordion. "More info / Close" toggle. Inner content slides open/closed with ease-in-out.</div>
+      </div>
+      <div class="anim-item">
+        <div class="anim-bullet"></div>
+        <div class="anim-text"><span class="anim-title">Number counter / large decorative text</span> <span class="badge badge-blue">Signature</span><br>Section index numbers are displayed very large in a light weight, behind or adjacent to content — decorative typographic framing. Awards listed with large numbered index.</div>
+      </div>
+      <div class="anim-item">
+        <div class="anim-bullet"></div>
+        <div class="anim-text"><span class="anim-title">Image hover zoom (project cards)</span> <span class="badge badge-green">Core</span><br>Project thumbnails scale subtly on hover (scale ~1.04) within a fixed container. "See project" text appears as an overlay or slides up. Smooth transition, ~300ms.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- COMPONENTS -->
+  <div class="section">
+    <div class="section-label">06</div>
+    <div class="section-title">UI Components & Patterns</div>
+
+    <div class="grid2" style="margin-bottom: 12px;">
+      <div class="card">
+        <div class="card-label">Navigation</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5;">Fixed top bar. Transparent on hero, transitions to solid on scroll. Numbered links with "(1)" prefix system. EST – 2022 left badge. Hamburger right — opens full-screen overlay.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Footer</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5;">Dark background. Three-column layout: numbered nav links left, contact info center, social + office right. GPS coordinates displayed (139.8107° E / 35.7100° N). Decorative horizontal stroke rule above.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">CTA section (repeated)</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5;">"Craft Your Vision" — appears at the bottom of every page. Dark background. Two images flanking centered text. Kanji label "(setsu zoku) connect" above. Consistent sitewide component.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Project cards</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5;">Full-bleed image with kanji SVG overlay bottom-left. Project name, location. "See project" CTA. Featured 3 on homepage in slider format; all 6 on Projects page in a grid/list.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Journal cards</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5;">Image above, tag category, headline, date, "Read More" link. Filterable by category (All, Sustainability, Eco-Resort, Smart Building, Urban Planning) via tag pills.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Contact form</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5;">Minimal. Name, email, company, project type dropdown, message textarea. "Submit message" as repeating marquee CTA rather than a standard button. No visible input borders — line-only style.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Team grid (About)</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5;">6 members in a 3-column photo grid. Portrait photography, desaturated. Name + title below each. Consistent crop ratio.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Awards list (About)</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5;">Numbered 1–10 list of award wins. Large index number left, award name + category + year right. Divider lines between entries. Clean editorial format.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- BRAND LANGUAGE -->
+  <div class="section">
+    <div class="section-label">07</div>
+    <div class="section-title">Brand Language & Philosophy System</div>
+
+    <div class="card" style="margin-bottom: 12px;">
+      <div class="card-label">Kanji / Japanese concept system</div>
+      <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin-top: 4px;">Every major section is anchored by a Japanese philosophical concept, presented as: <strong style="color: var(--color-text-primary);">(romanization)</strong> above, and the English translation below. Examples: (den tou) Tradition · (Kaku SHIN) Innovation · (Ken chiku) Architecture · (Fu ku mu) Service · (setsu zoku) Connect. These act as section identifiers and deepen the cultural brand positioning. They are styled small, low contrast, and never compete with the headline.</div>
+    </div>
+
+    <div class="card" style="margin-bottom: 12px;">
+      <div class="card-label">Japanese philosophy quotes</div>
+      <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin-top: 4px;">Each page ends or includes a longer Japanese philosophy quote section — a short concept name in parentheses with a multi-sentence explanation of how it informs Saisei's work. E.g. "Ichi-go ichi-e", "Chousensha", "Shizen no Junkan". These appear against a full-bleed architectural image at the bottom of major sections.</div>
+    </div>
+
+    <div class="grid3">
+      <div class="card">
+        <div class="card-label">Voice / Tone</div>
+        <div style="font-size: 12px; color: var(--color-text-secondary); line-height: 1.5;">Measured, poetic, reverent. No urgency language. No superlatives. Philosophical rather than commercial.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Logo / Wordmark</div>
+        <div style="font-size: 12px; color: var(--color-text-secondary); line-height: 1.5;">SAISEI wordmark in Fragment. No logomark — the word is the mark. SVG kanji characters used as decorative project identifiers.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Cultural positioning</div>
+        <div style="font-size: 12px; color: var(--color-text-secondary); line-height: 1.5;">Tokyo-based. Wabi-sabi aesthetics. Zen philosophy. Japanese modernism x sustainability. Clearly referencing SANAA, Kengo Kuma territory.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- OVERALL VERDICT -->
+  <div class="section">
+    <div class="section-label">08</div>
+    <div class="section-title">Overall Design Classification</div>
+    <div class="card">
+      <div style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.8;">
+        <div class="row-pair"><div class="row-key">Style</div><div class="row-val">Japanese Minimalist Editorial · New Luxury Architecture</div></div>
+        <div class="row-pair"><div class="row-key">References</div><div class="row-val">Kengo Kuma, Snøhetta, Wallpaper* editorial, Céline fashion brand sites</div></div>
+        <div class="row-pair"><div class="row-key">Mood</div><div class="row-val">Meditative · Unhurried · Reverent · Premium-without-showing-off</div></div>
+        <div class="row-pair"><div class="row-key">Animations</div><div class="row-val">Intentional, slow, scroll-driven. Nothing gratuitous. Motion serves meaning.</div></div>
+        <div class="row-pair"><div class="row-key">Tech</div><div class="row-val">Webflow · Midjourney imagery · Fragment + Aeonik typefaces · Awwwards nominated</div></div>
+        <div class="row-pair"><div class="row-key">What makes it</div><div class="row-val">The kanji system, the numbered nav, the philosophy quotes, and the warm neutral palette work together as a cohesive cultural identity — not just decoration.</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -49,15 +49,19 @@ export const AcademicPage = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold text-text-primary">Academic</h1>
-        <Button onClick={onAddModule}>
+      <div className="pb-6 border-b border-border mb-2 flex items-start justify-between">
+        <div>
+          <p className="chapter-label mb-2">(keisei) Formation</p>
+          <h1 className="chapter-title">Academic</h1>
+          <p className="chapter-subtitle">Module tracking and grade management</p>
+        </div>
+        <Button onClick={onAddModule} className="mt-2">
           <Plus size={16} className="mr-1" />Add Module
         </Button>
       </div>
 
       {completedModules.length > 0 && (
-        <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-success/20  p-4">
+        <div className="surface-card p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10  bg-success/20 flex items-center justify-center">
@@ -80,7 +84,7 @@ export const AcademicPage = ({
       )}
 
       {activeModules.length === 0 && modules.length > 0 && (
-        <div className="text-center py-12 bg-surface border border-border ">
+        <div className="text-center py-12 surface-card">
           <p className="text-text-tertiary text-sm inline-flex items-center gap-2">
             <Star size={14} className="text-text-primary" />
             All modules completed!
@@ -97,7 +101,7 @@ export const AcademicPage = ({
           return (
             <div 
               key={module.id} 
-              className="bg-surface border border-border  overflow-hidden transition-all duration-200 hover:border-text-primary hover:shadow-lg hover:-translate-y-1"
+              className="surface-card overflow-hidden transition-all duration-300 ease-contemplative hover:border-border-hover hover:-translate-y-1"
             >
               <div className="h-32 relative group cursor-pointer" style={{ 
                 background: module.coverImage?.startsWith('data:') ? 'none' : module.coverImage || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -107,7 +111,7 @@ export const AcademicPage = ({
               }}>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                 <div className="absolute top-3 right-3 flex gap-2">
-                  <label className="p-2 bg-background/50 hover:bg-background/70  backdrop-blur-sm transition-colors cursor-pointer">
+                  <label className="p-2 rounded-sm bg-background/50 hover:bg-background/70 backdrop-blur-sm transition-colors duration-300 ease-contemplative cursor-pointer">
                     <Camera size={16} className="text-text-primary" />
                     <input 
                       type="file" 
@@ -118,7 +122,7 @@ export const AcademicPage = ({
                   </label>
                   <button 
                     onClick={(e) => { e.stopPropagation(); onEditModule(module); }}
-                    className="p-2 bg-background/50 hover:bg-background/70  backdrop-blur-sm transition-colors"
+                    className="p-2 rounded-sm bg-background/50 hover:bg-background/70 backdrop-blur-sm transition-colors duration-300 ease-contemplative"
                   >
                     <PencilSimple size={16} className="text-text-primary" />
                   </button>
@@ -129,7 +133,7 @@ export const AcademicPage = ({
                         onDeleteModule(module.id);
                       }
                     }}
-                    className="p-2 bg-background/50 hover:bg-danger/70  backdrop-blur-sm transition-colors"
+                    className="p-2 rounded-sm bg-background/50 hover:bg-danger/70 backdrop-blur-sm transition-colors duration-300 ease-contemplative"
                   >
                     <Trash size={16} className="text-text-primary" />
                   </button>
@@ -167,7 +171,7 @@ export const AcademicPage = ({
                   </div>
                   <ProgressBar 
                     percentage={Math.min((module.currentGrade / module.targetGrade) * 100, 100)}
-                    color={targetDiff >= 0 ? '#34C759' : '#FF9F0A'}
+                    color={targetDiff >= 0 ? '#567045' : '#9B7A3C'}
                   />
                 </div>
 

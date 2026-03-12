@@ -17,10 +17,14 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-semibold text-text-primary">Academic Progress</h1>
+      <div className="pb-6 border-b border-border mb-2">
+        <p className="chapter-label mb-2">(kiseki) Trajectory</p>
+        <h1 className="chapter-title">Academic Progress</h1>
+        <p className="chapter-subtitle">Cumulative weighted average and module performance</p>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-surface border border-border  p-6">
+        <div className="surface-card p-6">
           <div className="text-center mb-8">
             <div className="text-sm text-text-tertiary mb-2">Cumulative Weighted Average</div>
             <div className="text-6xl font-mono font-bold text-text-primary mb-2">{cwa}%</div>
@@ -49,7 +53,7 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
                     {yearModules.map(module => (
                       <div 
                         key={module.id} 
-                        className="flex items-center justify-between p-3 bg-background  hover:bg-surface/50 transition-colors"
+                        className="flex items-center justify-between p-3 rounded-sm bg-background/50 hover:bg-surface/50 transition-colors duration-300 ease-contemplative"
                       >
                         <div className="flex-1">
                           <div className="text-sm text-text-primary font-medium">{module.code}</div>
@@ -74,7 +78,7 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
             })}
           </div>
 
-          <div className="mt-6 p-4 bg-text-primary/10 border border-text-primary/30 ">
+          <div className="mt-6 p-4 rounded-sm bg-text-primary/10 border border-text-primary/30">
             <div className="text-xs text-text-tertiary mb-2">Formula:</div>
             <div className="text-xs font-mono text-text-primary">
               CWA = Σ(credits × grade) / Σ(total credits)
@@ -82,7 +86,7 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
           </div>
         </div>
 
-        <div className="bg-surface border border-border  p-6">
+        <div className="surface-card p-6">
           <div className="text-center mb-8">
             <div className="text-sm text-text-tertiary mb-2">Current Year Average</div>
             <div className="text-6xl font-mono font-bold text-success mb-2">{currentYearAverage}%</div>
@@ -101,7 +105,7 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
               return (
                 <div 
                   key={module.id} 
-                  className="p-4 bg-background  hover:bg-surface/50 transition-colors border border-border hover:border-text-primary"
+                  className="p-4 rounded-sm bg-background/50 hover:bg-surface/50 transition-colors duration-300 ease-contemplative border border-border/50 hover:border-border-hover"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -139,7 +143,7 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
                     </div>
                     <ProgressBar 
                       percentage={progressToTarget}
-                      color={targetDiff >= 0 ? '#34C759' : '#FF9F0A'}
+                    color={targetDiff >= 0 ? '#567045' : '#9B7A3C'}
                       height={6}
                     />
                   </div>
@@ -148,7 +152,7 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
             })}
           </div>
 
-          <div className="mt-6 p-4 bg-success/10 border border-success/30 ">
+          <div className="mt-6 p-4 rounded-sm bg-surface border border-success/30">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-xs text-text-tertiary mb-1">Modules Above Target</div>

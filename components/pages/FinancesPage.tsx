@@ -205,9 +205,13 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold text-text-primary">Finances</h1>
-        <div className="flex gap-2">
+      <div className="flex items-start justify-between pb-6 border-b border-border">
+        <div>
+          <p className="chapter-label mb-2">(junkan) Sustainability</p>
+          <h1 className="chapter-title">Finances</h1>
+          <p className="chapter-subtitle">Track income, expenses, and budget health</p>
+        </div>
+        <div className="flex gap-2 mt-2">
           <Button variant="secondary" onClick={exportToCSV}>
             <DownloadSimple size={16} className="mr-1" />Export CSV
           </Button>
@@ -224,7 +228,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
             <button
               key={filter}
               onClick={() => setTimeFilter(filter)}
-              className={`px-4 py-2  text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-sm text-sm font-medium transition-colors duration-300 ease-contemplative ${
                 timeFilter === filter
                   ? 'bg-text-primary text-background'
                   : 'bg-surface text-text-tertiary hover:bg-surface/50 border border-border'
@@ -256,7 +260,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
         </select>
         <button
           onClick={() => setShowRecurringOnly(!showRecurringOnly)}
-          className={`px-4 py-2  text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-sm text-sm font-medium transition-colors duration-300 ease-contemplative ${
             showRecurringOnly ? 'bg-text-primary text-background' : 'bg-surface text-text-tertiary hover:bg-surface/50 border border-border'
           }`}
         >
@@ -269,14 +273,14 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           <button
             key={cat}
             onClick={() => setCategoryFilter(cat)}
-            className="px-3 py-1.5  text-xs border border-border text-text-primary hover:border-text-primary"
+            className="px-3 py-1.5 rounded-sm text-xs border border-border text-text-primary hover:border-text-primary transition-colors duration-300 ease-contemplative"
           >
             {cat}
           </button>
         ))}
         <button
           onClick={() => setCategoryFilter('all')}
-          className="px-3 py-1.5  text-xs border border-border text-text-tertiary hover:text-text-primary"
+          className="px-3 py-1.5 rounded-sm text-xs border border-border text-text-tertiary hover:text-text-primary transition-colors duration-300 ease-contemplative"
         >
           Clear
         </button>
@@ -284,7 +288,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-text-tertiary">Income</h3>
             <div className="p-2 bg-success/10 ">
@@ -295,7 +299,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           <div className="text-xs text-text-tertiary mt-1">{stats.transactionCount} transactions</div>
         </div>
 
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-text-tertiary">Expenses</h3>
             <div className="p-2 bg-danger/10 ">
@@ -306,7 +310,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           <div className="text-xs text-text-tertiary mt-1">Daily avg: R{stats.dailyAverage.toFixed(2)}</div>
         </div>
 
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-text-tertiary">Net Balance</h3>
             <div className="p-2 bg-text-primary/10 ">
@@ -321,7 +325,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           </div>
         </div>
 
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-text-tertiary">Savings Rate</h3>
             <div className="p-2 bg-warning/10 ">
@@ -334,7 +338,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           <div className="text-xs text-text-tertiary mt-1">Of income saved</div>
         </div>
 
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-text-tertiary">Budget Used</h3>
             <div className="p-2 bg-text-primary/10 ">
@@ -352,7 +356,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Budget Tracking */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-surface border border-border  p-6">
+          <div className="surface-card p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-text-primary">Budget Overview</h2>
               <span className="text-sm text-text-tertiary">{timeFilter === 'month' ? 'This Month' : timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)}</span>
@@ -402,7 +406,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           </div>
 
           {/* Recent Transactions */}
-          <div className="bg-surface border border-border  p-6">
+          <div className="surface-card p-6">
             <h2 className="text-xl font-semibold text-text-primary mb-4">Recent Transactions</h2>
             <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {filteredTransactions.length > 0 ? (
@@ -412,7 +416,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
                   .map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex items-center justify-between p-4 bg-background  hover:bg-surface/50 transition-colors group"
+                      className={`flex items-center justify-between p-4 bg-background rounded-sm hover:bg-surface/50 transition-colors duration-300 ease-contemplative group`}
                     >
                       <div className="flex items-center gap-4 flex-1">
                         <div className="text-2xl">{getCategoryIcon(transaction.category)}</div>
@@ -475,7 +479,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
 
         {/* Category Breakdown */}
         <div className="space-y-6">
-          <div className="bg-surface border border-border  p-6">
+          <div className="surface-card p-6">
             <h2 className="text-xl font-semibold text-text-primary mb-4">Spending by Category</h2>
             <div className="space-y-3">
               {Object.entries(stats.categoryBreakdown)
@@ -510,7 +514,7 @@ export const FinancesPage: React.FC<FinancesPageProps> = ({
           </div>
 
           {/* Quick Insights */}
-          <div className="bg-surface border border-border  p-6">
+          <div className="surface-card p-6">
             <h2 className="text-xl font-semibold text-text-primary mb-4 flex items-center gap-2">
               <Lightbulb size={20} className="text-warning" />
               Insights

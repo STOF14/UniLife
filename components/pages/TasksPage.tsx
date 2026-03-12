@@ -53,7 +53,7 @@ const TaskItem = ({
     return (
         <div
             key={task.id}
-            className={`bg-surface border-t border-border p-4 transition-all duration-300 hover:border-t-text-primary ${
+            className={`bg-surface border-t border-border p-4 transition-all duration-300 ease-contemplative hover:border-t-border-hover ${
                 task.completed ? 'opacity-40' : ''
             }`}
         >
@@ -376,9 +376,10 @@ export const TasksPage = ({
   return (
     <div className="min-h-screen bg-background p-8 page-enter">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-display-sm font-semibold text-text-primary mb-1 tracking-tight">Study</h1>
-          <p className="text-text-tertiary text-xs uppercase tracking-wider">Keep track of your learning</p>
+        <div className="pb-6 border-b border-border mb-2">
+          <p className="chapter-label mb-2">(yakusoku) Commitments</p>
+          <h1 className="chapter-title">Study Tasks</h1>
+          <p className="chapter-subtitle">Keep track of your learning</p>
         </div>
 
         {/* Tab Navigation */}
@@ -519,7 +520,7 @@ export const TasksPage = ({
             </div>
 
             {/* Add Task Button */}
-            <div className="bg-surface border border-border  p-5 mb-6">
+            <div className="surface-card p-5 mb-6">
               <button
                 onClick={onAddTask}
                 className="w-full px-0 py-2 border-0 border-b border-border text-text-tertiary text-left text-sm hover:text-text-primary hover:border-text-primary transition-colors"
@@ -639,7 +640,7 @@ export const TasksPage = ({
                   const modStats = getModuleStats(mod.code);
                   
                   return (
-                    <div key={mod.id} className="bg-surface border border-border  p-4 flex items-center justify-between group hover:border-text-primary transition-colors">
+                    <div key={mod.id} className="surface-card p-4 flex items-center justify-between group hover:border-border-hover transition-colors duration-300 ease-contemplative">
                       <div className="flex items-center gap-3">
                         <div className={`w-3 h-3  ${color?.class.split(' ')[2] || 'bg-surface0/30'}`}></div>
                         <div>

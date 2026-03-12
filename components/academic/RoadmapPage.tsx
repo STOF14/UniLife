@@ -168,26 +168,27 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
   const selectedPlan = yearPlans.find(plan => plan.year === selectedYear) || yearPlans[0];
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="pb-6 border-b border-border mb-6 flex items-start justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-text-primary mb-2 flex items-center">
-              <GraduationCap className="h-8 w-8 mr-3 text-text-primary" />
+            <p className="chapter-label mb-2">(keikaku) Path</p>
+            <h1 className="chapter-title flex items-center gap-3">
+              <GraduationCap className="h-7 w-7" />
               University Journey Roadmap
             </h1>
-            <p className="text-text-tertiary text-lg">
+            <p className="chapter-subtitle">
               Your personalized path to success in {major}
               {secondMajor && ` with ${secondMajor} as second major`}
             </p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 mt-2">
             <div className="text-right">
               <p className="text-text-tertiary text-sm">Total Journey</p>
-              <p className="text-text-primary text-2xl font-bold">3 Years</p>
+              <p className="font-display text-title-xs text-text-primary">3 Years</p>
             </div>
-            <RocketLaunch className="h-8 w-8 text-text-primary" />
+            <RocketLaunch className="h-6 w-6 text-text-tertiary" />
           </div>
         </div>
 
@@ -197,9 +198,9 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
             <Button
               key={plan.year}
               onClick={() => setSelectedYear(plan.year)}
-              className={`flex-1 transition-all duration-300 transform hover:scale-105 ${
+              className={`flex-1 rounded-sm transition-all duration-300 ease-contemplative ${
                 selectedYear === plan.year
-                  ? 'bg-text-primary text-background shadow-lg shadow-text-primary/30'
+                  ? 'bg-text-primary text-background shadow-md'
                   : 'bg-surface text-text-tertiary hover:bg-border'
               }`}
             >
@@ -219,7 +220,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
         {/* Year Overview */}
         <div className="lg:col-span-2 space-y-6">
           {/* Year Card */}
-          <Card className="bg-background border-border overflow-hidden">
+          <Card className="overflow-hidden">
             <div 
               className="h-2 bg-gradient-to-r from-transparent via-text-primary to-transparent"
               style={{ backgroundColor: selectedPlan.color }}
@@ -243,15 +244,15 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
               
               {/* Credit Breakdown */}
               <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="text-center p-4 bg-surface ">
+                <div className="text-center p-4 rounded-sm bg-surface/70">
                   <p className="text-2xl font-bold text-success">{selectedPlan.fundamentalCredits}</p>
                   <p className="text-text-tertiary text-sm">Fundamental</p>
                 </div>
-                <div className="text-center p-4 bg-surface ">
+                <div className="text-center p-4 rounded-sm bg-surface/70">
                   <p className="text-2xl font-bold text-text-primary">{selectedPlan.coreCredits}</p>
                   <p className="text-text-tertiary text-sm">Core</p>
                 </div>
-                <div className="text-center p-4 bg-surface ">
+                <div className="text-center p-4 rounded-sm bg-surface/70">
                   <p className="text-2xl font-bold text-warning">{selectedPlan.electiveCredits}</p>
                   <p className="text-text-tertiary text-sm">Elective</p>
                 </div>
@@ -267,7 +268,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
                   {selectedPlan.focus.map((focus, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-surface text-text-tertiary  text-sm border border-border"
+                      className="px-3 py-1 rounded-sm bg-surface text-text-tertiary text-sm border border-border"
                     >
                       {focus}
                     </span>
@@ -283,7 +284,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
                     {Math.round(animatedProgress[selectedPlan.year] || 0)}%
                   </span>
                 </div>
-                <div className="w-full bg-border  h-3 overflow-hidden">
+                <div className="w-full rounded-sm bg-border h-3 overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-text-primary to-success  transition-all duration-1000 ease-out"
                     style={{ width: `${animatedProgress[selectedPlan.year] || 0}%` }}
@@ -294,7 +295,7 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
           </Card>
 
           {/* Modules Grid */}
-          <Card className="bg-background border-border">
+          <Card>
             <CardHeader>
               <CardTitle className="text-text-primary flex items-center">
                 <BookOpen className="h-5 w-5 mr-2 text-text-primary" />
@@ -306,9 +307,9 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
                 {selectedPlan.modules.map((module, index) => (
                   <div
                     key={module.id}
-                    className={`p-4 bg-surface border border-border  transition-all duration-300 cursor-pointer
-                      ${hoveredModule === module.id ? 'border-text-primary transform scale-105' : ''}
-                      ${module.progress === 100 ? 'bg-surface/50' : ''}
+                    className={`p-4 surface-card transition-all duration-300 ease-contemplative cursor-pointer
+                      ${hoveredModule === module.id ? 'border-border-hover -translate-y-0.5' : ''}
+                      ${module.progress === 100 ? 'opacity-70' : ''}
                     `}
                     onMouseEnter={() => setHoveredModule(module.id)}
                     onMouseLeave={() => setHoveredModule(null)}
@@ -354,10 +355,10 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Milestones */}
-          <Card className="bg-background border-border">
+          <Card>
             <CardHeader>
               <CardTitle className="text-text-primary flex items-center">
-                <Star className="h-5 w-5 mr-2 text-warning" />
+                <Star className="h-5 w-5 mr-2 text-text-tertiary" />
                 Year {selectedPlan.year} Milestones
               </CardTitle>
             </CardHeader>
@@ -372,8 +373,8 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
                       animation: 'slideInRight 0.5s ease-out forwards'
                     }}
                   >
-                    <div className={`p-2  ${
-                      milestone.completed ? 'bg-success' : 'bg-border'
+                    <div className={`p-2 rounded-sm ${
+                      milestone.completed ? 'bg-success/20' : 'bg-border'
                     }`}>
                       {milestone.icon}
                     </div>
@@ -394,10 +395,10 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
           </Card>
 
           {/* Journey Stats */}
-          <Card className="bg-background border-border">
+          <Card>
             <CardHeader>
               <CardTitle className="text-text-primary flex items-center">
-                <TrendUp className="h-5 w-5 mr-2 text-success" />
+                <TrendUp className="h-5 w-5 mr-2 text-text-tertiary" />
                 Journey Statistics
               </CardTitle>
             </CardHeader>
@@ -436,24 +437,24 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
           </Card>
 
           {/* Quick Actions */}
-          <Card className="bg-background border-border">
+          <Card>
             <CardHeader>
               <CardTitle className="text-text-primary flex items-center">
-                <Lightning className="h-5 w-5 mr-2 text-text-primary" />
+                <Lightning className="h-5 w-5 mr-2 text-text-tertiary" />
                 Quick Actions
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <Button className="w-full bg-text-primary text-background hover:bg-text-secondary">
+                <Button className="w-full rounded-sm bg-text-primary text-background hover:bg-text-secondary ease-contemplative">
                   <Calendar className="h-4 w-4 mr-2" />
                   View Academic Calendar
                 </Button>
-                <Button className="w-full bg-surface hover:bg-border text-text-primary">
+                <Button className="w-full rounded-sm bg-surface hover:bg-border text-text-primary ease-contemplative">
                   <Target className="h-4 w-4 mr-2" />
                   Set Goals
                 </Button>
-                <Button className="w-full bg-surface hover:bg-border text-text-primary">
+                <Button className="w-full rounded-sm bg-surface hover:bg-border text-text-primary ease-contemplative">
                   <Trophy className="h-4 w-4 mr-2" />
                   Track Achievements
                 </Button>
@@ -466,25 +467,12 @@ export function RoadmapPage({ modules, major = "Physics", secondMajor }: Roadmap
       {/* CSS Animations */}
       <style jsx>{`
         @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes slideInRight {
-          from {
-            opacity: 0;
-            transform: translateX(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
+          from { opacity: 0; transform: translateX(12px); }
+          to   { opacity: 1; transform: translateX(0); }
         }
       `}</style>
     </div>

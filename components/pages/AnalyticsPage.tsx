@@ -125,48 +125,49 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       {/* Header */}
-      <div>
-        <h1 className="text-4xl font-light text-text-primary mb-2">Analytics Dashboard</h1>
-        <p className="text-text-tertiary text-sm">BSc Physics with Computational Physics</p>
+      <div className="border-b border-border/80 pb-3">
+        <p className="chapter-label">(bunseki) Analysis</p>
+        <h1 className="chapter-title mb-1">Analytics Dashboard</h1>
+        <p className="chapter-subtitle text-body">BSc Physics with Computational Physics</p>
       </div>
       <div className="flex gap-2">
         <button
           onClick={() => window.print()}
-          className="px-4 py-2  text-sm font-medium bg-surface border border-border text-text-primary hover:border-text-primary"
+          className="rounded-sm border border-border/80 bg-surface px-4 py-2 text-body-sm font-medium uppercase tracking-[0.08em] text-text-primary transition-all duration-300 ease-contemplative hover:border-border-hover"
         >
           Export PDF
         </button>
       </div>
 
       {/* Historic Data Display (Auto-calculated from completed modules) */}
-      <div className="bg-surface border border-border  p-6">
+      <div className="surface-card p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-text-primary">Academic Profile</h2>
-          <span className="text-xs px-3 py-1 bg-success/20 text-success ">
+          <h2 className="font-display text-title-sm text-text-primary">Academic Profile</h2>
+          <span className="rounded-sm border border-success/40 px-3 py-1 text-caption uppercase tracking-[0.08em] bg-success-muted text-success">
             Auto-calculated from completed modules
           </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="text-text-tertiary text-xs uppercase tracking-wider font-semibold mb-2 block">
+            <label className="mb-2 block text-label uppercase tracking-[0.1em] text-text-muted">
               Completed Credits
             </label>
-            <div className="w-full bg-background border border-border  px-4 py-3 text-2xl font-light text-text-primary">
+            <div className="w-full rounded-sm border border-border/80 bg-background/70 px-4 py-3 font-display text-title-sm text-text-primary">
               {analysis.completedCredits}
             </div>
           </div>
           <div>
-            <label className="text-text-tertiary text-xs uppercase tracking-wider font-semibold mb-2 block">
+            <label className="mb-2 block text-label uppercase tracking-[0.1em] text-text-muted">
               Current CWA (%)
             </label>
-            <div className="w-full bg-background border border-border  px-4 py-3 text-2xl font-light text-text-primary">
+            <div className="w-full rounded-sm border border-border/80 bg-background/70 px-4 py-3 font-display text-title-sm text-text-primary">
               {analysis.actualCWA.toFixed(2)}
             </div>
           </div>
           <div>
-            <label className="text-text-primary text-xs uppercase tracking-wider font-semibold mb-2 block">
+            <label className="mb-2 block text-label uppercase tracking-[0.1em] text-text-primary">
               Target CWA (%)
             </label>
             <input 
@@ -174,15 +175,15 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
               //step="0.01"
               value={academicProfile.targetCWA}
               onChange={(e) => setAcademicProfile({...academicProfile, targetCWA: Number(e.target.value)})}
-              className="w-full bg-background border border-text-primary/30  px-4 py-3 text-2xl font-light text-text-primary focus:outline-none focus:border-text-primary"
+              className="w-full rounded-sm border border-text-primary/30 bg-background/70 px-4 py-3 font-display text-title-sm text-text-primary focus:outline-none focus:border-text-primary"
               placeholder="e.g., 65.00"
             />
           </div>
           <div>
-            <label className="text-text-tertiary text-xs uppercase tracking-wider font-semibold mb-2 block">
+            <label className="mb-2 block text-label uppercase tracking-[0.1em] text-text-muted">
               Remaining Credits
             </label>
-            <div className="w-full bg-background border border-border  px-4 py-3 text-2xl font-light text-text-primary">
+            <div className="w-full rounded-sm border border-border/80 bg-background/70 px-4 py-3 font-display text-title-sm text-text-primary">
               {analysis.futureCredits}
             </div>
           </div>
@@ -191,7 +192,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center gap-2 mb-2">
             <Target className="text-text-primary" size={20} />
             <span className="text-text-tertiary text-sm">Required Average</span>
@@ -201,7 +202,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
           </div>
         </div>
 
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center gap-2 mb-2">
             <TrendUp className="text-success" size={20} />
             <span className="text-text-tertiary text-sm">Projected Average</span>
@@ -211,7 +212,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
           </div>
         </div>
 
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center gap-2 mb-2">
             <BookOpen className="text-warning" size={20} />
             <span className="text-text-tertiary text-sm">Final Projected CWA</span>
@@ -221,7 +222,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
           </div>
         </div>
 
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center gap-2 mb-2">
             <Calendar className="text-text-secondary" size={20} />
             <span className="text-text-tertiary text-sm">Total Credits</span>
@@ -236,7 +237,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-text-tertiary text-sm">Attendance Estimate</span>
             <span className="text-text-primary text-sm">{attendanceRate.toFixed(1)}%</span>
@@ -245,7 +246,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
             <div className="h-full bg-success" style={{ width: `${attendanceRate}%` }} />
           </div>
         </div>
-        <div className="bg-surface border border-border  p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-text-tertiary text-sm">Goal Progress</span>
             <span className="text-text-primary text-sm">{goalProgress.toFixed(1)}%</span>
@@ -256,8 +257,8 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
         </div>
       </div>
 
-      <div className="bg-surface border border-border  p-6">
-        <h2 className="text-lg font-semibold text-text-primary mb-4">Year Comparison</h2>
+      <div className="surface-card p-6">
+        <h2 className="mb-4 font-display text-title-sm text-text-primary">Year Comparison</h2>
         <div className="space-y-3">
           {yearBreakdown.map(year => (
             <div key={year.year}>
@@ -273,11 +274,11 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
         </div>
       </div>
 
-      <div className="bg-surface border border-border  p-6">
-        <h2 className="text-lg font-semibold text-text-primary mb-4">Module Performance Heatmap</h2>
+      <div className="surface-card p-6">
+        <h2 className="mb-4 font-display text-title-sm text-text-primary">Module Performance Heatmap</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {modules.map(mod => (
-            <div key={mod.id} className={`p-3  border border-border ${getHeatColor(mod.currentGrade || 0)}`}>
+            <div key={mod.id} className={`rounded-sm border border-border/80 p-3 ${getHeatColor(mod.currentGrade || 0)}`}>
               <div className="text-xs text-text-primary font-semibold">{mod.code}</div>
               <div className="text-[10px] text-text-tertiary truncate">{mod.name}</div>
               <div className="text-xs text-text-primary mt-1">{mod.currentGrade || 0}%</div>
@@ -287,7 +288,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
       </div>
 
       {/* Status Banner */}
-      <div className={` p-6 ${analysis.isOnTrack ? 'bg-success/10 border border-success/30' : 'bg-danger/10 border border-danger/30'}`}>
+      <div className={`rounded-md p-6 ${analysis.isOnTrack ? 'bg-success-muted border border-success/40' : 'bg-danger-muted border border-danger/40'}`}>
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-semibold text-text-primary mb-1">
@@ -310,23 +311,23 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
               }
             </p>
           </div>
-          <div className={`px-4 py-2  text-sm font-bold ${analysis.isOnTrack ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'}`}>
+          <div className={`rounded-sm border px-4 py-2 text-body-sm font-bold uppercase tracking-[0.08em] ${analysis.isOnTrack ? 'border-success/40 bg-success-muted text-success' : 'border-danger/40 bg-danger-muted text-danger'}`}>
             {analysis.isOnTrack ? 'ON TRACK' : 'ACTION NEEDED'}
           </div>
         </div>
       </div>
 
       {/* Year Breakdown Tabs */}
-      <div className="bg-surface border border-border  p-6">
+      <div className="surface-card p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-text-primary">Year-by-Year Breakdown</h2>
+          <h2 className="font-display text-title text-text-primary">Year-by-Year Breakdown</h2>
           <div className="flex gap-2">
             <button
               onClick={() => setSelectedYear('all')}
-              className={`px-4 py-2  text-sm font-medium transition-colors ${
+              className={`rounded-sm border px-4 py-2 text-body-sm font-medium uppercase tracking-[0.08em] transition-all duration-300 ease-contemplative ${
                 selectedYear === 'all' 
-                  ? 'bg-text-primary text-background' 
-                  : 'bg-border text-text-tertiary hover:bg-border'
+                  ? 'border-text-primary bg-text-primary text-background' 
+                  : 'border-border/80 bg-border/40 text-text-tertiary hover:border-border-hover'
               }`}
             >
               All Years
@@ -335,10 +336,10 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
               <button
                 key={year.year}
                 onClick={() => setSelectedYear(year.year)}
-                className={`px-4 py-2  text-sm font-medium transition-colors ${
+                className={`rounded-sm border px-4 py-2 text-body-sm font-medium uppercase tracking-[0.08em] transition-all duration-300 ease-contemplative ${
                   selectedYear === year.year 
-                    ? 'bg-text-primary text-background' 
-                    : 'bg-border text-text-tertiary hover:bg-border'
+                    ? 'border-text-primary bg-text-primary text-background' 
+                    : 'border-border/80 bg-border/40 text-text-tertiary hover:border-border-hover'
                 }`}
               >
                 {year.year}
@@ -485,7 +486,7 @@ export const AnalyticsPage = ({ modules }: AnalyticsPageProps) => {
       </div>
 
       {/* Computational Physics Track Info */}
-      <div className="bg-gradient-to-r from-text-primary/10 to-text-secondary/10 border border-text-primary/30  p-6">
+      <div className="rounded-md border border-border-hover bg-gradient-to-r from-surface-hover/80 to-surface/60 p-6">
         <h3 className="text-xl font-semibold text-text-primary mb-3 flex items-center gap-2">
           <ChartLineUp size={20} className="text-text-primary" />
           BSc Physics with Computational Physics Track

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { X } from 'phosphor-react';
 import type { ModalProps } from '@/lib/types';
 
-export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+export const Modal = ({ isOpen, onClose, title, chapterLabel = 'Form', children }: ModalProps) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -19,30 +19,29 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
   
   return (
     <div className="fixed inset-0 z-50 flex items-end desktop:items-center justify-center">
-      {/* Backdrop */}
       <div 
-        className={`absolute inset-0 bg-background/85 transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-text-primary/35 backdrop-blur-[2px] transition-opacity duration-420 ease-contemplative ${
           visible ? 'opacity-100' : 'opacity-0'
         }`} 
+        data-testid="modal-backdrop"
         onClick={onClose} 
       />
-      {/* Panel */}
-      <div className={`relative bg-surface w-full desktop:max-w-2xl desktop:mx-4 max-h-[90vh] overflow-y-auto scroll-container transition-all duration-400 ease-swiss ${
+      <div className={`relative w-full max-h-[90vh] overflow-y-auto scroll-container border border-border/80 bg-surface desktop:mx-4 desktop:max-w-2xl shadow-surface transition-all duration-420 ease-contemplative ${
         visible 
           ? 'translate-y-0 opacity-100' 
           : 'translate-y-8 opacity-0'
       }`}>
-        {/* Top accent line */}
-        <div className="h-[2px] bg-text-primary" />
+        <div className="h-[1px] bg-border-hover" />
         <div className="p-4 desktop:p-6">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <p className="text-overline uppercase tracking-[0.12em] text-text-secondary mb-1">Form</p>
-              <h2 className="text-title text-text-primary">{title}</h2>
+              <p className="chapter-label mb-1">{chapterLabel}</p>
+              <h2 className="font-display text-title text-text-primary">{title}</h2>
             </div>
             <button 
               onClick={onClose} 
-              className="text-text-tertiary hover:text-text-primary transition-colors duration-200 p-1"
+              data-testid="modal-close-btn"
+              className="rounded-sm p-1 text-text-tertiary transition-colors duration-300 ease-contemplative hover:text-text-primary"
             >
               <X size={18} />
             </button>

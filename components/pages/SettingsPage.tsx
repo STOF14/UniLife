@@ -75,16 +75,16 @@ const pastModules: Array<{
 ];
 
   const coverImages: Record<string, string> = {
-    'AIM': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    'COS': 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-    'LST': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    'PHY': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-    'WTW': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    'AIM': 'linear-gradient(135deg, #c9c1b2 0%, #8c8a82 100%)',
+    'COS': 'linear-gradient(135deg, #d7d0c2 0%, #a79f91 100%)',
+    'LST': 'linear-gradient(135deg, #e8e4da 0%, #bfb6a7 100%)',
+    'PHY': 'linear-gradient(135deg, #d8cbc0 0%, #9a4f45 100%)',
+    'WTW': 'linear-gradient(135deg, #d9d1c5 0%, #9b7a3c 100%)',
   };
 
   const getCoverImage = (code: string) => {
     const prefix = code.substring(0, 3);
-    return coverImages[prefix] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    return coverImages[prefix] || 'linear-gradient(135deg, #d9d1c5 0%, #8c8a82 100%)';
   };
 
 const handleImport = async () => {
@@ -204,41 +204,44 @@ const handleImport = async () => {
   const demoTabs = ['Dashboard', 'Academic', 'Tasks', 'Timetable'];
 
   return (
-    <div className="bg-surface border border-border  p-6">
-      <h3 className="text-xl font-semibold text-text-primary mb-4">Import Past Modules (2024-2025)</h3>
+    <div className="surface-card p-6 desktop:p-8">
+      <div className="mb-6 border-b border-border/80 pb-3">
+        <p className="chapter-label">(chosei) System</p>
+        <h3 className="chapter-title">Import Past Modules (2024-2025)</h3>
+      </div>
       
-      <div className="bg-background border border-border  p-4 mb-4">
+      <div className="mb-4 rounded-md border border-border/80 bg-background/70 p-4">
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div>
-            <div className="text-sm text-text-tertiary mb-1">Total Modules</div>
-            <div className="text-2xl font-bold text-text-primary">{pastModules.length}</div>
+            <div className="text-caption uppercase tracking-[0.08em] text-text-muted mb-1">Total Modules</div>
+            <div className="font-display text-title text-text-primary">{pastModules.length}</div>
           </div>
           <div>
-            <div className="text-sm text-text-tertiary mb-1">Total Credits</div>
-            <div className="text-2xl font-bold text-text-primary">{totalCredits}</div>
+            <div className="text-caption uppercase tracking-[0.08em] text-text-muted mb-1">Total Credits</div>
+            <div className="font-display text-title text-text-primary">{totalCredits}</div>
           </div>
           <div>
-            <div className="text-sm text-text-tertiary mb-1">Calculated CWA</div>
-            <div className="text-2xl font-bold text-text-primary">{cwa.toFixed(2)}%</div>
+            <div className="text-caption uppercase tracking-[0.08em] text-text-muted mb-1">Calculated CWA</div>
+            <div className="font-display text-title text-text-primary">{cwa.toFixed(2)}%</div>
           </div>
         </div>
 
         <div className="space-y-2 max-h-60 overflow-y-auto">
-          <div className="text-xs font-semibold text-text-tertiary mb-2">Modules to Import:</div>
+          <div className="mb-2 text-caption uppercase tracking-[0.08em] text-text-muted">Modules to Import</div>
           {pastModules.map((mod, idx) => (
-            <div key={idx} className="flex items-center justify-between py-2 px-3 bg-surface">
+            <div key={idx} className="flex items-center justify-between rounded-sm border border-border/70 bg-surface/70 px-3 py-2">
               <div className="flex items-center gap-3">
-                <span className="text-xs px-2 py-0.5 bg-border text-text-tertiary">
+                <span className="rounded-sm bg-border/70 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-text-muted">
                   {mod.semester}
                 </span>
-                <span className="text-sm text-text-primary font-medium">{mod.code}</span>
-                <span className="text-xs text-text-tertiary truncate max-w-xs">
+                <span className="font-mono text-body-sm text-text-primary">{mod.code}</span>
+                <span className="max-w-xs truncate text-caption text-text-tertiary">
                   {mod.name}
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-text-tertiary">{mod.credits} cr</span>
-                <span className={`text-sm font-bold ${
+                <span className="text-caption text-text-tertiary">{mod.credits} cr</span>
+                <span className={`text-body-sm font-semibold ${
                   mod.grade >= 75 ? 'text-success' : 
                   mod.grade >= 50 ? 'text-text-primary' : 'text-danger'
                 }`}>
@@ -254,12 +257,12 @@ const handleImport = async () => {
         <button
           onClick={handleImport}
           disabled={importing || imported}
-          className={`flex items-center gap-2 px-6 py-3  font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-sm border px-6 py-3 text-body-sm font-medium uppercase tracking-[0.08em] transition-all duration-300 ease-contemplative ${
             imported 
-              ? 'bg-success/20 text-success cursor-not-allowed' 
+              ? 'border-success/40 bg-success-muted text-success cursor-not-allowed' 
               : importing
-              ? 'bg-border text-text-tertiary cursor-wait'
-              : 'bg-text-primary text-background hover:bg-text-primary/80'
+              ? 'border-border bg-border/70 text-text-tertiary cursor-wait'
+              : 'border-text-primary bg-text-primary text-background hover:bg-accent-hover'
           }`}
         >
           {imported ? (
@@ -281,32 +284,32 @@ const handleImport = async () => {
         </button>
 
         {imported && (
-          <span className="text-sm text-success inline-flex items-center gap-2">
+          <span className="inline-flex items-center gap-2 text-body-sm text-success">
             <CheckCircle size={16} />
             {pastModules.length} modules successfully imported!
           </span>
         )}
       </div>
 
-      <div className="mt-4 p-3 bg-warning/10 border border-warning/30 ">
-        <p className="text-xs text-warning">
+      <div className="mt-4 rounded-sm border border-warning/40 bg-warning-muted p-3">
+        <p className="text-caption text-warning">
           <strong>Note:</strong> This will import all your completed modules from 2024-2025 academic years. 
           These modules are marked as 100% complete and will automatically calculate your actual CWA.
         </p>
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-background border border-border  p-4">
-          <h4 className="text-text-primary font-semibold mb-3">Theme</h4>
+        <div className="rounded-md border border-border/80 bg-background/70 p-4">
+          <h4 className="mb-3 font-display text-title-sm text-text-primary">Theme</h4>
           <div className="flex gap-2">
             {(['dark', 'auto'] as const).map(option => (
               <button
                 key={option}
                 onClick={() => setTheme(option)}
-                className={`px-4 py-2  text-sm font-medium border ${
+                className={`rounded-sm border px-4 py-2 text-body-sm font-medium uppercase tracking-[0.08em] transition-all duration-300 ease-contemplative ${
                   theme === option
-                    ? 'bg-text-primary/20 text-text-primary border-text-primary/40'
-                    : 'bg-surface text-text-tertiary border-border'
+                    ? 'bg-text-primary/10 text-text-primary border-text-primary/40'
+                    : 'bg-surface text-text-tertiary border-border/80 hover:border-border-hover'
                 }`}
               >
                 {option === 'dark' ? 'Dark' : 'Auto'}
@@ -315,10 +318,10 @@ const handleImport = async () => {
           </div>
         </div>
 
-        <div className="bg-background border border-border  p-4">
-          <h4 className="text-text-primary font-semibold mb-3">Notifications</h4>
+        <div className="rounded-md border border-border/80 bg-background/70 p-4">
+          <h4 className="mb-3 font-display text-title-sm text-text-primary">Notifications</h4>
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm text-text-tertiary">
+            <label className="flex items-center gap-2 text-body-sm text-text-tertiary">
               <input
                 type="checkbox"
                 checked={notifications.email}
@@ -326,7 +329,7 @@ const handleImport = async () => {
               />
               Email updates
             </label>
-            <label className="flex items-center gap-2 text-sm text-text-tertiary">
+            <label className="flex items-center gap-2 text-body-sm text-text-tertiary">
               <input
                 type="checkbox"
                 checked={notifications.push}
@@ -337,16 +340,16 @@ const handleImport = async () => {
           </div>
         </div>
 
-        <div className="bg-background border border-border  p-4">
-          <h4 className="text-text-primary font-semibold mb-3">Backup & Restore</h4>
+        <div className="rounded-md border border-border/80 bg-background/70 p-4">
+          <h4 className="mb-3 font-display text-title-sm text-text-primary">Backup & Restore</h4>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={handleBackup}
-              className="px-4 py-2  text-sm font-medium bg-surface text-text-primary border border-border hover:border-text-primary"
+              className="rounded-sm border border-border/80 bg-surface px-4 py-2 text-body-sm font-medium uppercase tracking-[0.08em] text-text-primary transition-all duration-300 ease-contemplative hover:border-border-hover"
             >
               Download Backup
             </button>
-            <label className="px-4 py-2  text-sm font-medium bg-surface text-text-primary border border-border hover:border-text-primary cursor-pointer">
+            <label className="cursor-pointer rounded-sm border border-border/80 bg-surface px-4 py-2 text-body-sm font-medium uppercase tracking-[0.08em] text-text-primary transition-all duration-300 ease-contemplative hover:border-border-hover">
               Restore
               <input
                 type="file"
@@ -361,62 +364,62 @@ const handleImport = async () => {
           </div>
         </div>
 
-        <div className="bg-background border border-border  p-4">
-          <h4 className="text-text-primary font-semibold mb-3">Quick Fixes</h4>
+        <div className="rounded-md border border-border/80 bg-background/70 p-4">
+          <h4 className="mb-3 font-display text-title-sm text-text-primary">Quick Fixes</h4>
           <button
             onClick={handleClearCache}
-            className="px-4 py-2  text-sm font-medium bg-surface text-text-primary border border-border hover:border-danger"
+            className="rounded-sm border border-border/80 bg-surface px-4 py-2 text-body-sm font-medium uppercase tracking-[0.08em] text-text-primary transition-all duration-300 ease-contemplative hover:border-danger"
           >
             Clear Cache
           </button>
         </div>
       </div>
 
-      <div className="mt-8 bg-background border border-border  p-4">
-        <h4 className="text-text-primary font-semibold mb-3">Profile</h4>
+      <div className="mt-8 rounded-md border border-border/80 bg-background/70 p-4">
+        <h4 className="mb-3 font-display text-title-sm text-text-primary">Profile</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input
             value={profileName}
             onChange={(e) => setProfileName(e.target.value)}
             placeholder="Full name"
-            className="px-3 py-2 bg-surface border border-border  text-text-primary text-sm"
+            className="border-b border-border bg-transparent px-1 py-2.5 text-body text-text-primary placeholder:text-text-muted focus:border-text-secondary focus:outline-none"
           />
           <input
             value={profileEmail}
             onChange={(e) => setProfileEmail(e.target.value)}
             placeholder="Email (optional)"
-            className="px-3 py-2 bg-surface border border-border  text-text-primary text-sm"
+            className="border-b border-border bg-transparent px-1 py-2.5 text-body text-text-primary placeholder:text-text-muted focus:border-text-secondary focus:outline-none"
           />
         </div>
-        {profileError && <div className="text-xs text-danger mt-2">{profileError}</div>}
+        {profileError && <div className="mt-2 text-caption text-danger">{profileError}</div>}
         <button
           onClick={validateProfile}
-          className="mt-3 px-4 py-2  text-sm font-medium bg-text-primary text-background"
+          className="mt-3 rounded-sm border border-text-primary bg-text-primary px-4 py-2 text-body-sm font-medium uppercase tracking-[0.08em] text-background transition-all duration-300 ease-contemplative hover:bg-accent-hover"
         >
           Validate Profile
         </button>
       </div>
 
-      <div className="mt-8 bg-background border border-border  p-4">
-        <h4 className="text-text-primary font-semibold mb-3">Tab Morph Previews</h4>
-        <p className="text-xs text-text-tertiary mb-4">
+      <div className="mt-8 rounded-md border border-border/80 bg-background/70 p-4">
+        <h4 className="mb-3 font-display text-title-sm text-text-primary">Tab Morph Previews</h4>
+        <p className="mb-4 text-caption text-text-tertiary">
           Tap each tab to see the morphing behavior. These are temporary previews for testing.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Take 1: Frosted Slide Indicator */}
-          <div className="bg-surface border border-border  p-3">
-            <div className="text-xs text-text-tertiary mb-2">Take 1 — Frosted Slide</div>
-            <div className="relative grid grid-cols-4 gap-1 p-1 bg-background border border-border  overflow-hidden">
+          <div className="rounded-md border border-border/80 bg-surface/70 p-3">
+            <div className="mb-2 text-caption text-text-tertiary">Take 1 — Frosted Slide</div>
+            <div className="relative grid grid-cols-4 gap-1 overflow-hidden rounded-sm border border-border/80 bg-background/70 p-1">
               <div
-                className="absolute top-1 bottom-1 left-1 w-[calc(25%-4px)]  bg-white/10 border border-white/20 backdrop-blur-md shadow-[0_0_16px_rgba(255,255,255,0.12)] transition-transform duration-300 ease-out"
+                className="absolute bottom-1 left-1 top-1 w-[calc(25%-4px)] rounded-sm border border-border/80 bg-surface-hover/70 transition-transform duration-300 ease-contemplative"
                 style={{ transform: `translateX(${tabDemoOne * 100}%)` }}
               />
               {demoTabs.map((tab, index) => (
                 <button
                   key={tab}
                   onClick={() => setTabDemoOne(index)}
-                  className={`relative z-10 py-2 text-[11px] font-medium  transition-colors ${
+                  className={`relative z-10 rounded-sm py-2 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors ${
                     tabDemoOne === index ? 'text-text-primary' : 'text-text-tertiary'
                   }`}
                 >
@@ -427,17 +430,17 @@ const handleImport = async () => {
           </div>
 
           {/* Take 2: Glass Layer Morph */}
-          <div className="bg-surface border border-border  p-3">
-            <div className="text-xs text-text-tertiary mb-2">Take 2 — Glass Layer</div>
-            <div className="grid grid-cols-4 gap-1 p-1 bg-background border border-border ">
+          <div className="rounded-md border border-border/80 bg-surface/70 p-3">
+            <div className="mb-2 text-caption text-text-tertiary">Take 2 — Glass Layer</div>
+            <div className="grid grid-cols-4 gap-1 rounded-sm border border-border/80 bg-background/70 p-1">
               {demoTabs.map((tab, index) => (
                 <button
                   key={tab}
                   onClick={() => setTabDemoTwo(index)}
-                  className={`py-2 text-[11px] font-medium  transition-all duration-300 ${
+                  className={`rounded-sm py-2 text-[11px] font-medium uppercase tracking-[0.08em] transition-all duration-300 ease-contemplative ${
                     tabDemoTwo === index
-                      ? 'text-text-primary bg-white/10 border border-white/20 backdrop-blur-md shadow-[0_6px_18px_rgba(0,0,0,0.4)]'
-                      : 'text-text-tertiary border border-transparent hover:border-border'
+                      ? 'border border-border/80 bg-surface-hover/80 text-text-primary shadow-surface-soft'
+                      : 'border border-transparent text-text-tertiary hover:border-border/80'
                   }`}
                 >
                   {tab}
@@ -447,18 +450,18 @@ const handleImport = async () => {
           </div>
 
           {/* Take 3: Liquid Halo */}
-          <div className="bg-surface border border-border  p-3">
-            <div className="text-xs text-text-tertiary mb-2">Take 3 — Liquid Halo</div>
-            <div className="relative grid grid-cols-4 gap-1 p-1 bg-background border border-border  overflow-hidden">
+          <div className="rounded-md border border-border/80 bg-surface/70 p-3">
+            <div className="mb-2 text-caption text-text-tertiary">Take 3 — Liquid Halo</div>
+            <div className="relative grid grid-cols-4 gap-1 overflow-hidden rounded-sm border border-border/80 bg-background/70 p-1">
               <div
-                className="absolute top-1 bottom-1 left-1 w-[calc(25%-4px)]  bg-gradient-to-r from-text-primary/35 via-text-secondary/30 to-success/25 blur-[10px] opacity-80 transition-transform duration-300 ease-out"
+                className="absolute bottom-1 left-1 top-1 w-[calc(25%-4px)] rounded-sm bg-gradient-to-r from-border/80 via-surface-hover to-success/30 opacity-90 transition-transform duration-300 ease-contemplative"
                 style={{ transform: `translateX(${tabDemoThree * 100}%)` }}
               />
               {demoTabs.map((tab, index) => (
                 <button
                   key={tab}
                   onClick={() => setTabDemoThree(index)}
-                  className={`relative z-10 py-2 text-[11px] font-medium  transition-colors ${
+                  className={`relative z-10 rounded-sm py-2 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors ${
                     tabDemoThree === index ? 'text-text-primary' : 'text-text-tertiary'
                   }`}
                 >
