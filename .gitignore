@@ -50,3 +50,27 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Build artifacts and logs
+build.log
+tsconfig.tsbuildinfo
+
+# Analysis/temp files
+structure-analysis-result.json
+full_context.txt
+*.Zone.Identifier
+
+# Supabase temp
+supabase/.temp/
+
+# Backup files
+*.backup
+.env.backup
+node_modules_backup/
+
+# Production test artifacts
+production/*.json
+production/*-test.js
+
+# Archived scripts
+scripts/archive/

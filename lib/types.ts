@@ -1,3 +1,6 @@
+
+
+
 // Type Definitions
 export type ProgressRingProps = {
   percentage: number;
@@ -15,16 +18,19 @@ export type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   title: string;
+  chapterLabel?: string;
   children: React.ReactNode;
 };
 
 export type ButtonProps = {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'outline';
   onClick?: () => void;
   className?: string;
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  loading?: boolean;
+  size?: 'sm' | 'md' | 'lg';
   'data-testid'?: string;
 };
 
@@ -38,6 +44,10 @@ export type InputProps = {
   step?: string;
   min?: string;
   max?: string;
+  inputMode?: 'text' | 'search' | 'email' | 'tel' | 'url' | 'none' | 'numeric' | 'decimal';
+  error?: string;
+  className?: string;
+  disabled?: boolean;
   'data-testid'?: string;
 };
 
@@ -47,32 +57,9 @@ export type SelectProps = {
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: { value: string; label: string }[];
   required?: boolean;
+  error?: string;
+  className?: string;
   'data-testid'?: string;
-};
-
-export type Assessment = {
-  id: string;
-  name: string;
-  type: 'assignment' | 'test' | 'exam';
-  dueDate: string;
-  weight?: number;
-};
-
-export type Module = {
-  id: string;
-  code: string;
-  name: string;
-  semester: string;
-  credits: number;
-  currentGrade: number;
-  targetGrade: number;
-  progress: number;
-  coverImage?: string;
-  assessments: Assessment[];
-  specialCode?: number;
-  created_at?: string;
-  updated_at?: string;
-  user_id?: string;
 };
 
 export type Task = {
@@ -98,4 +85,86 @@ export type Transaction = {
   user_id?: string;
 };
 
-export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'tasks' | 'finances' | 'settings';
+
+
+// Base types
+export interface BaseEntity {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+}
+
+// Module and Assessment types
+export interface Assessment extends BaseEntity {
+  name: string;
+  weight: number;
+  dueDate: string;
+  grade?: number;
+  submitted: boolean;
+  graded: boolean;
+  type: 'exam' | 'assignment' | 'quiz' | 'project' | 'presentation' | 'participation' | 'other';
+  moduleId: string;
+  description?: string;
+  rubric?: {
+    criteria: string;
+    weight: number;
+    score?: number;
+    maxScore: number;
+  }[];
+  resources?: Resource[];
+}
+
+export interface Module extends BaseEntity {
+  code: string;
+  name: string;
+  credits: number;
+  semester: string;
+  year?: number; // Academic year (1, 2, 3, 4)
+  currentGrade: number;
+  targetGrade: number;
+  progress: number;
+  assessments: Assessment[];
+  completed?: boolean; // Whether the module is completed
+  completedAssessments?: number; // Number of completed assessments
+  prerequisites?: string[];
+  corequisites?: string[];
+  description?: string;
+  learningOutcomes?: string[];
+  coverImage?: string;  
+  targetMark?: number;
+  specialCode?: number;
+  color?: string;
+  professor?: string;
+  schedule?: ClassSchedule[];
+  resources?: Resource[];
+}
+
+// Additional types
+export interface Resource {
+  id: string;
+  name: string;
+  type: 'syllabus' | 'slides' | 'notes' | 'assignment' | 'other';
+  url: string;
+  uploadedAt: string;
+  size?: number;
+  moduleId?: string;
+  assessmentId?: string;
+}
+
+export interface ClassSchedule {
+  id: string;
+  day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  startTime: string;
+  endTime: string;
+  location: string;
+  type: 'lecture' | 'tutorial' | 'lab' | 'seminar';
+  recurring: boolean;
+  frequency?: 'weekly' | 'biweekly' | 'monthly';
+  exceptions?: string[]; // Dates when class doesn't occur
+}
+
+export type PageType = 'dashboard' | 'academic' | 'academic-progress' | 'timetable' | 'roadmap' | 'tasks' | 'finances' | 'analytics' | 'settings';
+
+// Export Button component for easy importing
+export { Button } from '@/components/ui/Button';

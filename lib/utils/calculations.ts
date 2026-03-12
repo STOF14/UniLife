@@ -21,3 +21,18 @@ export const calculateTermAverage = (modules: Module[], term: string) => {
   const termModules = modules.filter(m => m.semester === term);
   return calculateCWA(termModules);
 };
+
+export const getGradeLetter = (grade: number): string => {
+  if (grade >= 90) return 'A+';
+  if (grade >= 85) return 'A';
+  if (grade >= 80) return 'A-';
+  if (grade >= 75) return 'B+';
+  if (grade >= 70) return 'B';
+  if (grade >= 65) return 'B-';
+  if (grade >= 60) return 'C+';
+  if (grade >= 55) return 'C';
+  if (grade >= 50) return 'C-';
+  if (grade >= 45) return 'D+';
+  if (grade >= 40) return 'D';
+  return 'F';
+};

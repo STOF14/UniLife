@@ -17,14 +17,18 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-semibold text-white">Academic Progress</h1>
+      <div className="pb-6 border-b border-border mb-2">
+        <p className="chapter-label mb-2">(kiseki) Trajectory</p>
+        <h1 className="chapter-title">Academic Progress</h1>
+        <p className="chapter-subtitle">Cumulative weighted average and module performance</p>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
+        <div className="surface-card p-6">
           <div className="text-center mb-8">
-            <div className="text-sm text-[#EBEBF599] mb-2">Cumulative Weighted Average</div>
-            <div className="text-6xl font-mono font-bold text-[#0A84FF] mb-2">{cwa}%</div>
-            <div className="text-xs text-[#EBEBF599]">
+            <div className="text-sm text-text-tertiary mb-2">Cumulative Weighted Average</div>
+            <div className="text-6xl font-mono font-bold text-text-primary mb-2">{cwa}%</div>
+            <div className="text-xs text-text-tertiary">
               Based on {modules.reduce((sum, m) => sum + m.credits, 0)} total credits
             </div>
           </div>
@@ -37,11 +41,11 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
 
               return (
                 <div key={year} className="space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#38383A]">
-                    <h3 className="text-lg font-semibold text-white">Term {year}</h3>
+                  <div className="flex items-center justify-between pb-2 border-b border-border">
+                    <h3 className="text-lg font-semibold text-text-primary">Term {year}</h3>
                     <div className="text-right">
-                      <div className="text-2xl font-mono font-bold text-[#0A84FF]">{yearAverage}%</div>
-                      <div className="text-xs text-[#EBEBF599]">{yearCredits} credits</div>
+                      <div className="text-2xl font-mono font-bold text-text-primary">{yearAverage}%</div>
+                      <div className="text-xs text-text-tertiary">{yearCredits} credits</div>
                     </div>
                   </div>
 
@@ -49,21 +53,21 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
                     {yearModules.map(module => (
                       <div 
                         key={module.id} 
-                        className="flex items-center justify-between p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors"
+                        className="flex items-center justify-between p-3 rounded-sm bg-background/50 hover:bg-surface/50 transition-colors duration-300 ease-contemplative"
                       >
                         <div className="flex-1">
-                          <div className="text-sm text-white font-medium">{module.code}</div>
-                          <div className="text-xs text-[#EBEBF599]">{module.credits} credits</div>
+                          <div className="text-sm text-text-primary font-medium">{module.code}</div>
+                          <div className="text-xs text-text-tertiary">{module.credits} credits</div>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <div className="text-lg font-mono font-semibold text-white">{module.currentGrade}%</div>
+                            <div className="text-lg font-mono font-semibold text-text-primary">{module.currentGrade}%</div>
                           </div>
                           <div className="w-16 text-right">
-                            <div className="text-sm font-mono text-[#0A84FF]">
+                            <div className="text-sm font-mono text-text-primary">
                               {(module.currentGrade * module.credits).toFixed(0)}
                             </div>
-                            <div className="text-[10px] text-[#EBEBF599]">weighted</div>
+                            <div className="text-[10px] text-text-tertiary">weighted</div>
                           </div>
                         </div>
                       </div>
@@ -74,25 +78,25 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
             })}
           </div>
 
-          <div className="mt-6 p-4 bg-[#0A84FF]/10 border border-[#0A84FF]/30 rounded-lg">
-            <div className="text-xs text-[#EBEBF599] mb-2">Formula:</div>
-            <div className="text-xs font-mono text-[#0A84FF]">
+          <div className="mt-6 p-4 rounded-sm bg-text-primary/10 border border-text-primary/30">
+            <div className="text-xs text-text-tertiary mb-2">Formula:</div>
+            <div className="text-xs font-mono text-text-primary">
               CWA = Σ(credits × grade) / Σ(total credits)
             </div>
           </div>
         </div>
 
-        <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
+        <div className="surface-card p-6">
           <div className="text-center mb-8">
-            <div className="text-sm text-[#EBEBF599] mb-2">Current Year Average</div>
-            <div className="text-6xl font-mono font-bold text-[#30D158] mb-2">{currentYearAverage}%</div>
-            <div className="text-xs text-[#EBEBF599]">
+            <div className="text-sm text-text-tertiary mb-2">Current Year Average</div>
+            <div className="text-6xl font-mono font-bold text-success mb-2">{currentYearAverage}%</div>
+            <div className="text-xs text-text-tertiary">
               Term {currentYear} • {currentYearModules.reduce((sum, m) => sum + m.credits, 0)} credits
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white mb-4">Module Performance</h3>
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Module Performance</h3>
             
             {currentYearModules.map(module => {
               const targetDiff = module.currentGrade - module.targetGrade;
@@ -101,12 +105,12 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
               return (
                 <div 
                   key={module.id} 
-                  className="p-4 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors border border-[#38383A] hover:border-[#0A84FF]"
+                  className="p-4 rounded-sm bg-background/50 hover:bg-surface/50 transition-colors duration-300 ease-contemplative border border-border/50 hover:border-border-hover"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <div className="text-sm font-semibold text-white">{module.code}</div>
-                      <div className="text-xs text-[#EBEBF599] line-clamp-1">{module.name}</div>
+                      <div className="text-sm font-semibold text-text-primary">{module.code}</div>
+                      <div className="text-xs text-text-tertiary line-clamp-1">{module.name}</div>
                     </div>
                     <div className="flex items-center gap-3">
                       <ProgressRing percentage={module.currentGrade} size={45} strokeWidth={4} />
@@ -114,18 +118,18 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
                   </div>
 
                   <div className="grid grid-cols-3 gap-3 mb-3">
-                    <div className="text-center p-2 bg-[#141414] rounded">
-                      <div className="text-xs text-[#EBEBF599]">Current</div>
-                      <div className="text-sm font-mono font-semibold text-white">{module.currentGrade}%</div>
+                    <div className="text-center p-2 bg-surface rounded">
+                      <div className="text-xs text-text-tertiary">Current</div>
+                      <div className="text-sm font-mono font-semibold text-text-primary">{module.currentGrade}%</div>
                     </div>
-                    <div className="text-center p-2 bg-[#141414] rounded">
-                      <div className="text-xs text-[#EBEBF599]">Target</div>
-                      <div className="text-sm font-mono font-semibold text-white">{module.targetGrade}%</div>
+                    <div className="text-center p-2 bg-surface rounded">
+                      <div className="text-xs text-text-tertiary">Target</div>
+                      <div className="text-sm font-mono font-semibold text-text-primary">{module.targetGrade}%</div>
                     </div>
-                    <div className="text-center p-2 bg-[#141414] rounded">
-                      <div className="text-xs text-[#EBEBF599]">Diff</div>
+                    <div className="text-center p-2 bg-surface rounded">
+                      <div className="text-xs text-text-tertiary">Diff</div>
                       <div className={`text-sm font-mono font-semibold ${
-                        targetDiff >= 0 ? 'text-[#30D158]' : 'text-[#FF453A]'
+                        targetDiff >= 0 ? 'text-success' : 'text-danger'
                       }`}>
                         {targetDiff >= 0 ? '+' : ''}{targetDiff}%
                       </div>
@@ -133,13 +137,13 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-xs text-[#EBEBF599] mb-1">
+                    <div className="flex justify-between text-xs text-text-tertiary mb-1">
                       <span>Progress to target</span>
                       <span>{Math.round(progressToTarget)}%</span>
                     </div>
                     <ProgressBar 
                       percentage={progressToTarget}
-                      color={targetDiff >= 0 ? '#30D158' : '#FF9F0A'}
+                    color={targetDiff >= 0 ? '#567045' : '#9B7A3C'}
                       height={6}
                     />
                   </div>
@@ -148,17 +152,17 @@ export const AcademicProgressPage = ({ modules, cwa }: AcademicProgressPageProps
             })}
           </div>
 
-          <div className="mt-6 p-4 bg-[#30D158]/10 border border-[#30D158]/30 rounded-lg">
+          <div className="mt-6 p-4 rounded-sm bg-surface border border-success/30">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className="text-xs text-[#EBEBF599] mb-1">Modules Above Target</div>
-                <div className="text-2xl font-bold text-[#30D158]">
+                <div className="text-xs text-text-tertiary mb-1">Modules Above Target</div>
+                <div className="text-2xl font-bold text-success">
                   {currentYearModules.filter(m => m.currentGrade >= m.targetGrade).length}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-[#EBEBF599] mb-1">Average Progress</div>
-                <div className="text-2xl font-bold text-[#30D158]">
+                <div className="text-xs text-text-tertiary mb-1">Average Progress</div>
+                <div className="text-2xl font-bold text-success">
                   {Math.round(currentYearModules.reduce((sum, m) => sum + m.progress, 0) / currentYearModules.length)}%
                 </div>
               </div>

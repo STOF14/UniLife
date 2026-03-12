@@ -1,13 +1,30 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import { Suspense } from 'react'
 import React, { useState, useEffect } from 'react';
-import { Calendar, BookOpen, CheckSquare, DollarSign, Settings, User, Menu, X, Plus, Edit, Trash2, ArrowLeft, Download, Upload, Upload as UploadIcon, Camera, Target as TargetIcon, TrendingUp, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Calendar,
+  BookOpen,
+  TrendUp,
+  Target,
+  CheckSquare,
+  CurrencyDollar,
+  GearSix,
+  Plus,
+  UploadSimple,
+  X,
+  CaretLeft,
+  CaretRight,
+  FileText,
+  DownloadSimple,
+  List
+} from 'phosphor-react';
 import { useDatabase } from '@/hooks/useDatabase';
+import { AnalyticsPage } from '@/components/pages/AnalyticsPage';
+import { iPhoneInteractions } from '@/lib/utils/iphoneInteractions';
+import { getNextSession } from '@/lib/timetableData';
 
 // Types
-import type { Module, Task, Transaction, PageType, Assessment, ButtonProps, InputProps, SelectProps, ProgressRingProps, ProgressBarProps, ModalProps } from '@/lib/types';
+import type { Module, Task, Transaction, PageType } from '@/lib/types';
 
 // Hooks
 import { useStore } from '@/hooks/useStore';
@@ -20,50 +37,116 @@ import { ProgressRing } from '@/components/ui/ProgressRing';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Modal } from '@/components/ui/Modal';
 
+import { ModuleForm as AcademicModuleForm } from '@/components/academic/ModuleForm';
+import { AcademicDashboard } from '@/components/academic/AcademicDashboard';
+import { DocumentImport } from '@/components/academic/DocumentImport';
+import { RoadmapPage } from '@/components/academic/RoadmapPage';
+import { useAcademic } from '@/hooks/useAcademic';
+
 // Pages
 import { TasksPage } from '@/components/pages/TasksPage';
 import { SettingsPage } from '@/components/pages/SettingsPage';
+import { FinancesPage } from '@/components/pages/FinancesPage';
+import { TimetablePage } from '@/components/pages/TimetablePage';
 
 // Utilities
 import { calculateCWA, calculateTermAverage } from '@/lib/utils/calculations';
+import type { ScheduleEntry } from '@/lib/import/scheduleParser';
+import type { ExamEntry } from '@/lib/import/examScheduleParser';
+
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/supabase';
+
+// Constants
+const MOBILE_WIDTH_THRESHOLD = 428;
+const MOBILE_HEIGHT_THRESHOLD = 800;
+const MAX_VISIBLE_TASKS_DASHBOARD = 5;
+const MAX_VISIBLE_MODULES_DASHBOARD = 3;
+
+type NavItem = {
+  id: PageType;
+  icon: React.ElementType;
+  label: string;
+  chapter: string;
+  index: string;
+};
 
 const UniLife = () => {
+  // ---  AUTH PROTECTION START ---
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const store = useStore();
   const db = useDatabase();
   const [isMobile, setIsMobile] = useState(false);
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
+  
+  // Academic state - Move ALL hooks here, before any conditional logic
+  const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
+  const [isDocumentImportOpen, setIsDocumentImportOpen] = useState(false);
+  const { 
+    modules, 
+    isLoading: modulesLoading, 
+    error: modulesError,
+    createModule,
+    fetchModules 
+  } = useAcademic();
+
+  // Load modules on component mount
+  useEffect(() => {
+    fetchModules().catch(error => {
+      console.error('Failed to load modules:', error);
+    });
+  }, []); // Empty deps - fetchModules is stable from useAcademic hook
+
+  const handleAddModule = async (moduleData: any) => {
+    try {
+      await createModule(moduleData);
+      setIsModuleModalOpen(false);
+    } catch (error) {
+      console.error('Failed to add module:', error);
+      alert(`Failed to add module: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleDocumentImportModules = async (importedModules: Module[]) => {
+    try {
+      for (const moduleData of importedModules) {
+        await createModule(moduleData);
+      }
+    } catch (error) {
+      console.error('Failed to import modules:', error);
+    }
+  };
+
+  const handleImportSchedule = (entries: ScheduleEntry[]) => {
+    // TODO: Wire schedule entries to module ClassSchedule[] or timetable store
+    console.log('Imported schedule entries:', entries);
+  };
+
+  const handleImportAssessments = (entries: ExamEntry[], moduleCode: string) => {
+    // TODO: Wire exam entries to module assessments
+    console.log('Imported assessments for', moduleCode, entries);
+  };
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => {
+      // Check for actual iPhone or mobile device
+      const isIPhone = /iPhone/i.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const isMobileDevice = isIPhone || isAndroid || 
+                            (window.innerWidth <= MOBILE_WIDTH_THRESHOLD && 
+                             'ontouchstart' in window); // Has touch capability
+      setIsMobile(prev => prev !== isMobileDevice ? isMobileDevice : prev);
+    };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const navigation = [
-    { id: 'dashboard' as PageType, icon: Calendar, label: 'Dashboard' },
-    { id: 'academic' as PageType, icon: BookOpen, label: 'Academic' },
-    { id: 'academic-progress' as PageType, icon: TrendingUp, label: 'Progress' },
-    { id: 'tasks' as PageType, icon: CheckSquare, label: 'Tasks' },
-    { id: 'finances' as PageType, icon: DollarSign, label: 'Finances' },
-    { id: 'settings' as PageType, icon: Settings, label: 'Settings' },
-  ];
-
-  const cwa = calculateCWA(db.modules);
-  const term2024 = calculateTermAverage(db.modules, '2024');
-  const term2025 = calculateTermAverage(db.modules, '2025');
-
-  const getThisWeekTasks = (moduleCode: string) => {
-    const today = new Date();
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    
-    return db.tasks.filter(task => 
-      task.moduleCode === moduleCode &&
-      new Date(task.dueDate) >= today &&
-      new Date(task.dueDate) <= nextWeek &&
-      !task.completed
-    );
-  };
+  // Initialize iPhone-specific optimizations
+  useEffect(() => {
+    iPhoneInteractions.initialize();
+  }, []);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -78,7 +161,7 @@ const UniLife = () => {
 
   const getEventsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return db.tasks.filter(task => task.dueDate === dateStr);
+    return (db.tasks || []).filter(task => task.dueDate === dateStr);
   };
 
   const exportData = () => {
@@ -96,6 +179,488 @@ const UniLife = () => {
     a.click();
   };
 
+  // Page Components - moved inside to access required variables
+  const DashboardPage = () => {
+    const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentCalendarDate);
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const today = new Date();
+    const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+
+    const getTasksThisWeek = () => {
+      const startOfWeek = new Date(today);
+      startOfWeek.setHours(0, 0, 0, 0);
+      // Roll back to Monday (1 = Monday)
+      const dayOfWeek = startOfWeek.getDay();
+      const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startOfWeek.setDate(startOfWeek.getDate() - diffToMonday);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+      
+      return (db.tasks || []).filter(task => {
+        if (!task.dueDate) return false;
+        const taskDate = new Date(task.dueDate + 'T00:00:00');
+        return taskDate >= startOfWeek && taskDate <= endOfWeek && !task.completed;
+      }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    };
+
+    const thisWeekTasks = getTasksThisWeek();
+    const currentYear = new Date().getFullYear();
+    const activeModules = (modules || []).filter(m => {
+      const isCompleted = m.completed || m.currentGrade >= 100;
+      const yearMatch = m.semester?.match(/\b20\d{2}\b/);
+      const isPastYear = yearMatch ? parseInt(yearMatch[0], 10) < currentYear : false;
+      return !isCompleted && !isPastYear;
+    });
+    const nextSession = getNextSession(new Date());
+    const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayKey = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
+    const todayTasks = (db.tasks || []).filter(task => task.dueDate === todayKey && !task.completed).slice(0, 3);
+    const streakDays = (() => {
+      // Count consecutive days (backwards from today) with completed tasks
+      let streak = 0;
+      for (let i = 0; i < 30; i++) {
+        const checkDate = new Date(todayLocal);
+        checkDate.setDate(checkDate.getDate() - i);
+        const checkKey = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+        const hasCompleted = (db.tasks || []).some(t => t.completed && t.dueDate === checkKey);
+        if (hasCompleted) {
+          streak++;
+        } else if (i > 0) {
+          break; // streak broken (skip today if nothing yet)
+        }
+      }
+      return streak;
+    })();
+
+    // Finance snapshot
+    const currentMonthTransactions = (db.transactions || []).filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+    });
+    const monthIncome = currentMonthTransactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const monthExpenses = currentMonthTransactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+    const monthBalance = monthIncome - monthExpenses;
+
+    // Academic snapshot
+    const cwaVal = modules.length > 0 ? calculateCWA(modules) : 0;
+    const cwa = typeof cwaVal === 'string' ? parseFloat(cwaVal) || 0 : cwaVal;
+    const completedCount = (modules || []).filter(m => m.completed || m.currentGrade >= 100).length;
+    const totalTasks = (db.tasks || []).length;
+    const completedTasks = (db.tasks || []).filter(t => t.completed).length;
+    const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    // Overdue tasks
+    const overdueTasks = (db.tasks || []).filter(task => {
+      if (task.completed || !task.dueDate) return false;
+      return new Date(task.dueDate + 'T00:00:00') < todayLocal;
+    });
+
+    if (db.loading || modulesLoading) {
+      return (
+        <div className="space-y-4 mx-2 pt-4">
+          <div className="h-8 w-48 bg-surface animate-pulse rounded" />
+          <div className="grid grid-cols-2 desktop:grid-cols-4 gap-[1px] bg-border">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-surface p-3">
+                <div className="h-3 w-16 bg-surface-hover animate-pulse rounded mb-2" />
+                <div className="h-6 w-10 bg-surface-hover animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 desktop:grid-cols-3 gap-[1px] bg-border">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-surface p-4">
+                <div className="h-3 w-20 bg-surface-hover animate-pulse rounded mb-2" />
+                <div className="h-5 w-24 bg-surface-hover animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4 stagger-children">
+        {/* Header */}
+        <div className="flex items-baseline justify-between px-2 pt-2">
+          <div>
+            <p className="text-overline uppercase tracking-[0.1em] text-text-muted mb-0.5">
+              {(() => { const h = today.getHours(); return h < 5 ? 'Late night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night'; })()}
+            </p>
+            <h1 className="text-title-lg text-text-primary">Dashboard</h1>
+            <p className="text-caption text-text-secondary mt-0.5">
+              {today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                store.setEditingTask(null);
+                store.setShowModal('task');
+              }}
+              className="h-8 px-2"
+            >
+              <Plus size={14} />
+            </Button>
+            <Button variant="secondary" size="sm" onClick={exportData} className="h-8 px-2">
+              <DownloadSimple size={14} />
+            </Button>
+          </div>
+        </div>
+
+        {/* Overview Stats — 4-column grid */}
+        <div className="grid grid-cols-2 desktop:grid-cols-4 gap-[1px] bg-border mx-2">
+          <div className="bg-surface p-3">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-tertiary block mb-1">Due this week</span>
+            <div className="text-title-sm font-mono text-text-primary">{thisWeekTasks.length}</div>
+          </div>
+          <div className="bg-surface p-3">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-tertiary block mb-1">Overdue</span>
+            <div className={`text-title-sm font-mono ${overdueTasks.length > 0 ? 'text-danger' : 'text-text-primary'}`}>{overdueTasks.length}</div>
+          </div>
+          <div className="bg-surface p-3">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-tertiary block mb-1">CWA</span>
+            <div className="text-title-sm font-mono text-text-primary">{cwa > 0 ? cwa.toFixed(0) + '%' : '—'}</div>
+          </div>
+          <div className="bg-surface p-3">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-tertiary block mb-1">Balance</span>
+            <div className={`text-title-sm font-mono ${monthBalance >= 0 ? 'text-success' : 'text-danger'}`}>
+              {monthBalance >= 0 ? '+' : '-'}R{Math.abs(monthBalance).toFixed(0)}
+            </div>
+          </div>
+        </div>
+
+        {/* Info Cards Row */}
+        <div className="grid grid-cols-1 desktop:grid-cols-3 gap-[1px] bg-border mx-2">
+          <div className="bg-surface p-4">
+            <div className="text-label uppercase tracking-[0.08em] text-text-secondary mb-1">Next class</div>
+            {nextSession ? (
+              <>
+                <div className="text-body font-medium text-text-primary">{nextSession.module}</div>
+                <div className="text-caption text-text-secondary">
+                  {nextSession.day} · {nextSession.time}
+                </div>
+                <div className="text-caption text-text-tertiary">{nextSession.venue}</div>
+              </>
+            ) : (
+              <div className="text-body text-text-tertiary">No upcoming class</div>
+            )}
+          </div>
+          <div className="bg-surface p-4">
+            <div className="text-label uppercase tracking-[0.08em] text-text-secondary mb-1">Today focus</div>
+            {todayTasks.length > 0 ? (
+              <div className="space-y-0.5">
+                {todayTasks.map(task => (
+                  <div key={task.id} className="text-body text-text-primary truncate">{task.title}</div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-body text-text-tertiary">No tasks today</div>
+            )}
+          </div>
+          <div className="bg-surface p-4">
+            <div className="text-label uppercase tracking-[0.08em] text-text-secondary mb-1">Completion rate</div>
+            <div className="text-title-lg font-mono text-text-primary">{taskCompletionRate}%</div>
+            <div className="text-caption text-text-tertiary">{completedTasks}/{totalTasks} tasks done</div>
+          </div>
+        </div>
+
+        {/* Calendar */}
+        <div className="bg-surface p-4 mx-2 border-t-2 border-t-text-primary">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-title-sm text-text-primary">
+              {monthNames[month]} {year}
+            </h2>
+            <div className="flex gap-0.5">
+              <button 
+                onClick={() => setCurrentCalendarDate(new Date(year, month - 1, 1))}
+                className="p-2 hover:bg-surface-hover transition-colors duration-200"
+              >
+                <CaretLeft size={16} className="text-text-primary" />
+              </button>
+              <button 
+                onClick={() => setCurrentCalendarDate(new Date())}
+                className="px-3 py-2 hover:bg-surface-hover transition-colors duration-200 text-caption uppercase tracking-[0.08em] text-text-secondary"
+              >
+                Today
+              </button>
+              <button 
+                onClick={() => setCurrentCalendarDate(new Date(year, month + 1, 1))}
+                className="p-2 hover:bg-surface-hover transition-colors duration-200"
+              >
+                <CaretRight size={16} className="text-text-primary" />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-7 gap-0">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+              <div key={`${day}-${i}`} className="text-center text-label uppercase tracking-[0.08em] text-text-tertiary py-2">
+                {day}
+              </div>
+            ))}
+
+            {/* Previous month trailing days */}
+            {Array.from({ length: startingDayOfWeek }).map((_, i) => {
+              const prevMonthLastDay = new Date(year, month, 0).getDate();
+              const day = prevMonthLastDay - startingDayOfWeek + 1 + i;
+              return (
+                <div key={`prev-${i}`} className="aspect-square border border-border p-1 opacity-30">
+                  <div className="text-caption font-mono mb-0.5 text-text-tertiary">{day}</div>
+                </div>
+              );
+            })}
+
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const date = new Date(year, month, day);
+              const events = getEventsForDate(date);
+              const isToday = isCurrentMonth && day === today.getDate();
+
+              return (
+                <div 
+                  key={day}
+                  className={`aspect-square border border-border p-1 hover:bg-surface-hover transition-all duration-200 cursor-pointer ${
+                    isToday ? 'bg-surface-active border-text-primary' : ''
+                  }`}
+                >
+                  <div className={`text-caption font-mono mb-0.5 ${isToday ? 'text-text-primary font-semibold' : 'text-text-secondary'}`}>
+                    {day}
+                  </div>
+                  <div className="flex gap-0.5 flex-wrap">
+                    {events.slice(0, 3).map(event => (
+                      <div 
+                        key={event.id}
+                        className={`w-1 h-1 rounded-full ${
+                          event.priority === 'high' ? 'bg-danger' :
+                          event.priority === 'medium' ? 'bg-warning' :
+                          'bg-success'
+                        }`}
+                        title={event.title}
+                      />
+                    ))}
+                    {events.length > 3 && (
+                      <div className="text-[7px] font-mono text-text-tertiary leading-none">+{events.length - 3}</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* This Week Tasks */}
+        <div className="mx-2">
+          <div className="flex items-baseline justify-between mb-3">
+            <h3 className="text-title-sm text-text-primary">This Week</h3>
+            <span className="text-label uppercase tracking-[0.08em] text-text-secondary">
+              {thisWeekTasks.length} tasks
+            </span>
+          </div>
+          <div className="space-y-0 border-t border-border">
+            {thisWeekTasks.length > 0 ? (
+              thisWeekTasks.slice(0, MAX_VISIBLE_TASKS_DASHBOARD).map(task => (
+                <div key={task.id} className="data-row px-0 py-3 gap-3">
+                  <div className={`w-1.5 h-1.5 shrink-0 ${
+                    task.priority === 'high' ? 'bg-danger' : 
+                    task.priority === 'medium' ? 'bg-warning' : 'bg-success'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-body text-text-primary truncate">{task.title}</div>
+                    <div className="text-caption text-text-secondary mt-0.5">
+                      {new Date(task.dueDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {task.moduleCode && <span className="ml-2 font-mono text-text-tertiary">{task.moduleCode}</span>}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <CheckSquare className="mx-auto h-6 w-6 text-text-tertiary" />
+                <p className="mt-2 text-body text-text-secondary">No tasks this week</p>
+              </div>
+            )}
+          </div>
+          {thisWeekTasks.length > MAX_VISIBLE_TASKS_DASHBOARD && (
+            <button 
+              onClick={() => store.setCurrentPage('tasks')}
+              className="w-full mt-2 py-2 text-caption uppercase tracking-[0.08em] text-text-secondary hover:text-text-primary transition-colors duration-200 btn-underline"
+            >
+              View all tasks
+            </button>
+          )}
+        </div>
+
+        {/* Quick Links */}
+        <div className="grid grid-cols-3 gap-[1px] bg-border mx-2 mb-4">
+          <button
+            onClick={() => store.setCurrentPage('academic')}
+            className="bg-surface p-3 text-center hover:bg-surface-hover transition-colors duration-200"
+          >
+            <BookOpen size={16} className="mx-auto text-text-secondary mb-1" />
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-secondary">Academic</span>
+            <div className="text-caption font-mono text-text-primary mt-0.5">{activeModules.length} active</div>
+          </button>
+          <button
+            onClick={() => store.setCurrentPage('finances')}
+            className="bg-surface p-3 text-center hover:bg-surface-hover transition-colors duration-200"
+          >
+            <CurrencyDollar size={16} className="mx-auto text-text-secondary mb-1" />
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-secondary">Finances</span>
+            <div className="text-caption font-mono text-text-primary mt-0.5">
+              R{monthExpenses.toFixed(0)} spent
+            </div>
+          </button>
+          <button
+            onClick={() => store.setCurrentPage('timetable')}
+            className="bg-surface p-3 text-center hover:bg-surface-hover transition-colors duration-200"
+          >
+            <Calendar size={16} className="mx-auto text-text-secondary mb-1" />
+            <span className="text-[10px] uppercase tracking-[0.1em] text-text-secondary">Timetable</span>
+            <div className="text-caption font-mono text-text-primary mt-0.5">{streakDays}d streak</div>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Auth state listener with session refresh
+  useEffect(() => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push('/login');
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    // Listen for auth changes (logout, token refresh, etc)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.push('/login');
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
+          <div className="w-8 h-[2px] bg-text-primary animate-pulse-subtle"></div>
+          <p className="text-text-secondary text-label uppercase tracking-[0.12em]">Verifying access</p>
+        </div>
+      </div>
+    );
+  }
+
+  const navigation: NavItem[] = [
+    { id: 'dashboard', icon: Calendar, label: 'Dashboard', chapter: '(ima) Today', index: '01' },
+    { id: 'academic', icon: BookOpen, label: 'Academic', chapter: '(keisei) Formation', index: '02' },
+    { id: 'academic-progress', icon: TrendUp, label: 'Progress', chapter: '(kiseki) Trajectory', index: '03' },
+    { id: 'timetable', icon: FileText, label: 'Timetable', chapter: '(rizumu) Rhythm', index: '04' },
+    { id: 'analytics', icon: Target, label: 'Analytics', chapter: '(bunseki) Analysis', index: '05' },
+    { id: 'roadmap', icon: Target, label: 'Roadmap', chapter: '(keikaku) Path', index: '06' },
+    { id: 'tasks', icon: CheckSquare, label: 'Tasks', chapter: '(yakusoku) Commitments', index: '07' },
+    { id: 'finances', icon: CurrencyDollar, label: 'Finances', chapter: '(junkan) Sustainability', index: '08' },
+    { id: 'settings', icon: GearSix, label: 'Settings', chapter: '(chosei) System', index: '09' },
+  ];
+
+  const activeNavigation = navigation.find(item => item.id === store.currentPage) || navigation[0];
+
+  const bottomNavItems = navigation.slice(0, 5);
+  const activeBottomIndexRaw = bottomNavItems.findIndex(item => item.id === store.currentPage);
+  const activeBottomIndex = activeBottomIndexRaw === -1 ? 0 : activeBottomIndexRaw;
+
+  const renderPage = () => {
+    switch (store.currentPage) {
+      case 'dashboard': return <DashboardPage />;
+      case 'academic': return <AcademicPage />;
+      case 'academic-progress': return <AcademicProgressPage />;
+      case 'roadmap': return <RoadmapPage modules={modules} major="Physics" secondMajor="Mathematics" />;
+      case 'analytics': return <AnalyticsPage modules={db.modules} />;
+      case 'timetable': return <TimetablePage />;
+      case 'tasks':
+        
+        return (
+          <TasksPage
+            tasks={db.tasks}
+            modules={db.modules}
+            onAddTask={() => {
+              store.setEditingTask(null);
+              store.setShowModal('task');
+            }}
+            onEditTask={(task: Task) => {
+              store.setEditingTask(task);
+              store.setShowModal('task');
+            }}
+            onDeleteTask={(id: string) => {
+              if (confirm('Are you sure you want to delete this task?')) {
+                db.deleteTask(id);
+              }
+            }}
+            onToggleComplete={async (id: string) => {
+              const task = db.tasks.find((t: Task) => t.id === id);
+              if (task) {
+                await db.saveTask({ ...task, completed: !task.completed });
+              }
+            }}
+            onSaveTask={db.saveTask}
+          />
+        );
+      case 'finances': 
+        return (
+          <FinancesPage
+            transactions={db.transactions}
+            onAddTransaction={() => {
+              store.setEditingTransaction(null);
+              store.setShowModal('transaction');
+            }}
+            onEditTransaction={(transaction: Transaction) => {
+              store.setEditingTransaction(transaction);
+              store.setShowModal('transaction');
+            }}
+            onDeleteTransaction={(id: string) => {
+              if (confirm('Are you sure you want to delete this transaction?')) {
+                db.deleteTransaction(id);
+              }
+            }}
+          />
+        );
+      case 'settings': return <SettingsPage />;
+      default: return <DashboardPage />;
+    }
+  };
+
+  // Calculate on each render (simpler, no hook issues)
+  const cwa = calculateCWA(db.modules || []);
+  const term2024 = calculateTermAverage(db.modules || [], '2024');
+  const term2025 = calculateTermAverage(db.modules || [], '2025');
+
+  const getThisWeekTasks = (moduleCode: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    nextWeek.setHours(23, 59, 59, 999);
+    
+    return (db.tasks || []).filter(task => 
+      task.moduleCode === moduleCode &&
+      task.dueDate &&
+      new Date(task.dueDate) >= today &&
+      new Date(task.dueDate) <= nextWeek &&
+      !task.completed
+    );
+  };
+
 const ModuleForm = () => {
   const [formState, setFormState] = useState<Partial<Module>>(store.editingModule || {
     code: '', name: '', semester: '2025', credits: 16, currentGrade: 0, targetGrade: 60, progress: 0, assessments: []
@@ -109,10 +674,14 @@ const ModuleForm = () => {
     try {
       const moduleToSave: Module = {
         ...formState,
+        credits: formState.credits ?? 16,
+        currentGrade: formState.currentGrade ?? 0,
+        targetGrade: formState.targetGrade ?? 60,
+        progress: formState.progress ?? 0,
         id: store.editingModule?.id || Date.now().toString(),
         assessments: store.editingModule?.assessments || [],
         coverImage: store.editingModule?.coverImage || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        created_at: store.editingModule?.created_at || new Date().toISOString(),
+        created_at: store.editingModule?.createdAt || new Date().toISOString(),
         updated_at: new Date().toISOString(),
       } as Module;
       
@@ -155,9 +724,20 @@ const ModuleForm = () => {
       <div className="grid grid-cols-3 gap-4">
         <Input 
           label="Credits" 
-          type="number" 
-          value={formState.credits || 16} 
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState({...formState, credits: parseInt(e.target.value)})} 
+          type="text" 
+          inputMode="numeric"
+          value={formState.credits === undefined || formState.credits === null ? '' : String(formState.credits)} 
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+            if (val === '') {
+              setFormState({...formState, credits: undefined as any});
+            } else {
+              const num = parseInt(val);
+              if (!isNaN(num)) {
+                setFormState({...formState, credits: num});
+              }
+            }
+          }} 
           placeholder="16" 
           required 
           min="1"
@@ -166,9 +746,20 @@ const ModuleForm = () => {
         />
         <Input 
           label="Current Grade" 
-          type="number" 
-          value={formState.currentGrade || 0} 
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState({...formState, currentGrade: parseInt(e.target.value)})} 
+          type="text" 
+          inputMode="numeric"
+          value={formState.currentGrade === undefined || formState.currentGrade === null ? '' : String(formState.currentGrade)} 
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+            if (val === '') {
+              setFormState({...formState, currentGrade: undefined as any});
+            } else {
+              const num = parseInt(val);
+              if (!isNaN(num)) {
+                setFormState({...formState, currentGrade: num});
+              }
+            }
+          }} 
           placeholder="75" 
           min="0"
           max="100"
@@ -176,9 +767,20 @@ const ModuleForm = () => {
         />
         <Input 
           label="Target Grade" 
-          type="number" 
-          value={formState.targetGrade || 60} 
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState({...formState, targetGrade: parseInt(e.target.value)})} 
+          type="text" 
+          inputMode="numeric"
+          value={formState.targetGrade === undefined || formState.targetGrade === null ? '' : String(formState.targetGrade)} 
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+            if (val === '') {
+              setFormState({...formState, targetGrade: undefined as any});
+            } else {
+              const num = parseInt(val);
+              if (!isNaN(num)) {
+                setFormState({...formState, targetGrade: num});
+              }
+            }
+          }} 
           placeholder="80" 
           min="0"
           max="100"
@@ -201,9 +803,20 @@ const ModuleForm = () => {
         />
         <Input 
           label="Progress (%)" 
-          type="number" 
-          value={formState.progress || 0} 
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState({...formState, progress: parseInt(e.target.value)})} 
+          type="text" 
+          inputMode="numeric"
+          value={formState.progress === undefined || formState.progress === null ? '' : String(formState.progress)} 
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+            if (val === '') {
+              setFormState({...formState, progress: undefined as any});
+            } else {
+              const num = parseInt(val);
+              if (!isNaN(num)) {
+                setFormState({...formState, progress: num});
+              }
+            }
+          }} 
           placeholder="75" 
           min="0"
           max="100"
@@ -229,11 +842,8 @@ const ModuleForm = () => {
           data-testid="module-submit-btn"
         >
           {isSubmitting ? (
-            <span className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <span className="flex items-center justify-center gap-2">
+              <div className="h-4 w-4 border-t border-background animate-spin"></div>
               Saving...
             </span>
           ) : (
@@ -339,9 +949,9 @@ const TaskForm = () => {
           id="completed"
           checked={formState.completed || false}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState({...formState, completed: e.target.checked})}
-          className="w-4 h-4 rounded border-[#38383A] bg-[#0A0A0A]"
+          className="w-4 h-4 border-border bg-background accent-text-primary"
         />
-        <label htmlFor="completed" className="text-sm text-white cursor-pointer">
+        <label htmlFor="completed" className="text-sm text-text-primary cursor-pointer">
           Mark as completed
         </label>
       </div>
@@ -363,11 +973,8 @@ const TaskForm = () => {
           className="min-w-[120px]"
         >
           {isSubmitting ? (
-            <span className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <span className="flex items-center justify-center gap-2">
+              <div className="h-4 w-4 border-t border-background animate-spin"></div>
               Saving...
             </span>
           ) : (
@@ -458,11 +1065,11 @@ const TransactionForm = () => {
         required 
       />
       <div className="relative">
-        <label className="block text-sm font-medium text-white mb-2">
-          Amount <span className="text-[#FF453A]">*</span>
+        <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-2">
+          Amount <span className="text-danger">*</span>
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#EBEBF599]">R</span>
+          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-tertiary font-mono">R</span>
           <input
             type="text"
             value={formState.amount === 0 ? '' : formState.amount?.toString()}
@@ -472,17 +1079,17 @@ const TransactionForm = () => {
             }}
             placeholder="-25.50"
             required
-            className="w-full bg-[#0A0A0A] border border-[#38383A] rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-[#0A84FF]"
+            className="w-full bg-transparent border-b border-border pl-10 pr-4 py-2 text-text-primary font-mono focus:outline-none focus:border-text-primary transition-colors"
           />
         </div>
         <div className="flex gap-2 mt-2">
-          <span className="text-xs text-[#EBEBF599]">Quick add:</span>
+          <span className="text-xs text-text-tertiary uppercase tracking-wider">Quick add:</span>
           {[10, 20, 50, 100, 200].map(amt => (
             <button
               key={amt}
               type="button"
               onClick={() => setFormState({...formState, amount: -amt})}
-              className="text-xs px-2 py-1 bg-[#38383A] hover:bg-[#444444] rounded transition-colors text-white"
+              className="text-xs px-2 py-1 bg-surface hover:bg-border transition-colors text-text-secondary font-mono"
             >
               -R{amt}
             </button>
@@ -490,7 +1097,7 @@ const TransactionForm = () => {
           <button
             type="button"
             onClick={() => setFormState({...formState, amount: Math.abs(formState.amount || 0)})}
-            className="text-xs px-2 py-1 bg-[#30D158]/20 hover:bg-[#30D158]/30 rounded transition-colors text-[#30D158]"
+            className="text-xs px-2 py-1 bg-success/10 hover:bg-success/20 transition-colors text-success font-mono"
           >
             Make positive
           </button>
@@ -514,11 +1121,8 @@ const TransactionForm = () => {
           className="min-w-[120px]"
         >
           {isSubmitting ? (
-            <span className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <span className="flex items-center justify-center gap-2">
+              <div className="h-4 w-4 border-t border-background animate-spin"></div>
               Saving...
             </span>
           ) : (
@@ -530,623 +1134,326 @@ const TransactionForm = () => {
   );
 };
 
-  const DashboardPage = () => {
-    const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentCalendarDate);
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const today = new Date();
-    const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+  const AcademicProgressPage = () => {
+    const currentYear = new Date().getFullYear().toString();
+    const currentYearModules = (db.modules || []).filter((m: Module) => m.semester === currentYear);
+    const currentYearAverage = calculateTermAverage(db.modules || [], currentYear);
+    const years = [...new Set((db.modules || []).map((m: Module) => m.semester))].sort() as string[];
+    const cwa = calculateCWA(db.modules || []);
 
-    const getTasksThisWeek = () => {
-      const startOfWeek = new Date(today);
-      const endOfWeek = new Date(today);
-      endOfWeek.setDate(today.getDate() + 7);
-      
-      return db.tasks.filter(task => {
-        const taskDate = new Date(task.dueDate);
-        return taskDate >= startOfWeek && taskDate <= endOfWeek && !task.completed;
-      }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-    };
+  return (
+    <div className="space-y-4 page-enter">
+      <div className="px-1 pb-3 border-b border-border/60">
+        <p className="chapter-label">(kiseki) Trajectory</p>
+        <h1 className="chapter-title">Academic Progress</h1>
+      </div>
 
-    const thisWeekTasks = getTasksThisWeek();
-
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold text-white">Dashboard</h1>
-          <Button variant="secondary" onClick={exportData}><Download size={16} className="mr-2" />Export</Button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-[#141414] border border-[#38383A] rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-white">
-                {monthNames[month]} {year}
-              </h2>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setCurrentCalendarDate(new Date(year, month - 1, 1))}
-                  className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
-                >
-                  <ChevronLeft size={20} className="text-white" />
-                </button>
-                <button 
-                  onClick={() => setCurrentCalendarDate(new Date())}
-                  className="px-4 py-2 hover:bg-[#38383A] rounded-lg transition-colors text-sm text-white"
-                >
-                  Today
-                </button>
-                <button 
-                  onClick={() => setCurrentCalendarDate(new Date(year, month + 1, 1))}
-                  className="p-2 hover:bg-[#38383A] rounded-lg transition-colors"
-                >
-                  <ChevronRight size={20} className="text-white" />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-7 gap-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-xs font-medium text-[#EBEBF599] py-2">
-                  {day}
-                </div>
-              ))}
-
-              {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                <div key={`empty-${i}`} className="aspect-square" />
-              ))}
-
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1;
-                const date = new Date(year, month, day);
-                const dateStr = date.toISOString().split('T')[0];
-                const events = getEventsForDate(date);
-                const isToday = isCurrentMonth && day === today.getDate();
-
-                return (
-                  <div 
-                    key={day}
-                    className={`aspect-square border border-[#38383A] rounded-lg p-2 hover:border-[#0A84FF] transition-all cursor-pointer ${
-                      isToday ? 'bg-[#0A84FF]/20 border-[#0A84FF]' : 'bg-[#0A0A0A]'
-                    }`}
-                  >
-                    <div className={`text-sm font-medium mb-1 ${isToday ? 'text-[#0A84FF]' : 'text-white'}`}>
-                      {day}
-                    </div>
-                    <div className="space-y-1">
-                      {events.slice(0, 2).map(event => (
-                        <div 
-                          key={event.id}
-                          className={`text-[10px] px-1 py-0.5 rounded truncate ${
-                            event.priority === 'high' ? 'bg-[#FF453A]/20 text-[#FF453A]' :
-                            event.priority === 'medium' ? 'bg-[#FF9F0A]/20 text-[#FF9F0A]' :
-                            'bg-[#30D158]/20 text-[#30D158]'
-                          }`}
-                          title={event.title}
-                        >
-                          {event.title}
-                        </div>
-                      ))}
-                      {events.length > 2 && (
-                        <div className="text-[9px] text-[#EBEBF599] px-1">
-                          +{events.length - 2} more
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+      <div className="space-y-4">
+        {/* CWA Panel */}
+        <div className="surface-card p-6">
+          <div className="text-center mb-8">
+            <div className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-2">Cumulative Weighted Average</div>
+            <div className="text-6xl font-mono font-bold text-text-primary mb-2">{cwa}%</div>
+            <div className="text-xs text-text-tertiary font-mono">
+              Based on {db.modules.reduce((sum: number, m: Module) => sum + m.credits, 0)} total credits
             </div>
           </div>
 
           <div className="space-y-6">
-            <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">This Week</h3>
-                <span className="text-xs px-2 py-1 bg-[#FF453A]/20 text-[#FF453A] rounded-full">
-                  {thisWeekTasks.length} tasks
-                </span>
-              </div>
-              <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                {thisWeekTasks.length > 0 ? (
-                  thisWeekTasks.map(task => (
-                    <div key={task.id} className="flex items-start gap-3 p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors">
-                      <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
-                        task.priority === 'high' ? 'bg-[#FF453A]' : 
-                        task.priority === 'medium' ? 'bg-[#FF9F0A]' : 'bg-[#30D158]'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-white font-medium">{task.title}</div>
-<div className="text-xs text-[#EBEBF599] mt-1">
-{task.moduleCode} · {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-</div>
-</div>
-</div>
-))
-) : (
-<div className="text-center py-8 text-[#EBEBF599] text-sm">
-No tasks this week! 🎉
-</div>
-)}
-</div>
-</div>
-        <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Quick Stats</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-[#EBEBF599]">Current CWA</span>
-                <span className="text-2xl font-bold font-mono text-[#0A84FF]">{cwa}%</span>
-              </div>
-            </div>
-            <div className="h-px bg-[#38383A]" />
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-[#EBEBF599]">Active Modules</span>
-                <span className="text-lg font-bold text-white">{db.modules.length}</span>
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-[#EBEBF599]">Tasks Completed</span>
-                <span className="text-lg font-bold text-white">
-                  {db.tasks.filter(t => t.completed).length}/{db.tasks.length}
-                </span>
-              </div>
-              <ProgressBar percentage={(db.tasks.filter(t => t.completed).length / db.tasks.length) * 100} height={3} />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-[#EBEBF599]">Avg Progress</span>
-                <span className="text-lg font-bold text-white">
-                  {Math.round(db.modules.reduce((sum, m) => sum + m.progress, 0) / db.modules.length)}%
-                </span>
-              </div>
-              <ProgressBar percentage={db.modules.reduce((sum, m) => sum + m.progress, 0) / db.modules.length} height={3} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-};
-const AcademicPage = () => {
-const handlePhotoUpload = (moduleId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-const file = e.target.files?.[0];
-if (!file) return;
-  const reader = new FileReader();
-  reader.onloadend = async () => {
-    const module = db.modules.find(m => m.id === moduleId);
-    if (module) {
-      await db.saveModule({ ...module, coverImage: reader.result as string });
-    }
-  };
-  reader.readAsDataURL(file);
-};
+            {years.map((year: string) => {
+              const yearModules = db.modules.filter((m: Module) => m.semester === year);
+              const yearAverage = calculateTermAverage(db.modules, year);
+              const yearCredits = yearModules.reduce((sum: number, m: Module) => sum + m.credits, 0);
 
-return (
-  <div className="space-y-6">
-    <div className="flex items-center justify-between">
-      <h1 className="text-3xl font-semibold text-white">Academic</h1>
-      <Button onClick={() => { store.setEditingModule(null); store.setShowModal('module'); }}>
-        <Plus size={16} className="mr-1" />Add Module
-      </Button>
-    </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {db.modules.map(module => {
-        const thisWeekTasks = getThisWeekTasks(module.code);
-        const targetDiff = module.currentGrade - module.targetGrade;
-        
-        return (
-          <div 
-            key={module.id} 
-            className="bg-[#141414] border border-[#38383A] rounded-xl overflow-hidden transition-all duration-200 hover:border-[#0A84FF] hover:shadow-lg hover:-translate-y-1"
-          >
-            <div className="h-32 relative group cursor-pointer" style={{ 
-              background: module.coverImage?.startsWith('data:') ? 'none' : module.coverImage || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              backgroundImage: module.coverImage?.startsWith('data:') ? `url(${module.coverImage})` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-              <div className="absolute top-3 right-3 flex gap-2">
-                <label className="p-2 bg-black/50 hover:bg-black/70 rounded-lg backdrop-blur-sm transition-colors cursor-pointer">
-                  <Camera size={16} className="text-white" />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={(e) => handlePhotoUpload(module.id, e)}
-                  />
-                </label>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); store.setEditingModule(module); store.setShowModal('module'); }}
-                  className="p-2 bg-black/50 hover:bg-black/70 rounded-lg backdrop-blur-sm transition-colors"
-                >
-                  <Edit size={16} className="text-white" />
-                </button>
-                <button 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    if (confirm(`Delete ${module.code}?`)) {
-                      db.deleteModule(module.id);
-                    }
-                  }}
-                  className="p-2 bg-black/50 hover:bg-[#FF453A]/70 rounded-lg backdrop-blur-sm transition-colors"
-                >
-                  <Trash2 size={16} className="text-white" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 space-y-3">
-              <div>
-                <div className="text-xs text-[#EBEBF599] mb-1">{module.code} · {module.credits} credits</div>
-                <h3 className="text-base font-semibold text-white line-clamp-2">{module.name}</h3>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ProgressRing percentage={module.currentGrade} size={50} strokeWidth={5} />
-                  <div>
-                    <div className="text-xs text-[#EBEBF599]">Current</div>
-                    <div className="text-sm font-mono text-white">{module.currentGrade}%</div>
+              return (
+                <div key={year} className="space-y-0">
+                  <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                    <h3 className="text-[10px] uppercase tracking-[0.12em] text-text-muted">Term {year}</h3>
+                    <div className="text-right">
+                      <div className="text-xl font-mono font-semibold text-text-primary">{yearAverage}%</div>
+                      <div className="text-xs font-mono text-text-tertiary">{yearCredits} credits</div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-[#EBEBF599]">Target: {module.targetGrade}%</div>
-                  <div className={`text-sm font-mono font-semibold ${
-                    targetDiff >= 0 ? 'text-[#30D158]' : 'text-[#FF453A]'
-                  }`}>
-                    {targetDiff >= 0 ? '+' : ''}{targetDiff}%
-                  </div>
-                </div>
-              </div>
 
-              <div>
-                <div className="flex justify-between text-xs text-[#EBEBF599] mb-1">
-                  <span>Progress to target</span>
-                  <span>{Math.min(Math.round((module.currentGrade / module.targetGrade) * 100), 100)}%</span>
-                </div>
-                <ProgressBar 
-                  percentage={Math.min((module.currentGrade / module.targetGrade) * 100, 100)}
-                  color={targetDiff >= 0 ? '#30D158' : '#FF9F0A'}
-                />
-              </div>
-
-              {thisWeekTasks.length > 0 && (
-                <div className="pt-3 border-t border-[#38383A]">
-                  <div className="text-xs font-medium text-[#EBEBF599] mb-2">📋 This Week:</div>
-                  <div className="space-y-1">
-                    {thisWeekTasks.slice(0, 2).map(task => (
-                      <div key={task.id} className="text-xs text-white flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${
-                          task.priority === 'high' ? 'bg-[#FF453A]' : 'bg-[#FF9F0A]'
-                        }`} />
-                        <span className="truncate">{task.title}</span>
+                  <div className="divide-y divide-border/40">
+                    {yearModules.map((module: Module) => (
+                      <div
+                        key={module.id}
+                        className="flex items-center justify-between py-3 px-2 rounded-sm hover:bg-surface-hover/50 transition-all duration-300 ease-contemplative"
+                      >
+                        <div className="flex-1">
+                          <div className="text-sm text-text-primary font-medium font-mono">{module.code}</div>
+                          <div className="text-xs text-text-tertiary">{module.credits} credits</div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-lg font-mono font-semibold text-text-primary">{module.currentGrade}%</div>
+                          </div>
+                          <div className="w-16 text-right">
+                            <div className="text-sm font-mono text-text-secondary">
+                              {(module.currentGrade * module.credits).toFixed(0)}
+                            </div>
+                            <div className="text-[10px] uppercase tracking-wider text-text-tertiary">weighted</div>
+                          </div>
+                        </div>
                       </div>
                     ))}
-                    {thisWeekTasks.length > 2 && (
-                      <div className="text-xs text-[#EBEBF599]">+{thisWeekTasks.length - 2} more</div>
-                    )}
                   </div>
                 </div>
-              )}
+              );
+            })}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-border/60">
+            <div className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-2">Formula</div>
+            <div className="text-xs font-mono text-text-secondary">
+              CWA = Σ(credits × grade) / Σ(total credits)
             </div>
           </div>
-        );
-      })}
-    </div>
-  </div>
-);
-};
-const AcademicProgressPage = () => {
-const currentYear = '2025';
-const currentYearModules = db.modules.filter(m => m.semester === currentYear);
-const currentYearAverage = calculateTermAverage(db.modules, currentYear);
-const years = [...new Set(db.modules.map(m => m.semester))].sort();
-
-return (
-  <div className="space-y-6">
-    <h1 className="text-3xl font-semibold text-white">Academic Progress</h1>
-
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
-        <div className="text-center mb-8">
-          <div className="text-sm text-[#EBEBF599] mb-2">Cumulative Weighted Average</div>
-          <div className="text-6xl font-mono font-bold text-[#0A84FF] mb-2">{cwa}%</div>
-          <div className="text-xs text-[#EBEBF599]">
-            Based on {db.modules.reduce((sum, m) => sum + m.credits, 0)} total credits
-          </div>
         </div>
 
-        <div className="space-y-6">
-          {years.map(year => {
-            const yearModules = db.modules.filter(m => m.semester === year);
-            const yearAverage = calculateTermAverage(db.modules, year);
-            const yearCredits = yearModules.reduce((sum, m) => sum + m.credits, 0);
+        {/* Current Year Panel */}
+        <div className="surface-card p-6">
+          <div className="text-center mb-8">
+            <div className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-2">Current Year Average</div>
+            <div className="text-6xl font-mono font-bold text-success mb-2">{currentYearAverage}%</div>
+            <div className="text-xs text-text-tertiary font-mono">
+              Term {currentYear} · {currentYearModules.reduce((sum: number, m: Module) => sum + m.credits, 0)} credits
+            </div>
+          </div>
 
-            return (
-              <div key={year} className="space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-[#38383A]">
-                  <h3 className="text-lg font-semibold text-white">Term {year}</h3>
-                  <div className="text-right">
-                    <div className="text-2xl font-mono font-bold text-[#0A84FF]">{yearAverage}%</div>
-                    <div className="text-xs text-[#EBEBF599]">{yearCredits} credits</div>
+          <div className="space-y-3">
+            <h3 className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-3">Module Performance</h3>
+
+            {currentYearModules.map((module: Module) => {
+              const targetDiff = module.currentGrade - module.targetGrade;
+              const progressToTarget = Math.min((module.currentGrade / module.targetGrade) * 100, 100);
+
+              return (
+                <div
+                  key={module.id}
+                  className="surface-card p-4 transition-all duration-300 ease-contemplative hover:-translate-y-0.5"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-text-primary font-mono">{module.code}</div>
+                      <div className="text-xs text-text-tertiary line-clamp-1">{module.name}</div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <ProgressRing percentage={module.currentGrade ?? 0} size={45} strokeWidth={4} />
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  {yearModules.map(module => (
-                    <div 
-                      key={module.id} 
-                      className="flex items-center justify-between p-3 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="text-sm text-white font-medium">{module.code}</div>
-                        <div className="text-xs text-[#EBEBF599]">{module.credits} credits</div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-lg font-mono font-semibold text-white">{module.currentGrade}%</div>
-                        </div>
-                        <div className="w-16 text-right">
-                          <div className="text-sm font-mono text-[#0A84FF]">
-                            {(module.currentGrade * module.credits).toFixed(0)}
-                          </div>
-                          <div className="text-[10px] text-[#EBEBF599]">weighted</div>
-                        </div>
+                  <div className="grid grid-cols-3 gap-[1px] bg-border/60 mb-3">
+                    <div className="text-center p-2 bg-surface">
+                      <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Current</div>
+                      <div className="text-sm font-mono font-semibold text-text-primary">{module.currentGrade}%</div>
+                    </div>
+                    <div className="text-center p-2 bg-surface">
+                      <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Target</div>
+                      <div className="text-sm font-mono font-semibold text-text-primary">{module.targetGrade}%</div>
+                    </div>
+                    <div className="text-center p-2 bg-surface">
+                      <div className="text-[10px] uppercase tracking-wider text-text-tertiary">Diff</div>
+                      <div className={`text-sm font-mono font-semibold ${
+                        targetDiff >= 0 ? 'text-success' : 'text-danger'
+                      }`}>
+                        {targetDiff >= 0 ? '+' : ''}{targetDiff}%
                       </div>
                     </div>
-                  ))}
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[10px] uppercase tracking-[0.1em] text-text-muted mb-1">
+                      <span>Progress to target</span>
+                      <span className="font-mono">{Math.round(progressToTarget)}%</span>
+                    </div>
+                    <ProgressBar
+                      percentage={progressToTarget}
+                      color={targetDiff >= 0 ? '#567045' : '#9B7A3C'}
+                      height={6}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-border/60">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-1">Modules Above Target</div>
+                <div className="text-2xl font-mono font-semibold text-success">
+                  {currentYearModules.filter(m => m.currentGrade >= m.targetGrade).length}
                 </div>
               </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 p-4 bg-[#0A84FF]/10 border border-[#0A84FF]/30 rounded-lg">
-          <div className="text-xs text-[#EBEBF599] mb-2">Formula:</div>
-          <div className="text-xs font-mono text-[#0A84FF]">
-            CWA = Σ(credits × grade) / Σ(total credits)
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.12em] text-text-muted mb-1">Average Progress</div>
+                <div className="text-2xl font-mono font-semibold text-success">
+                  {Math.round(currentYearModules.reduce((sum, m) => sum + m.progress, 0) / currentYearModules.length)}%
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+};
 
-      <div className="bg-[#141414] border border-[#38383A] rounded-2xl p-6">
-        <div className="text-center mb-8">
-          <div className="text-sm text-[#EBEBF599] mb-2">Current Year Average</div>
-          <div className="text-6xl font-mono font-bold text-[#30D158] mb-2">{currentYearAverage}%</div>
-          <div className="text-xs text-[#EBEBF599]">
-            Term {currentYear} • {currentYearModules.reduce((sum, m) => sum + m.credits, 0)} credits
-          </div>
+const AcademicPage = () => {
+    return (
+      <AcademicDashboard 
+        modules={modules}
+        onImportYearbook={() => setIsDocumentImportOpen(true)}
+      />
+    );
+  };
+
+  return (
+  <div className="min-h-screen bg-background text-text-primary font-sans safe-area-top">
+    {/* Desktop Sidebar */}
+    {!isMobile && (
+      <div 
+        className={`fixed left-0 top-0 z-50 h-full border-r border-border/80 bg-surface/80 backdrop-blur-md transition-all duration-420 ease-contemplative ${
+          store.sidebarExpanded ? 'w-60' : 'w-16'
+        }`}
+      >
+        <div className="border-b border-border/80 px-4 py-4">
+          {store.sidebarExpanded ? (
+            <div className="space-y-1">
+              <p className="chapter-label">EST 2026</p>
+              <div className="font-display text-title-sm text-text-primary tracking-tight">UniLife</div>
+              <p className="text-caption text-text-tertiary">Student Academic Manager</p>
+            </div>
+          ) : (
+            <div className="font-display text-title-sm text-text-primary tracking-tight">UL</div>
+          )}
         </div>
-
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white mb-4">Module Performance</h3>
-          
-          {currentYearModules.map(module => {
-            const targetDiff = module.currentGrade - module.targetGrade;
-            const progressToTarget = Math.min((module.currentGrade / module.targetGrade) * 100, 100);
-
+        <nav className="flex-1 overflow-y-auto p-2">
+          {navigation.map(item => {
+            const Icon = item.icon;
+            const isActive = store.currentPage === item.id;
             return (
-              <div 
-                key={module.id} 
-                className="p-4 bg-[#0A0A0A] rounded-lg hover:bg-[#1C1C1C] transition-colors border border-[#38383A] hover:border-[#0A84FF]"
+              <button
+                key={item.id}
+                onClick={() => store.setCurrentPage(item.id)}
+                data-testid={`nav-${item.id}`}
+                className={`nav-indicator mb-1 w-full rounded-sm px-3 py-2.5 transition-all duration-300 ease-contemplative ${
+                  isActive 
+                    ? 'active border border-border-hover bg-surface-hover/70 text-text-primary shadow-surface-soft' 
+                    : 'border border-transparent text-text-secondary hover:border-border/70 hover:bg-surface-hover/50 hover:text-text-primary'
+                }`}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-white">{module.code}</div>
-                    <div className="text-xs text-[#EBEBF599] line-clamp-1">{module.name}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <ProgressRing percentage={module.currentGrade} size={45} strokeWidth={4} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="text-center p-2 bg-[#141414] rounded">
-                    <div className="text-xs text-[#EBEBF599]">Current</div>
-                    <div className="text-sm font-mono font-semibold text-white">{module.currentGrade}%</div>
-                  </div>
-                  <div className="text-center p-2 bg-[#141414] rounded">
-                    <div className="text-xs text-[#EBEBF599]">Target</div>
-                    <div className="text-sm font-mono font-semibold text-white">{module.targetGrade}%</div>
-                  </div>
-                  <div className="text-center p-2 bg-[#141414] rounded">
-                    <div className="text-xs text-[#EBEBF599]">Diff</div>
-                    <div className={`text-sm font-mono font-semibold ${
-                      targetDiff >= 0 ? 'text-[#30D158]' : 'text-[#FF453A]'
-                    }`}>
-                      {targetDiff >= 0 ? '+' : ''}{targetDiff}%
+                <div className="flex items-center gap-3">
+                  <Icon size={17} className="shrink-0" />
+                  {store.sidebarExpanded && (
+                    <div className="min-w-0 text-left">
+                      <div className="truncate text-body-sm font-medium">({item.index}) {item.label}</div>
+                      <div className="truncate text-[10px] uppercase tracking-[0.12em] text-text-muted">{item.chapter}</div>
                     </div>
-                  </div>
+                  )}
                 </div>
-
-                <div>
-                  <div className="flex justify-between text-xs text-[#EBEBF599] mb-1">
-                    <span>Progress to target</span>
-                    <span>{Math.round(progressToTarget)}%</span>
-                  </div>
-                  <ProgressBar 
-                    percentage={progressToTarget}
-                    color={targetDiff >= 0 ? '#30D158' : '#FF9F0A'}
-                    height={6}
-                  />
-                </div>
-              </div>
+              </button>
             );
           })}
-        </div>
-
-        <div className="mt-6 p-4 bg-[#30D158]/10 border border-[#30D158]/30 rounded-lg">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs text-[#EBEBF599] mb-1">Modules Above Target</div>
-              <div className="text-2xl font-bold text-[#30D158]">
-                {currentYearModules.filter(m => m.currentGrade >= m.targetGrade).length}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-[#EBEBF599] mb-1">Average Progress</div>
-              <div className="text-2xl font-bold text-[#30D158]">
-                {Math.round(currentYearModules.reduce((sum, m) => sum + m.progress, 0) / currentYearModules.length)}%
-              </div>
-            </div>
-          </div>
+        </nav>
+        <div className="border-t border-border/80 p-4">
+          <button
+            onClick={() => store.setSidebarExpanded(!store.sidebarExpanded)}
+            className="flex w-full items-center justify-center gap-2 rounded-sm border border-border/80 px-3 py-2 text-text-secondary transition-all duration-300 ease-contemplative hover:border-border-hover hover:bg-surface-hover/60 hover:text-text-primary"
+          >
+            {store.sidebarExpanded ? <X size={18} /> : <List size={18} />}
+          </button>
         </div>
       </div>
-    </div>
-  </div>
-);
-};
-const FinancesPage = () => {
-const totalBalance = db.transactions.reduce((sum, t) => sum + t.amount, 0);
-const thisMonth = db.transactions.filter(t => t.date.startsWith('2024-12')).reduce((sum, t) => sum + t.amount, 0);
-return (
-  <div className="space-y-6">
-    <div className="flex items-center justify-between">
-      <h1 className="text-3xl font-semibold text-white">Finances</h1>
-      <Button onClick={() => { store.setEditingTransaction(null); store.setShowModal('transaction'); }}>
-        <Plus size={16} className="mr-1" />Add Transaction
-      </Button>
-    </div>
+    )}
 
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-        <h3 className="text-base font-semibold text-white mb-3">Total Balance</h3>
-        <div className="text-3xl font-bold text-white mb-1">R{totalBalance.toFixed(2)}</div>
-      </div>
-      <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-        <h3 className="text-base font-semibold text-white mb-3">This Month</h3>
-        <div className={`text-3xl font-bold mb-1 ${thisMonth < 0 ? 'text-[#FF453A]' : 'text-[#30D158]'}`}>
-          R{thisMonth.toFixed(2)}
-        </div>
-      </div>
-      <div className="bg-[#141414] border border-[#38383A] rounded-xl p-4">
-        <h3 className="text-base font-semibold text-white mb-3">Transactions</h3>
-        <div className="text-3xl font-bold text-white">{db.transactions.length}</div>
-      </div>
-    </div>
-
-    <div className="bg-[#141414] border border-[#38383A] rounded-xl p-6">
-      <h2 className="text-xl font-semibold text-white mb-4">Recent Transactions</h2>
-      <div className="space-y-3">
-        {db.transactions.slice().reverse().map((transaction, i) => (
-          <div key={i} className="flex items-center justify-between py-2 border-b border-[#38383A]/50">
-            <div className="flex-1">
-              <div className="text-sm text-white">{transaction.description}</div>
-              <div className="text-xs text-[#EBEBF599] font-mono">{transaction.date}</div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs px-2 py-1 bg-[#38383A]/30 rounded text-[#EBEBF599]">{transaction.category}</span>
-              <div className={`text-sm font-mono font-semibold ${transaction.amount > 0 ? 'text-[#30D158]' : 'text-white'}`}>
-                R{transaction.amount.toFixed(2)}
-              </div>
-              <button onClick={() => { store.setEditingTransaction(transaction); store.setShowModal('transaction'); }}
-                className="text-[#EBEBF54D] hover:text-white">
-                <Edit size={14} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-};
-const renderPage = () => {
-  switch (store.currentPage) {
-    case 'dashboard': return <DashboardPage />;
-    case 'academic': return <AcademicPage />;
-    case 'academic-progress': return <AcademicProgressPage />;
-    case 'tasks':
-      return (
-        <TasksPage
-          tasks={db.tasks}
-          modules={db.modules}
-          onAddTask={() => {
-            store.setEditingTask(null);
-            store.setShowModal('task');
-          }}
-          onEditTask={(task) => {
-            store.setEditingTask(task);
-            store.setShowModal('task');
-          }}
-          onDeleteTask={db.deleteTask}
-          onToggleComplete={async (id) => {
-            const task = db.tasks.find(t => t.id === id);
-            if (task) {
-              await db.saveTask({ ...task, completed: !task.completed });
-            }
-          }}
-          onSaveTask={db.saveTask}
-        />
-      );
-    case 'finances': return <FinancesPage />;
-    case 'settings': return <SettingsPage exportData={exportData} />;
-    default: return <DashboardPage />;
-  }
-};
-
-return (
-  <div className="min-h-screen bg-black text-white font-sans">
-    <div 
-      className={`fixed left-0 top-0 h-full bg-[#0A0A0A] border-r border-[#38383A] transition-all duration-300 z-50 ${
-        store.sidebarExpanded ? 'w-60' : 'w-16'
-      } ${isMobile && !store.sidebarExpanded ? '-translate-x-full' : ''}`}
-    >
-      <div className="p-4 border-b border-[#38383A]">
-        <div className="text-xl font-bold text-white">{store.sidebarExpanded ? 'UniLife' : 'UL'}</div>
-      </div>
-      <nav className="p-2 flex-1 overflow-y-auto">
-        {navigation.map(item => {
-          const Icon = item.icon;
-          const isActive = store.currentPage === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => store.setCurrentPage(item.id)}
-              data-testid={`nav-${item.id}`}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg mb-1 transition-all ${
-                isActive 
-                  ? 'bg-[#0A84FF]/10 text-[#0A84FF] border-l-4 border-[#0A84FF]' 
-                  : 'text-[#EBEBF599] hover:bg-[#141414] hover:text-white'
-              }`}
-            >
-              <Icon size={20} className="shrink-0" />
-              {store.sidebarExpanded && <span className="text-sm font-medium truncate">{item.label}</span>}
-            </button>
-          );
-        })}
-      </nav>
-      <div className="p-4 border-t border-[#38383A]">
-        <button
-          onClick={() => store.setSidebarExpanded(!store.sidebarExpanded)}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[#EBEBF599] hover:bg-[#141414] hover:text-white"
-        >
-          {store.sidebarExpanded ? <X size={20} /> : <Menu size={20} />}
-        </button>
-      </div>
-    </div>
-
-    {!store.sidebarExpanded && (
+    {/* Desktop Menu Button */}
+    {!isMobile && !store.sidebarExpanded && (
       <button
         onClick={() => store.setSidebarExpanded(true)}
-        className="fixed top-4 left-4 z-50 p-3 bg-[#141414] border border-[#38383A] rounded-lg hover:bg-[#1C1C1C] hover:border-[#0A84FF] transition-colors shadow-lg"
+        className="fixed left-4 top-4 z-50 rounded-sm border border-border/80 bg-surface/90 p-3 shadow-surface-soft transition-all duration-300 ease-contemplative hover:border-border-hover"
       >
-        <Menu size={24} className="text-white" />
+        <List size={20} className="text-text-primary" />
       </button>
     )}
 
-    {isMobile && store.sidebarExpanded && (
-      <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => store.setSidebarExpanded(false)} />
+    {/* Mobile Bottom Navigation */}
+    {isMobile && (
+      <>
+        <div className="pb-24 safe-area-bottom">
+          <div className="scroll-container page-enter">
+            {/* Mobile chapter context strip */}
+            <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border/40">
+              <p className="text-overline uppercase tracking-[0.14em] text-text-muted">{activeNavigation.chapter}</p>
+              <p className="text-overline font-mono text-text-muted">
+                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}
+              </p>
+            </div>
+            <div className="px-3 pt-2">
+              {renderPage()}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Tab Bar */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/70 bg-background/97 backdrop-blur-xl">
+          <div className="max-w-mobile mx-auto flex items-stretch">
+            {([...bottomNavItems, { id: 'settings' as PageType, icon: GearSix, label: 'System', chapter: '(chosei) System', index: '09' }] as NavItem[]).map((item) => {
+              const Icon = item.icon;
+              const isActive = store.currentPage === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    store.setCurrentPage(item.id);
+                    if (iPhoneInteractions.supportsHaptic()) {
+                      iPhoneInteractions.haptic('selection');
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    iPhoneInteractions.touchFeedback(target, 'light');
+                  }}
+                  data-testid={`nav-${item.id}`}
+                  className={`relative flex flex-1 flex-col items-center justify-center pt-2 bottom-nav-safe-area no-select haptic-feedback transition-all duration-300 ease-contemplative ${
+                    isActive ? 'text-text-primary' : 'text-text-muted'
+                  }`}
+                >
+                  {isActive && (
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-[2px] bg-text-primary" />
+                  )}
+                  <div className={`flex items-center gap-1 transition-all duration-300 ease-contemplative rounded-full ${
+                    isActive ? 'bg-text-primary/[0.08] px-2.5 py-1' : 'px-2.5 py-1'
+                  }`}>
+                    <Icon size={isActive ? 15 : 18} />
+                    {isActive && (
+                      <span className="text-[11px] font-semibold tracking-tight leading-none whitespace-nowrap">{item.label}</span>
+                    )}
+                  </div>
+                  {/* Spacer keeps height consistent whether active label is shown or not */}
+                  <span className="mt-0.5 text-[9px] leading-none select-none" style={{ opacity: 0 }}>·</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </>
     )}
 
-    <div className={`transition-all duration-300 ${store.sidebarExpanded ? 'ml-60' : 'ml-16'} ${isMobile ? 'ml-0' : ''}`}>
-      <div className="max-w-[1440px] mx-auto p-6 md:p-12">{renderPage()}</div>
-    </div>
+    {/* Desktop Content Area */}
+    {!isMobile && (
+      <div className={`transition-all duration-420 ease-contemplative ${store.sidebarExpanded ? 'ml-60' : 'ml-16'}`}>
+        <div className="mx-auto max-w-wide p-6 desktop:p-12 page-enter">
+          <div className="mb-6 border-b border-border/80 pb-3">
+            <p className="chapter-label">({activeNavigation.index}) {activeNavigation.chapter}</p>
+            <p className="text-body-sm text-text-tertiary">Academic continuity through deliberate progress.</p>
+          </div>
+          {renderPage()}
+        </div>
+      </div>
+    )}
 
     <Modal 
       isOpen={store.showModal === 'module'} 
@@ -1155,6 +1462,7 @@ return (
         store.setEditingModule(null); 
       }}
       title={store.editingModule ? 'Edit Module' : 'Add New Module'}
+      chapterLabel="(keisei) Formation"
     >
       <ModuleForm />
     </Modal>
@@ -1166,6 +1474,7 @@ return (
         store.setEditingTask(null); 
       }}
       title={store.editingTask ? 'Edit Task' : 'Add New Task'}
+      chapterLabel="(yakusoku) Commitments"
     >
       <TaskForm />
     </Modal>
@@ -1177,10 +1486,43 @@ return (
         store.setEditingTransaction(null); 
       }}
       title={store.editingTransaction ? 'Edit Transaction' : 'Add New Transaction'}
+      chapterLabel="(junkan) Sustainability"
     >
       <TransactionForm />
     </Modal>
+
+    {/* Legacy yearbook modal redirects to document import */}
+    {store.showModal === 'yearbook' && (() => {
+      store.setShowModal(null);
+      setIsDocumentImportOpen(true);
+      return null;
+    })()}
+
+    {/* Module Modal */}
+    <Modal
+      isOpen={isModuleModalOpen}
+      onClose={() => setIsModuleModalOpen(false)}
+      title="Add New Module"
+      chapterLabel="(keisei) Formation"
+    >
+      <AcademicModuleForm 
+        onSubmit={handleAddModule}
+        onCancel={() => setIsModuleModalOpen(false)}
+        isSubmitting={false}
+      />
+    </Modal>
+
+    {/* Document Import Hub */}
+    <DocumentImport
+      isOpen={isDocumentImportOpen}
+      onClose={() => setIsDocumentImportOpen(false)}
+      onImportModules={handleDocumentImportModules}
+      onImportSchedule={handleImportSchedule}
+      onImportAssessments={handleImportAssessments}
+      existingModules={modules}
+    />
   </div>
 );
 };
 export default UniLife;
+
