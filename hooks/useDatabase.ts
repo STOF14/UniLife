@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase/supabase';
+import { supabase } from '@/lib/supabase/client';
 import type { Module, Task, Transaction } from '@/lib/types';
 
 // Convert camelCase to snake_case for database

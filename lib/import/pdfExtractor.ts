@@ -3,11 +3,23 @@
  * Shared foundation for all document parsers
  */
 
-import * as pdfjsLib from 'pdfjs-dist';
+type PdfJsModule = typeof import('pdfjs-dist');
 
-// Set worker source — uses the bundled worker from node_modules
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+let pdfjsLibPromise: Promise<PdfJsModule> | null = null;
+
+async function getPdfJs() {
+  if (typeof window === 'undefined') {
+    throw new Error('PDF extraction is only available in the browser');
+  }
+
+  if (!pdfjsLibPromise) {
+    pdfjsLibPromise = import('pdfjs-dist').then((pdfjsLib) => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+      return pdfjsLib;
+    });
+  }
+
+  return pdfjsLibPromise;
 }
 
 export interface PDFTextLine {
@@ -40,6 +52,7 @@ export interface PDFExtractionResult {
  * Preserves position, font size, and line structure
  */
 export async function extractPDFText(file: File): Promise<PDFExtractionResult> {
+  const pdfjsLib = await getPdfJs();
   const arrayBuffer = await file.arrayBuffer();
   const typedArray = new Uint8Array(arrayBuffer);
 

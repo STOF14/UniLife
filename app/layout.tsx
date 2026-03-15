@@ -1,25 +1,13 @@
+import type { CSSProperties } from 'react'
 import type { Metadata, Viewport } from 'next'
-import { Newsreader, Manrope, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { StoreProvider } from '@/hooks/useStore'
 
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  variable: '--font-display',
-  display: 'swap',
-})
-
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-})
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-  display: 'swap',
-})
+const rootFontVariables: CSSProperties = {
+  ['--font-display' as string]: 'Newsreader, Iowan Old Style, Times New Roman, serif',
+  ['--font-sans' as string]: 'Manrope, Avenir Next, Helvetica Neue, Helvetica, Arial, sans-serif',
+  ['--font-mono' as string]: 'JetBrains Mono, SF Mono, Monaco, Consolas, monospace',
+}
 
 export const metadata: Metadata = {
   title: 'UniLife',
@@ -41,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${newsreader.variable} ${manrope.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" style={rootFontVariables}>
       <body>
         <StoreProvider>
           {children}

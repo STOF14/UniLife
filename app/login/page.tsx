@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import { shouldRouteToOnboarding } from '@/lib/onboarding';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -34,12 +35,19 @@ export default function LoginPage() {
         setIsSignUp(false); // Switch back to login mode
       } else {
         // --- SIGN IN LOGIC ---
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        router.push('/');
+
+        const userId = data.user?.id;
+        if (userId && shouldRouteToOnboarding(userId)) {
+          router.push('/onboarding');
+        } else {
+          router.push('/');
+        }
+
         router.refresh();
       }
     } catch (err: any) {
@@ -133,6 +141,17 @@ export default function LoginPage() {
             {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
           </button>
         </div>
+        {process.env.NEXT_PUBLIC_DEV_MODE === 'true' && (
+          <div className="text-center mt-6">
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="text-[10px] text-gray-300 hover:text-gray-400 transition-colors"
+            >
+              ·
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

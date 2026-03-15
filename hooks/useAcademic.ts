@@ -1,7 +1,7 @@
 // hooks/useAcademic.ts
 import { useState, useCallback } from 'react';
 import { Module, Assessment } from '@/lib/types';
-import { supabase } from '@/lib/supabase/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 type UseAcademicReturn = {
   isLoading: boolean;

@@ -253,6 +253,14 @@ test.describe('UniLife E2E Tests', () => {
     for (const page_obj of pages) {
       await page.click(`[data-testid="${page_obj.testid}"]`);
       await page.waitForTimeout(500);
+
+      if (page_obj.testid === 'nav-settings') {
+        await expect(page.locator('text=Import Past Modules (2024-2025)')).toHaveCount(0);
+        await expect(page.locator('text=Tab Morph Previews')).toHaveCount(0);
+        await expect(page.locator('text=Appearance & Accessibility')).toBeVisible();
+        await expect(page.locator('text=Productivity Defaults')).toBeVisible();
+        await expect(page.locator('text=Privacy & Security')).toBeVisible();
+      }
     }
   });
 

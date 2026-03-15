@@ -3,8 +3,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase/adminClient';
+import { getDevCurriculaForDegree } from '@/lib/devAcademicCatalog';
 
 export const dynamic = 'force-dynamic';
+
+const shouldUseDevCatalog =
+  process.env.NEXT_PUBLIC_DEV_MODE === 'true' || process.env.NODE_ENV !== 'production';
 
 
 export async function GET(request: NextRequest) {
@@ -58,6 +62,16 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Failed to fetch available curricula:', error);
+
+    if (shouldUseDevCatalog) {
+      const { searchParams } = new URL(request.url);
+      const degreeId = searchParams.get('degreeId');
+
+      return NextResponse.json({
+        curricula: degreeId ? getDevCurriculaForDegree(degreeId) : [],
+      });
+    }
+
     return NextResponse.json(
       { error: 'Failed to fetch curricula' },
       { status: 500 }
